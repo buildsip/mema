@@ -1,13 +1,50 @@
-# mema
+<p align="center">
+  <picture>
+    <img src="docs/assets/banner.png" alt="banner" width="600">
+  </picture>
+</p>
 
-Git-native memory for AI coding agents. Requires Node.js 22.5 or newer.
+<p align="center">
+  <b>
+    Git-native memory for AI coding agents.
+  </b>
+</p>
 
-- Human inspectability ✅
-- PR human-in-the-loop review ✅
-- No vendor lock-in ✅
-- No burning millions of tokens on garbage context ✅
+<div align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/assets/cursor-white.svg">
+    <img src="docs/assets/cursor.svg" alt="Cursor" width="40">
+  </picture>
+  &nbsp;&nbsp;
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/assets/claudecode-white.svg">
+    <img src="docs/assets/claudecode.svg" alt="Claude Code" width="40">
+  </picture>
+  &nbsp;&nbsp;
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/assets/codex-white.svg">
+    <img src="docs/assets/codex.svg" alt="Codex" width="40">
+  </picture>
+  &nbsp;&nbsp;
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/assets/opencode-white.svg">
+    <img src="docs/assets/opencode.svg" alt="OpenCode" width="40">
+  </picture>
+  &nbsp;&nbsp;
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/assets/antigravity-white.svg">
+    <img src="docs/assets/antigravity.svg" alt="Antigravity" width="40">
+  </picture>
+</div>
 
-If you want your agent to inherit personal, team, or organization details and project specifics at the same time, you're in the right place. 🚀
+<div align="center">
+  <a href="https://www.npmjs.com/package/mema">
+    <img src="https://img.shields.io/npm/v/mema?logo=npm" alt="npm">
+  </a>
+  <img src="https://img.shields.io/badge/Node.js-18%2B-brightgreen?style=flat-square" alt="npm">
+</div>
+
+Mema helps your agent access **project, personal, team, or organization** memories at the same time.
 
 ```bash
 repo/
