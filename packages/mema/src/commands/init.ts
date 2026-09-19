@@ -6,6 +6,8 @@ import { confirm, group, intro, isCancel, log, outro } from "@clack/prompts";
 import { applyEdits, findNodeAtLocation, modify, parseTree, type ParseError } from "jsonc-parser";
 import { findRepo } from "../find-repo";
 import { installCli } from "../install-cli";
+import { installWritingSkill } from "../install-writing-skill";
+import { prepareInstructions } from "../prepare-instructions";
 import type { Config } from "../read-config";
 import { NAMES } from "../names";
 import { readConfig } from "../read-config";
@@ -80,6 +82,20 @@ export async function init({
       prune: () => confirm({ message: "Enable pruning?", initialValue: Boolean(config.prune) }),
       labels: () =>
         confirm({ message: "Add memory tab labels to VS Code / Cursor?", initialValue: true }),
+      skill: () =>
+        project === root
+          ? confirm({
+              message: "Install the global memory-writing skill? Existing copies will be replaced.",
+              initialValue: true,
+            })
+          : undefined,
+      instructions: () =>
+        project === root
+          ? confirm({
+              message: `Add starter instructions for when to store or update memories to ${join(root, NAMES.AGENTS_MD)}?`,
+              initialValue: true,
+            })
+          : undefined,
     },
     {
       onCancel: () => {
@@ -140,11 +156,21 @@ export async function init({
     );
   }
 
+  // Prepare the append before installing, then reject edits made while installation was running.
+  const instructions = answers.instructions
+    ? await prepareInstructions({ root, cliRoot })
+    : undefined;
+
   await installCli({ log }, { cwd: project, cliRoot, verbose });
+  if (answers.skill) installWritingSkill({ log }, { cwd: root, cliRoot, verbose });
 
   // Existing stores may already contain memories created by insert; leave all of those files alone.
   if (!directory) mkdirSync(memories);
   try {
+    if (instructions) {
+      await assertNoSymlinks({ path: instructions.path, base: root });
+      writeText(instructions);
+    }
     if (settings !== undefined) {
       mkdirSync(join(root, NAMES.VSCODE), { recursive: true });
       writeText({ path: settingsPath, text: settings, previous });

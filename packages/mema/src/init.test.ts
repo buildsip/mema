@@ -59,6 +59,10 @@ describe("mema init", () => {
     const original =
       await vi.importActual<typeof import("node:child_process")>("node:child_process");
     vi.mocked(execFileSync).mockImplementation((...args) => {
+      if (args[0] === "npx") {
+        if (failure === "skills") throw new Error("Could not install skill");
+        return Buffer.from("");
+      }
       if (["pnpm", "npm", "yarn", "bun"].includes(args[0])) {
         const command = (args[1] as string[])[0];
         if (command === failure) throw new Error(`Could not ${command}`);
@@ -97,13 +101,23 @@ describe("mema init", () => {
     mkdirSync(join(web, "src"), { recursive: true });
     mkdirSync(join(cliRoot, "scripts"), { recursive: true });
     writeFileSync(join(cliRoot, "scripts", "build.mjs"), "");
+    mkdirSync(join(cliRoot, NAMES.TEMPLATES), { recursive: true });
+    writeFileSync(
+      join(cliRoot, NAMES.TEMPLATES, NAMES.AGENTS_MD),
+      readFileSync(new URL("../templates/AGENTS.md", import.meta.url), "utf8"),
+    );
+    mkdirSync(join(cliRoot, NAMES.SKILLS, NAMES.MEMORY_WRITING_SKILL), { recursive: true });
+    writeFileSync(
+      join(cliRoot, NAMES.SKILLS, NAMES.MEMORY_WRITING_SKILL, NAMES.SKILL_MD),
+      readFileSync(new URL("../skills/mema-memory-writing/SKILL.md", import.meta.url), "utf8"),
+    );
     writeFileSync(
       join(cliRoot, NAMES.PACKAGE_JSON),
       JSON.stringify({
         name: "mema",
         version: "0.1.0",
         private: true,
-        bin: { "mema": "dist/index.js" },
+        bin: { mema: "dist/index.js" },
       }),
     );
     writeFileSync(join(root, NAMES.PACKAGE_JSON), '{"name":"@acme/monorepo"}');
@@ -126,7 +140,7 @@ describe("mema init", () => {
     mkdirSync(join(globalRoot, "mema"), { recursive: true });
     writeFileSync(
       join(globalRoot, "mema", NAMES.PACKAGE_JSON),
-      JSON.stringify({ name: "mema", version, bin: { "mema": "dist/index.js" } }),
+      JSON.stringify({ name: "mema", version, bin: { mema: "dist/index.js" } }),
     );
   }
 
@@ -134,7 +148,7 @@ describe("mema init", () => {
     vi.stubEnv("npm_config_user_agent", "npm/11.0.0 node/v22.0.0");
     writeFileSync(
       join(cliRoot, NAMES.PACKAGE_JSON),
-      JSON.stringify({ name: "mema", version: "0.1.0", bin: { "mema": "dist/index.js" } }),
+      JSON.stringify({ name: "mema", version: "0.1.0", bin: { mema: "dist/index.js" } }),
     );
   }
 
@@ -158,7 +172,7 @@ describe("mema init", () => {
         .mocked(execFileSync)
         .mock.calls.some(([, args]) => Array.isArray(args) && ["build", "view"].includes(args[0]!)),
     ).toBe(false);
-    expect(confirm).toHaveBeenCalledTimes(3);
+    expect(confirm).toHaveBeenCalledTimes(5);
     expect(outro).toHaveBeenCalledWith("mema initialized.");
     expect(log.info).not.toHaveBeenCalled();
   });
@@ -174,7 +188,7 @@ describe("mema init", () => {
     );
     expect(existsSync(join(web, NAMES.MEMORIES))).toBe(false);
     expect(existsSync(join(web, "src", NAMES.MEMORIES))).toBe(false);
-    expect(confirm).toHaveBeenCalledTimes(3);
+    expect(confirm).toHaveBeenCalledTimes(5);
     expect(log.info).toHaveBeenCalledWith(
       `First-time setup: initializing the repository at ${root}. Run mema init again from this package to configure it.`,
     );
@@ -241,7 +255,7 @@ describe("mema init", () => {
         prune: false,
       },
     );
-    expect(confirm).toHaveBeenCalledTimes(3);
+    expect(confirm).toHaveBeenCalledTimes(5);
   });
 
   it("offers package reconfiguration once the repo is initialized", async () => {
@@ -381,7 +395,7 @@ describe("mema init", () => {
     expect(readFileSync(join(root, NAMES.MEMORIES, NAMES.DATA, "keep.txt"), "utf8")).toBe("keep");
     expect(existsSync(join(root, NAMES.MEMORIES, NAMES.CONFIG_JSON))).toBe(true);
     expect(existsSync(join(web, NAMES.MEMORIES))).toBe(false);
-    expect(confirm).toHaveBeenCalledTimes(3);
+    expect(confirm).toHaveBeenCalledTimes(5);
   });
 
   it.each(["file", "dangling symlink"])("rejects an existing .memories %s", async (kind) => {
@@ -391,7 +405,7 @@ describe("mema init", () => {
     expect(confirm).not.toHaveBeenCalled();
   });
 
-  it.each([0, 1, 2])("cancels prompt %i without writing or installing", async (position) => {
+  it.each([0, 1, 2, 3, 4])("cancels prompt %i without writing or installing", async (position) => {
     for (let i = 0; i < position; i++) vi.mocked(confirm).mockResolvedValueOnce(false);
     vi.mocked(confirm).mockResolvedValueOnce(cancelled);
     await expect(init({ cwd: root, cliRoot })).rejects.toThrow("cancelled");
@@ -494,18 +508,127 @@ describe("mema init", () => {
     expect(outro).not.toHaveBeenCalled();
   });
 
+  it.each([
+    { skill: true, instructions: true },
+    { skill: true, instructions: false },
+    { skill: false, instructions: true },
+    { skill: false, instructions: false },
+  ])("independently opts into skill=$skill and instructions=$instructions", async (answers) => {
+    vi.mocked(confirm).mockImplementation(async (options) => {
+      if (options.message.startsWith("Install the global memory-writing skill")) {
+        expect(options.initialValue).toBe(true);
+        return answers.skill;
+      }
+      if (options.message.startsWith("Add starter instructions")) {
+        expect(options.message).toContain(join(root, NAMES.AGENTS_MD));
+        return answers.instructions;
+      }
+      return options.initialValue ?? false;
+    });
+    await init({ cwd: join(web, "src"), cliRoot });
+    const installs = vi.mocked(execFileSync).mock.calls.filter(([command]) => command === "npx");
+    expect(installs).toHaveLength(answers.skill ? 1 : 0);
+    if (answers.skill) {
+      expect(execFileSync).toHaveBeenCalledWith(
+        "npx",
+        [
+          "--yes",
+          "skills",
+          "add",
+          join(cliRoot, NAMES.SKILLS, NAMES.MEMORY_WRITING_SKILL),
+          "--global",
+          "--yes",
+        ],
+        expect.objectContaining({ cwd: root }),
+      );
+    }
+    expect(existsSync(join(root, NAMES.AGENTS_MD))).toBe(answers.instructions);
+    expect(existsSync(join(web, NAMES.AGENTS_MD))).toBe(false);
+    if (answers.instructions) {
+      const text = readFileSync(join(root, NAMES.AGENTS_MD), "utf8");
+      expect(text).toContain("## When to create a memory");
+      expect(text).toContain(NAMES.MEMORY_WRITING_SKILL);
+      expect(text).toContain(
+        readFileSync(join(cliRoot, NAMES.TEMPLATES, NAMES.AGENTS_MD), "utf8").trimEnd(),
+      );
+    }
+  });
+
+  it.each(["", "# Team rules", "# Team rules\n", "# Team rules\r\n\r\n"])(
+    "appends starter instructions while preserving existing AGENTS.md bytes: %j",
+    async (previous) => {
+      const path = join(root, NAMES.AGENTS_MD);
+      writeFileSync(path, previous);
+      await init({ cwd: root, cliRoot });
+      const text = readFileSync(path, "utf8");
+      expect(text.startsWith(previous)).toBe(true);
+      expect(text.match(/<!-- mema:instructions -->/g)).toHaveLength(1);
+      if (previous.includes("\r\n")) expect(text.replaceAll("\r\n", "")).not.toContain("\n");
+    },
+  );
+
+  it("refreshes the skill but preserves customized starter rules on repeated setup", async () => {
+    installed("0.2.0");
+    await init({ cwd: root, cliRoot });
+    const path = join(root, NAMES.AGENTS_MD);
+    const customized = readFileSync(path, "utf8").replace(
+      "## When to create a memory",
+      "## Our team's rules\n\nOnly save memories when requested.",
+    );
+    writeFileSync(path, customized);
+    vi.mocked(confirm).mockResolvedValueOnce(true);
+    await init({ cwd: root, cliRoot });
+    expect(readFileSync(path, "utf8")).toBe(customized);
+    expect(
+      vi.mocked(execFileSync).mock.calls.filter(([command]) => command === "npx"),
+    ).toHaveLength(2);
+  });
+
+  it("leaves files unchanged when skill installation fails", async () => {
+    const path = join(root, NAMES.AGENTS_MD);
+    writeFileSync(path, "Existing team instructions");
+    failure = "skills";
+    await expect(init({ cwd: root, cliRoot })).rejects.toThrow("mema init --verbose");
+    expect(readFileSync(path, "utf8")).toBe("Existing team instructions");
+    expect(existsSync(join(root, NAMES.MEMORIES))).toBe(false);
+    expect(existsSync(join(root, NAMES.VSCODE))).toBe(false);
+    expect(outro).not.toHaveBeenCalled();
+  });
+
+  it("rejects an AGENTS.md symlink before installing", async () => {
+    const outside = join(temp, "outside.md");
+    writeFileSync(outside, "Keep this");
+    symlinkSync(outside, join(root, NAMES.AGENTS_MD));
+    await expect(init({ cwd: root, cliRoot })).rejects.toThrow("Symbolic links");
+    expect(readFileSync(outside, "utf8")).toBe("Keep this");
+    expect(log.step).not.toHaveBeenCalled();
+  });
+
+  it("preserves AGENTS.md edits made while installing the skill", async () => {
+    const path = join(root, NAMES.AGENTS_MD);
+    writeFileSync(path, "Before install");
+    const run = vi.mocked(execFileSync).getMockImplementation()!;
+    vi.mocked(execFileSync).mockImplementation((...args) => {
+      if (args[0] === "npx") writeFileSync(path, "Concurrent edit");
+      return Reflect.apply(run, undefined, args);
+    });
+    await expect(init({ cwd: root, cliRoot })).rejects.toThrow("Settings changed");
+    expect(readFileSync(path, "utf8")).toBe("Concurrent edit");
+    expect(existsSync(join(root, NAMES.MEMORIES, NAMES.CONFIG_JSON))).toBe(false);
+  });
+
   it("skips reinstalling an equal or newer private global CLI", async () => {
     installed("0.2.0");
     await init({ cwd: root, cliRoot });
-    expect(log.step).not.toHaveBeenCalled();
-    expect(confirm).toHaveBeenCalledTimes(3);
+    expect(log.step).toHaveBeenCalledExactlyOnceWith("Installing mema-memory-writing globally.");
+    expect(confirm).toHaveBeenCalledTimes(5);
   });
 
   it("prompts before upgrading a published global CLI", async () => {
     published();
     installed("0.1.0");
     await init({ cwd: root, cliRoot });
-    expect(vi.mocked(confirm).mock.calls[3]?.[0].message).toContain("0.1.0 to 0.2.0");
+    expect(vi.mocked(confirm).mock.calls[5]?.[0].message).toContain("0.1.0 to 0.2.0");
     expect(execFileSync).toHaveBeenCalledWith(
       "npm",
       ["install", "--global", "mema@0.2.0"],
@@ -520,6 +643,8 @@ describe("mema init", () => {
       .mockResolvedValueOnce(false)
       .mockResolvedValueOnce(false)
       .mockResolvedValueOnce(false)
+      .mockResolvedValueOnce(false)
+      .mockResolvedValueOnce(false)
       .mockResolvedValueOnce(false);
     await init({ cwd: root, cliRoot });
     expect(log.step).not.toHaveBeenCalled();
@@ -529,6 +654,8 @@ describe("mema init", () => {
   it("installs the running published version if a first-install upgrade is declined", async () => {
     published();
     vi.mocked(confirm)
+      .mockResolvedValueOnce(false)
+      .mockResolvedValueOnce(false)
       .mockResolvedValueOnce(false)
       .mockResolvedValueOnce(false)
       .mockResolvedValueOnce(false)
@@ -545,6 +672,8 @@ describe("mema init", () => {
     published();
     installed("0.1.0");
     vi.mocked(confirm)
+      .mockResolvedValueOnce(false)
+      .mockResolvedValueOnce(false)
       .mockResolvedValueOnce(false)
       .mockResolvedValueOnce(false)
       .mockResolvedValueOnce(false)
@@ -570,13 +699,16 @@ describe("mema init", () => {
     published();
     installed("0.3.0");
     await init({ cwd: root, cliRoot });
-    expect(log.step).not.toHaveBeenCalled();
-    expect(confirm).toHaveBeenCalledTimes(3);
+    expect(log.step).toHaveBeenCalledExactlyOnceWith("Installing mema-memory-writing globally.");
+    expect(confirm).toHaveBeenCalledTimes(5);
   });
 
   it("refuses to overwrite a different global package using the same name", async () => {
     mkdirSync(join(globalRoot, "mema"), { recursive: true });
-    writeFileSync(join(globalRoot, "mema", NAMES.PACKAGE_JSON), '{"name":"mema","version":"10.0.0"}');
+    writeFileSync(
+      join(globalRoot, "mema", NAMES.PACKAGE_JSON),
+      '{"name":"mema","version":"10.0.0"}',
+    );
     await expect(init({ cwd: root, cliRoot })).rejects.toThrow("not this CLI");
     expect(log.step).not.toHaveBeenCalled();
   });
