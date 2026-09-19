@@ -48,15 +48,21 @@ Mema helps your agent access **project, personal, team, or organization** memori
 
 ```bash
 repo/
-├── .memories/
+├── .memories/                            # whole repo
 ├── apps/
-│   ├── web
-│   │   └── .memories/
-│   └── mobile
-│       └── .memories/
+│   └── web
+│       └── .memories/                    # scoped to web
+│           └── data/
+│               ├── errors/               # custom dir names, organize as you want
+│               │   └── webpack-error/
+│               │       ├── memory.md     # the memory file
+│               │       └── error.png     # attachment
+│               ├── gotchas/
+│               ├── ADRs/
+│               └── glossary/
 └── packages/
     └── auth
-        └── .memories/
+        └── .memories/                    # scoped to auth
 ```
 
 # Quickstart
