@@ -78,14 +78,14 @@ acme-memories/                            # separate Git repo, organization memo
 
 ## Step 1: Configure pruning (Optional)
 
-Optional. Upvotes and pruning prevent your memories from getting stale:
+Upvotes and pruning prevent your memories from getting stale:
 
-- Upvotes: When a memory helps solve a task, it gets upvoted (by you or the agent). Each upvote extends its lifespan.
-- Pruning: Unused memories expire over time if they're not upvoted, so your agent doesn't act on outdated rules.
+- **Upvotes**: When a memory helps solve a task, it gets upvoted (by you or the agent). Each upvote extends its lifespan.
+- **Pruning**: Unused memories expire over time if they're not upvoted, so your agent doesn't act on outdated context.
 
 The database stores these upvote events.
 
-If you skip this, upvotes are disabled. The agent can still prune memories manually by searching your codebase to verify if the code they describe still exists.
+If you skip this, upvotes are disabled. The agent can still prune memories manually by searching your codebase to verify if they're still relevant.
 
 ### Option A: Self-Hosted
 
@@ -95,11 +95,11 @@ This must be configured in **every repository** where you want to enable pruning
 
 Spin up a PostgreSQL database. Could use **[Neon](https://neon.tech)** or **[Supabase](https://supabase.com)** for free.
 
-> 💡 **Tip:** You can reuse the **same database connection string** across all your organization's repositories.
+> 💡 **Tip:** You can use the **same database** across all your organization's repositories.
 
 1. **Set the environment variable:**
 
-In your `.env` file at the root of your repo (or you can use a secrets manager like [Doppler](https://www.doppler.com/), but make sure your agent harness has access to it too):
+In your `.env` file at the root of your repo:
 
 ```bash
 MEMORIES_DATABASE_URL="postgresql://user:password@..."
@@ -115,7 +115,7 @@ Don't want to manage a database?
 
 ## Step 2: Separate project memories from personal, team, and/or organization memories (Optional)
 
-Optional. This step is useful for teams. If you're a solo dev, you could skip to [Step 3](./README.md#step-3-installation).
+This step is useful for teams. If you're a solo dev, you could skip to [Step 3](./README.md#step-3-installation).
 
 1. Create one repo for each set of memories you want to keep separate. For example, you might create one per team, one shared across the company, and a personal repo for memories that only apply to you.
 2. To "import" the memories, add the repos to your IDE **workspace** and to your agent harness **workspace**.
