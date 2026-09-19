@@ -40,6 +40,8 @@ Existing memories and unrelated config keys are left alone. The target's config 
 | Share this repository's memories with other projects in the workspace? | Configuring the Git root. Default is the current [`availableToWorkspace`](../config/availableToWorkspace.md) value, or `false`. |
 | Enable pruning? | Always. Default is whether [`prune`](../config/prune.md) is currently an object. |
 | Add memory tab labels to VS Code / Cursor? | Always. Default `true`. |
+| Install the global memory-writing skill? | Configuring the Git root. Default `true`. Reinstalls the bundled skill even if an older copy is already installed. |
+| Add starter instructions for when to store or update memories to the root `AGENTS.md`? | Configuring the Git root. Default `true`. Independent of skill installation. |
 
 Canceling any prompt exits with `mema init cancelled.`
 
@@ -62,6 +64,20 @@ Tab labels edit `.vscode/settings.json` at the Git root (JSONC comments are pres
 ```
 
 `data/` is not created here. See [`data/`](../file-conventions/data.md).
+
+If accepted, starter instructions are appended to the root `AGENTS.md`, creating it if needed. Existing text is preserved. The added section explains when to insert or update a memory and refers to the writing skill if installed. Keep its `<!-- mema:instructions -->` marker when customizing it: later init runs leave that section unchanged. The writing guidelines themselves are not added to `AGENTS.md`.
+
+### Writing skill
+
+After consent, init runs `npx --yes skills add <bundled-skill-path> --global --yes` to install `mema-memory-writing` through Vercel's Skills CLI. The skill ships with the mema package, so installation uses the guidelines from the running version. Accepted installations replace previous copies, including when setting up another repository.
+
+The skill and starter instructions are offered during repository setup or accepted root reconfiguration, not package-only setup. Installation failures stop setup before its files are written; retry with `mema init --verbose` or decline skill installation to continue without it.
+
+To install the skill separately:
+
+```bash filename="Terminal"
+npx skills add https://github.com/buildsip/mema/tree/main/packages/mema/skills/mema-memory-writing --global
+```
 
 ### CLI install
 
