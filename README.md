@@ -63,6 +63,15 @@ repo/
 └── packages/
     └── auth
         └── .memories/                    # scoped to auth
+
+adam-personal/                            # separate Git repo, personal user memories
+└── .memories/
+
+acme-team-1-memories/                     # separate Git repo
+└── .memories/
+
+acme-memories/                            # separate Git repo
+└── .memories/
 ```
 
 # Quickstart
@@ -127,24 +136,6 @@ npx mema init
 ```
 
 Under the hood, this installs the CLI, the MCP tools, and configures your repo.
-
-### Workspace example (for teams)
-
-```bash
-repo/
-├── .memories/
-├── apps/
-└── packages/
-
-adam-personal/         # separate Git repo, personal user memories
-└── .memories/
-
-acme-team-1-memories/  # separate Git repo
-└── .memories/
-
-acme-memories/         # separate Git repo
-└── .memories/
-```
 
 # Note for npm package maintainers
 
