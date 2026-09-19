@@ -67,10 +67,10 @@ repo/
 adam-personal/                            # separate Git repo, personal user memories
 └── .memories/
 
-acme-team-1-memories/                     # separate Git repo
+acme-team-1-memories/                     # separate Git repo, team memories
 └── .memories/
 
-acme-memories/                            # separate Git repo
+acme-memories/                            # separate Git repo, organization memories
 └── .memories/
 ```
 
