@@ -1,0 +1,31 @@
+{
+  "name": "mema",
+  "version": "1.0.0",
+  "private": true,
+  "description": "mema development workspace",
+  "keywords": [],
+  "license": "UNLICENSED",
+  "author": "",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "release": "node scripts/release.mjs",
+    "lint": "oxlint --report-unused-disable-directives",
+    "lint:fix": "oxlint --fix --fix-suggestions",
+    "format": "oxfmt --write \"**/*.{ts,tsx,md}\"",
+    "test": "pnpm --filter @buildsip/file-utils test && pnpm --filter ./packages/mema test",
+    "typecheck": "pnpm -r --parallel typecheck",
+    "build": "pnpm --filter ./packages/mema build"
+  },
+  "devDependencies": {
+    "@types/node": "^25.9.1",
+    "fallow": "^2.85.0",
+    "oxfmt": "^0.50.0",
+    "oxlint": "^1.65.0",
+    "typescript": "5.9.2"
+  },
+  "engines": {
+    "node": ">=22.5.0"
+  },
+  "packageManager": "pnpm@11.24.0+sha512.bd27e345e976dcb0be0b7a1228217b049a817e21b1f355c90dbe7dc46671895a8bc1e6d06c24554505ea93ea0b45f489a27ec1bfbc8de6a9659fca0f16fa0000"
+}

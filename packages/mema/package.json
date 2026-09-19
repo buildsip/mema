@@ -1,0 +1,62 @@
+{
+  "name": "mema",
+  "version": "0.1.0",
+  "description": "Git-native memory for AI coding agents",
+  "license": "UNLICENSED",
+  "type": "module",
+  "bin": {
+    "mema": "./dist/index.js"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE.md"
+  ],
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "mema": "pnpm build && node ./dist/index.js",
+    "format": "oxfmt --write src scripts",
+    "test": "pnpm build && vitest run",
+    "typecheck": "tsc --noEmit",
+    "prepack": "node scripts/build.mjs && node scripts/readme.mjs copy",
+    "postpack": "node scripts/readme.mjs clean"
+  },
+  "engines": {
+    "node": ">=22.5.0"
+  },
+  "dependencies": {
+    "@clack/prompts": "^1.5.1",
+    "@modelcontextprotocol/sdk": "^1.30.0",
+    "add-mcp": "^2.4.0",
+    "ajv": "^8.20.0",
+    "ajv-formats": "^3.0.1",
+    "commander": "^14.0.3",
+    "jsonc-parser": "^3.3.1",
+    "minisearch": "^7.2.0",
+    "semver": "^7.8.5",
+    "yaml": "^2.9.0",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@types/node": "^25.9.1",
+    "@types/semver": "^7.8.0",
+    "esbuild": "^0.28.0",
+    "oxfmt": "^0.50.0",
+    "typescript": "5.9.2",
+    "vitest": "^4.0.18",
+    "oxlint": "^1.65.0",
+    "@buildsip/file-utils": "workspace:*"
+  },
+  "homepage": "https://github.com/buildsip/mema#readme",
+  "bugs": {
+    "url": "https://github.com/buildsip/mema/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/buildsip/mema.git",
+    "directory": "packages/mema"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}
