@@ -12,6 +12,9 @@ import type { Config } from "../read-config";
 import { NAMES } from "../names";
 import { readConfig } from "../read-config";
 import { writeText } from "../write-text";
+import { getDatabaseUrl } from "../get-database-url";
+import { migrateDatabase } from "../migrate-database";
+import { promptDatabaseCommand } from "../prompt-database-command";
 
 /**
  * Configures the Git root first, then the nearest package on later runs.
@@ -67,7 +70,16 @@ export async function init({
       return;
     }
   }
-  const answers = await group(
+  let url: string | undefined;
+  const prune = config.prune || undefined;
+  const answers = await group<{
+    availableToWorkspace: boolean | symbol | undefined;
+    prune: boolean | symbol;
+    databaseUrlCommand: string | undefined;
+    labels: boolean | symbol;
+    skill: boolean | symbol | undefined;
+    instructions: boolean | symbol | undefined;
+  }>(
     {
       // Returning undefined skips this prompt when initializing a package,
       // because `availableToWorkspace` is only set at the root of a repository.
@@ -80,6 +92,25 @@ export async function init({
             })
           : undefined,
       prune: () => confirm({ message: "Enable pruning?", initialValue: Boolean(config.prune) }),
+      // Require fresh input on every accepted setup, even if a command is saved or inherited.
+      databaseUrlCommand: async ({ results }) => {
+        if (!results.prune) return undefined;
+        while (true) {
+          const command = await promptDatabaseCommand();
+          try {
+            // Validate before continuing setup; a bad command can be corrected in this run.
+            url = await getDatabaseUrl({ repo: root, command });
+            return command;
+          } catch (error) {
+            // getDatabaseUrl hides credentials and command output in its actionable errors.
+            log.warn(
+              error instanceof Error
+                ? error.message
+                : "The database command failed. Enter a command that prints one PostgreSQL URL.",
+            );
+          }
+        }
+      },
       labels: () =>
         confirm({ message: "Add memory tab labels to VS Code / Cursor?", initialValue: true }),
       skill: () =>
@@ -103,11 +134,6 @@ export async function init({
       },
     },
   );
-  if (answers.prune && !process.env.MEMORIES_DATABASE_URL) {
-    log.warn(
-      "MEMORIES_DATABASE_URL is not set. Pruning is enabled in config only; configure the database before using it.",
-    );
-  }
   const next: Config = {
     ...local,
     version: 1,
@@ -117,10 +143,10 @@ export async function init({
     // False overrides an enabled ancestor; omitting prune would inherit it.
     prune: answers.prune
       ? {
-          ttl: "90d",
-          humanUpvoteAdds: "180d",
-          agentUpvoteAdds: "90d",
-          ...config.prune,
+          ttl: prune?.ttl ?? "90d",
+          humanUpvoteAdds: prune?.humanUpvoteAdds ?? "180d",
+          agentUpvoteAdds: prune?.agentUpvoteAdds ?? "90d",
+          databaseUrlCommand: answers.databaseUrlCommand,
         }
       : false,
   };
@@ -160,6 +186,19 @@ export async function init({
   const instructions = answers.instructions
     ? await prepareInstructions({ root, cliRoot })
     : undefined;
+
+  if (url) {
+    // The URL was validated by the database prompt. Never persist the URL itself.
+    const result = await migrateDatabase({
+      url,
+      migrationsFolder: join(cliRoot, "dist", "migrations"),
+    });
+    log.info(
+      result.applied
+        ? `Applied ${result.applied} database migration(s).`
+        : "Database schema is already up to date; no migrations were applied.",
+    );
+  }
 
   await installCli({ log }, { cwd: project, cliRoot, verbose });
   if (answers.skill) installWritingSkill({ log }, { cwd: root, cliRoot, verbose });

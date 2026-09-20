@@ -13,11 +13,16 @@ import {
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { PassThrough } from "node:stream";
-import { confirm, log, outro } from "@clack/prompts";
+import { confirm, log, outro, text } from "@clack/prompts";
 import { parse } from "jsonc-parser";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { init } from "./commands/init";
 import { NAMES } from "./names";
+import { getDatabaseUrl } from "./get-database-url";
+import { migrateDatabase } from "./migrate-database";
+
+vi.mock("./get-database-url", () => ({ getDatabaseUrl: vi.fn() }));
+vi.mock("./migrate-database", () => ({ migrateDatabase: vi.fn() }));
 
 vi.mock("node:child_process", async (importOriginal) => {
   const original = await importOriginal<typeof import("node:child_process")>();
@@ -32,11 +37,14 @@ vi.mock("@clack/prompts", async (importOriginal) => {
   return {
     ...original,
     confirm: vi.fn(),
+    text: vi.fn(),
     intro: vi.fn(),
     log: { info: vi.fn(), step: vi.fn(), warn: vi.fn() },
     outro: vi.fn(),
   };
 });
+
+const dbCommand = "doppler secrets get MEMORIES_DATABASE_URL --plain";
 
 describe("mema init", () => {
   let temp: string;
@@ -51,6 +59,9 @@ describe("mema init", () => {
 
   beforeEach(async () => {
     vi.clearAllMocks();
+    vi.mocked(getDatabaseUrl).mockReset().mockResolvedValue("postgresql://example.test/memories");
+    vi.mocked(migrateDatabase).mockReset().mockResolvedValue({ applied: 1 });
+    vi.mocked(text).mockReset().mockResolvedValue(dbCommand);
     vi.stubEnv("MEMORIES_DATABASE_URL", "");
     vi.stubEnv("npm_config_user_agent", "pnpm/11.24.0 npm/? node/v22.0.0");
     latest = "0.2.0";
@@ -336,12 +347,17 @@ describe("mema init", () => {
     expect(outro).toHaveBeenCalledWith("mema unchanged.");
   });
 
-  it("preserves custom settings, durations, and memories during reconfiguration", async () => {
+  it("replaces the command while preserving custom settings, durations, and memories", async () => {
     const value = {
       version: 1,
       availableToWorkspace: true,
       frontmatter: { custom: { properties: { ticket: { type: "string" } } } },
-      prune: { ttl: "120d", humanUpvoteAdds: "200d", agentUpvoteAdds: "100d" },
+      prune: {
+        ttl: "120d",
+        humanUpvoteAdds: "200d",
+        agentUpvoteAdds: "100d",
+        databaseUrlCommand: "secrets read",
+      },
     };
     existing(value);
     mkdirSync(join(root, NAMES.MEMORIES, NAMES.DATA));
@@ -349,7 +365,7 @@ describe("mema init", () => {
     vi.mocked(confirm).mockResolvedValueOnce(true);
     await init({ cwd: root, cliRoot });
     expect(JSON.parse(readFileSync(join(root, NAMES.MEMORIES, NAMES.CONFIG_JSON), "utf8"))).toEqual(
-      value,
+      { ...value, prune: { ...value.prune, databaseUrlCommand: dbCommand } },
     );
     expect(readFileSync(join(root, NAMES.MEMORIES, NAMES.DATA, "keep.txt"), "utf8")).toBe("keep");
     expect(vi.mocked(confirm).mock.calls[1]?.[0].initialValue).toBe(true);
@@ -423,21 +439,238 @@ describe("mema init", () => {
     );
   });
 
-  it.each(["", "postgresql://example.test/memories"])(
-    "writes the enabled prune object with URL %j",
-    async (url) => {
-      vi.stubEnv("MEMORIES_DATABASE_URL", url);
+  it.each([0, 1])(
+    "collects one full command and applies %i pending migrations",
+    async (applied) => {
+      vi.mocked(migrateDatabase).mockResolvedValue({ applied });
       vi.mocked(confirm)
         .mockResolvedValueOnce(true)
         .mockResolvedValueOnce(true)
         .mockResolvedValueOnce(false);
       await init({ cwd: root, cliRoot });
       const value = JSON.parse(readFileSync(join(root, NAMES.MEMORIES, NAMES.CONFIG_JSON), "utf8"));
-      expect(value.prune).toEqual({ ttl: "90d", humanUpvoteAdds: "180d", agentUpvoteAdds: "90d" });
-      expect(log.warn).toHaveBeenCalledTimes(url ? 0 : 1);
+      expect(value.prune).toEqual({
+        ttl: "90d",
+        humanUpvoteAdds: "180d",
+        agentUpvoteAdds: "90d",
+        databaseUrlCommand: dbCommand,
+      });
+      expect(getDatabaseUrl).toHaveBeenCalledWith({ repo: root, command: dbCommand });
+      expect(migrateDatabase).toHaveBeenCalledWith({
+        url: "postgresql://example.test/memories",
+        migrationsFolder: join(cliRoot, "dist", "migrations"),
+      });
+      expect(value).not.toHaveProperty("database");
+      expect(value.prune).not.toHaveProperty("database");
+      expect(JSON.stringify(value)).not.toContain("postgresql://");
       expect(existsSync(join(root, ".env"))).toBe(false);
+      expect(text).toHaveBeenCalledOnce();
+      // The command prompt comes immediately after pruning, before unrelated setup prompts.
+      expect(vi.mocked(text).mock.invocationCallOrder[0]).toBeGreaterThan(
+        vi.mocked(confirm).mock.invocationCallOrder[1]!,
+      );
+      expect(vi.mocked(text).mock.invocationCallOrder[0]).toBeLessThan(
+        vi.mocked(confirm).mock.invocationCallOrder[2]!,
+      );
     },
   );
+
+  it("does not resolve credentials or migrate when pruning is disabled", async () => {
+    await init({ cwd: root, cliRoot });
+    expect(getDatabaseUrl).not.toHaveBeenCalled();
+    expect(migrateDatabase).not.toHaveBeenCalled();
+    expect(text).not.toHaveBeenCalled();
+  });
+
+  it("requires a new command and checks migrations on accepted root reconfiguration", async () => {
+    existing({ version: 1, prune: { databaseUrlCommand: "old-command" } });
+    vi.mocked(confirm).mockResolvedValueOnce(true);
+    await init({ cwd: root, cliRoot });
+    expect(text).toHaveBeenCalledOnce();
+    expect(getDatabaseUrl).toHaveBeenCalledExactlyOnceWith({ repo: root, command: dbCommand });
+    expect(migrateDatabase).toHaveBeenCalledOnce();
+    expect(
+      JSON.parse(readFileSync(join(root, NAMES.MEMORIES, NAMES.CONFIG_JSON), "utf8")).prune
+        .databaseUrlCommand,
+    ).toBe(dbCommand);
+  });
+
+  it("rejects blank input without supplying the old command or a default", async () => {
+    existing({ prune: { databaseUrlCommand: "old-command" } });
+    vi.mocked(confirm).mockResolvedValueOnce(true);
+    vi.mocked(text).mockImplementationOnce(async (options) => {
+      expect(options.initialValue).toBeUndefined();
+      expect(options.defaultValue).toBeUndefined();
+      if (typeof options.validate !== "function") throw new Error("Expected a command validator.");
+      for (const value of [undefined, "", "   "]) {
+        expect(options.validate(value)).toContain("Enter the full command");
+      }
+      expect(options.validate(dbCommand)).toBeUndefined();
+      return dbCommand;
+    });
+    await init({ cwd: root, cliRoot });
+    expect(getDatabaseUrl).toHaveBeenCalledExactlyOnceWith({ repo: root, command: dbCommand });
+  });
+
+  it("requires fresh input during package setup even when the root has a command", async () => {
+    const settings = { prune: { ttl: "120d", databaseUrlCommand: "root-command" } };
+    existing(settings);
+    await init({ cwd: web, cliRoot });
+    expect(text).toHaveBeenCalledOnce();
+    expect(getDatabaseUrl).toHaveBeenCalledExactlyOnceWith({ repo: root, command: dbCommand });
+    const value = JSON.parse(readFileSync(join(web, NAMES.MEMORIES, NAMES.CONFIG_JSON), "utf8"));
+    expect(value.prune).toEqual({
+      ttl: "120d",
+      humanUpvoteAdds: "180d",
+      agentUpvoteAdds: "90d",
+      databaseUrlCommand: dbCommand,
+    });
+    expect(JSON.parse(readFileSync(join(root, NAMES.MEMORIES, NAMES.CONFIG_JSON), "utf8"))).toEqual(
+      settings,
+    );
+  });
+
+  it("replaces a package's own saved command on reconfiguration", async () => {
+    existing({ prune: false });
+    mkdirSync(join(web, NAMES.MEMORIES));
+    writeFileSync(
+      join(web, NAMES.MEMORIES, NAMES.CONFIG_JSON),
+      JSON.stringify({ prune: { databaseUrlCommand: "package-command" } }),
+    );
+    vi.mocked(confirm).mockResolvedValueOnce(true);
+    await init({ cwd: web, cliRoot });
+    expect(getDatabaseUrl).toHaveBeenCalledExactlyOnceWith({ repo: root, command: dbCommand });
+    expect(
+      JSON.parse(readFileSync(join(web, NAMES.MEMORIES, NAMES.CONFIG_JSON), "utf8")).prune
+        .databaseUrlCommand,
+    ).toBe(dbCommand);
+  });
+
+  it("disables pruning without running the saved database command", async () => {
+    existing({ prune: { databaseUrlCommand: "old-command" } });
+    vi.mocked(confirm)
+      .mockResolvedValueOnce(true)
+      .mockResolvedValueOnce(false)
+      .mockResolvedValueOnce(false);
+    await init({ cwd: root, cliRoot });
+    const value = JSON.parse(readFileSync(join(root, NAMES.MEMORIES, NAMES.CONFIG_JSON), "utf8"));
+    expect(value.prune).toBe(false);
+    expect(getDatabaseUrl).not.toHaveBeenCalled();
+    expect(migrateDatabase).not.toHaveBeenCalled();
+    expect(text).not.toHaveBeenCalled();
+  });
+
+  it("stores a package command without enabling pruning at the root", async () => {
+    const settings = {
+      version: 1,
+      availableToWorkspace: true,
+      prune: false,
+      frontmatter: { custom: {} },
+    };
+    existing(settings);
+    vi.mocked(confirm).mockResolvedValueOnce(true);
+    await init({ cwd: web, cliRoot });
+    expect(JSON.parse(readFileSync(join(root, NAMES.MEMORIES, NAMES.CONFIG_JSON), "utf8"))).toEqual(
+      settings,
+    );
+    expect(
+      JSON.parse(readFileSync(join(web, NAMES.MEMORIES, NAMES.CONFIG_JSON), "utf8")).prune
+        .databaseUrlCommand,
+    ).toBe(dbCommand);
+    expect(getDatabaseUrl).toHaveBeenCalledWith({ repo: root, command: dbCommand });
+  });
+
+  it("leaves root and package configuration untouched if migration fails", async () => {
+    existing({ prune: false });
+    const path = join(root, NAMES.MEMORIES, NAMES.CONFIG_JSON);
+    const before = readFileSync(path, "utf8");
+    vi.mocked(confirm).mockResolvedValueOnce(true);
+    vi.mocked(migrateDatabase).mockRejectedValue(new Error("Database setup failed."));
+    await expect(init({ cwd: web, cliRoot })).rejects.toThrow("Database setup failed");
+    expect(readFileSync(path, "utf8")).toBe(before);
+    expect(existsSync(join(web, NAMES.MEMORIES))).toBe(false);
+  });
+
+  it("asks again after invalid output and saves only the successful command", async () => {
+    vi.mocked(confirm).mockResolvedValueOnce(false).mockResolvedValueOnce(true);
+    vi.mocked(text).mockResolvedValueOnce("wrong-command").mockResolvedValueOnce(dbCommand);
+    vi.mocked(getDatabaseUrl).mockRejectedValueOnce(
+      new Error("The database command must print exactly one PostgreSQL URL."),
+    );
+    await init({ cwd: root, cliRoot });
+    expect(text).toHaveBeenCalledTimes(2);
+    expect(log.warn).toHaveBeenCalledWith(
+      "The database command must print exactly one PostgreSQL URL.",
+    );
+    expect(migrateDatabase).toHaveBeenCalledOnce();
+    const value = JSON.parse(readFileSync(join(root, NAMES.MEMORIES, NAMES.CONFIG_JSON), "utf8"));
+    expect(value.prune.databaseUrlCommand).toBe(dbCommand);
+    expect(JSON.stringify(value)).not.toContain("wrong-command");
+  });
+
+  it("allows cancellation after invalid output without changing the saved command", async () => {
+    existing({ prune: { databaseUrlCommand: "old-command" } });
+    const path = join(root, NAMES.MEMORIES, NAMES.CONFIG_JSON);
+    const before = readFileSync(path, "utf8");
+    vi.mocked(getDatabaseUrl).mockRejectedValueOnce(new Error("Invalid PostgreSQL URL."));
+    vi.mocked(text)
+      .mockResolvedValueOnce("wrong-command")
+      .mockResolvedValueOnce(cancelled as symbol);
+    await expect(init({ cwd: web, cliRoot })).rejects.toThrow("cancelled");
+    expect(getDatabaseUrl).toHaveBeenCalledExactlyOnceWith({
+      repo: root,
+      command: "wrong-command",
+    });
+    expect(readFileSync(path, "utf8")).toBe(before);
+    expect(migrateDatabase).not.toHaveBeenCalled();
+    expect(existsSync(join(web, NAMES.MEMORIES))).toBe(false);
+  });
+
+  it("leaves root edits during package setup unchanged", async () => {
+    existing({ prune: false });
+    const path = join(root, NAMES.MEMORIES, NAMES.CONFIG_JSON);
+    const updated = '{"prune":false,"availableToWorkspace":true}';
+    vi.mocked(confirm).mockImplementationOnce(async () => {
+      writeFileSync(path, updated);
+      return true;
+    });
+    await init({ cwd: web, cliRoot });
+    expect(readFileSync(path, "utf8")).toBe(updated);
+    expect(
+      JSON.parse(readFileSync(join(web, NAMES.MEMORIES, NAMES.CONFIG_JSON), "utf8")).prune
+        .databaseUrlCommand,
+    ).toBe(dbCommand);
+  });
+
+  it("cancels package credential input without saving or using the inherited command", async () => {
+    existing({ prune: { databaseUrlCommand: "old-command" } });
+    const path = join(root, NAMES.MEMORIES, NAMES.CONFIG_JSON);
+    const before = readFileSync(path, "utf8");
+    vi.mocked(text).mockResolvedValueOnce(cancelled as symbol);
+    await expect(init({ cwd: web, cliRoot })).rejects.toThrow("cancelled");
+    expect(readFileSync(path, "utf8")).toBe(before);
+    expect(existsSync(join(web, NAMES.MEMORIES))).toBe(false);
+    expect(getDatabaseUrl).not.toHaveBeenCalled();
+    expect(migrateDatabase).not.toHaveBeenCalled();
+  });
+
+  it("leaves the saved command untouched when database setup fails", async () => {
+    existing({ prune: { databaseUrlCommand: "old-command" } });
+    const before = readFileSync(join(root, NAMES.MEMORIES, NAMES.CONFIG_JSON), "utf8");
+    vi.mocked(confirm).mockResolvedValueOnce(true);
+    vi.mocked(migrateDatabase).mockRejectedValue(new Error("Database setup failed."));
+    await expect(init({ cwd: root, cliRoot })).rejects.toThrow("Database setup failed");
+    expect(readFileSync(join(root, NAMES.MEMORIES, NAMES.CONFIG_JSON), "utf8")).toBe(before);
+    expect(outro).not.toHaveBeenCalled();
+  });
+
+  it("cancels database configuration without saving or migrating", async () => {
+    vi.mocked(confirm).mockResolvedValueOnce(false).mockResolvedValueOnce(true);
+    vi.mocked(text).mockResolvedValueOnce(cancelled as symbol);
+    await expect(init({ cwd: root, cliRoot })).rejects.toThrow("cancelled");
+    expect(migrateDatabase).not.toHaveBeenCalled();
+    expect(existsSync(join(root, NAMES.MEMORIES))).toBe(false);
+  });
 
   it("preserves JSONC comments, unrelated settings, and other labels", async () => {
     mkdirSync(join(root, NAMES.VSCODE));

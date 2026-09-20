@@ -14,8 +14,8 @@ mema init --verbose
 
 ## Reference
 
-| Options | Description |
-| --- | --- |
+| Options     | Description                                            |
+| ----------- | ------------------------------------------------------ |
 | `--verbose` | Print package-manager output while installing the CLI. |
 
 `init` does not take [`--roots`](./index.md#--roots) or [`--repo`](./index.md#--repo).
@@ -34,22 +34,34 @@ Run init again from the same package after first-time repository setup to create
 
 Existing memories and unrelated config keys are left alone. The target's config and inherited configs are validated before prompting.
 
-| Prompt | When |
-| --- | --- |
-| Reconfigure this target? | The target already has a config. Default `false`. Answering no leaves memory settings unchanged. |
-| Share this repository's memories with other projects in the workspace? | Configuring the Git root. Default is the current [`availableToWorkspace`](../config/availableToWorkspace.md) value, or `false`. |
-| Enable pruning? | Always. Default is whether [`prune`](../config/prune.md) is currently an object. |
-| Add memory tab labels to VS Code / Cursor? | Always. Default `true`. |
-| Install the global memory-writing skill? | Configuring the Git root. Default `true`. Reinstalls the bundled skill even if an older copy is already installed. |
-| Add starter instructions for when to store or update memories to the root `AGENTS.md`? | Configuring the Git root. Default `true`. Independent of skill installation. |
+| Prompt                                                                                 | When                                                                                                                                                                                                   |
+| -------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Reconfigure this target?                                                               | The target already has a config. Default `false`. Answering no leaves memory settings unchanged.                                                                                                       |
+| Share this repository's memories with other projects in the workspace?                 | Configuring the Git root. Default is the current [`availableToWorkspace`](../config/availableToWorkspace.md) value, or `false`.                                                                        |
+| Enable pruning?                                                                        | Always. Default is whether [`prune`](../config/prune.md) is currently an object.                                                                                                                       |
+| Full database URL command                                                              | Immediately after enabling pruning, on every accepted root or package setup. Requires fresh input; blank input is rejected and saved commands are not defaults. No database URL is requested or saved. |
+| Add memory tab labels to VS Code / Cursor?                                             | Always. Default `true`.                                                                                                                                                                                |
+| Install the global memory-writing skill?                                               | Configuring the Git root. Default `true`. Reinstalls the bundled skill even if an older copy is already installed.                                                                                     |
+| Add starter instructions for when to store or update memories to the root `AGENTS.md`? | Configuring the Git root. Default `true`. Independent of skill installation.                                                                                                                           |
 
 Canceling any prompt exits with `mema init cancelled.`
 
-If pruning is enabled and `MEMORIES_DATABASE_URL` is unset, init still writes the config and warns that the database is not configured.
+If pruning is enabled, init executes the newly entered [database command](../config/databaseUrlCommand.md) and
+applies pending [database migrations](../database.md) before saving configuration. Repeated
+initialization of a shared database skips migrations already recorded in its history, even
+when that database contains data. Failures stop setup before writing its configuration.
+Pruning disabled or reconfiguration declined means no credential command or migration runs.
+
+Credential-command failures or invalid URL output show an error and prompt for another command
+in the same init run. Cancel to stop without saving config. See the [output contract](../config/databaseUrlCommand.md).
 
 ### Written files
 
 Root config always includes `version: 1` and `availableToWorkspace`. Package config omits `availableToWorkspace`.
+
+The newly entered command replaces `prune.databaseUrlCommand` in the target's config. Saved or
+inherited commands are never used as defaults during init. Package setup leaves the root config
+unchanged, including when pruning is disabled at the root. Commands always run from the Git root.
 
 Enabled [`prune`](../config/prune.md) uses init's default durations, keeping any existing durations already on the target. Disabled pruning is `false`.
 

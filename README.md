@@ -89,21 +89,9 @@ If you skip this, upvotes are disabled. The agent can still prune memories manua
 
 ### Option A: Self-Hosted
 
-This must be configured in **every repository** where you want to enable pruning.
-
-1. **Create a database:**
-
 Spin up a PostgreSQL database. Could use **[Neon](https://neon.tech)** or **[Supabase](https://supabase.com)** for free.
 
 > 💡 **Tip:** You can use the **same database** across all your organization's repositories.
-
-1. **Set the environment variable:**
-
-In your `.env` file at the root of your repo:
-
-```bash
-MEMORIES_DATABASE_URL="postgresql://user:password@..."
-```
 
 ### Option B: mema app (Coming Soon)
 
