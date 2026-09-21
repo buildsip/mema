@@ -82,6 +82,13 @@ A human upvote adds this duration to the memory's lifetime.
 
 An agent upvote adds this duration to the memory's lifetime.
 
+### databaseUrlCommand
+
+A command that prints the database connection string.
+
+> [!WARNING]
+> This field can only be configured at the root of the repo.
+
 ## `config.json` Resolution
 
 Packages inherit settings from `.memories/config.json` files in their parent directories, up to the Git repository root.

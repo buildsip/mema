@@ -7,3 +7,4 @@ mema API Reference.
 - [File-system conventions](./file-conventions/index.md): `.memories` stores, `config.json`, `data/`, and `memory.md`.
 - [Configuration](./config/index.md): Fields in `.memories/config.json`.
 - [Memory](./memory/index.md): Frontmatter fields and Markdown body.
+- [Database](./database.md): Upvote event schema, migration history, and database upgrades.

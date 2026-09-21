@@ -16,7 +16,9 @@ Must be one JSON object with double-quoted keys. Comments and trailing commas ar
 
 mema merges config from the Git root down to the owning repo or package directory. Closer files override parent values. Nested objects are merged field by field; `false` replaces a parent object.
 
-[`availableToWorkspace`](../config/availableToWorkspace.md) and [`frontmatter.custom`](../config/frontmatter.md) may appear only in the Git root file.
+[`availableToWorkspace`](../config/availableToWorkspace.md) and [`frontmatter.custom`](../config/frontmatter.md)
+may appear only in the Git root file. [`prune.databaseUrlCommand`](../config/databaseUrlCommand.md) can be inherited
+or set in a package. A supplied command string replaces the inherited one.
 
 A missing file is treated as `{}`.
 

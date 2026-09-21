@@ -4,6 +4,7 @@ import { z } from "zod";
 import { mergeConfig } from "./merge-config";
 import { NAMES } from "./names";
 import { parseValue } from "./parse-value";
+import { databaseUrlCommandSchema } from "./database-url-command-schema";
 
 const duration = z
   .string({ error: 'Expected a nonempty duration string, such as "90d".' })
@@ -48,6 +49,7 @@ const schema = z.strictObject(
         z.literal(false, { error: "Expected false to disable pruning." }),
         z.strictObject(
           {
+            databaseUrlCommand: databaseUrlCommandSchema.optional(),
             ttl: duration.optional(),
             humanUpvoteAdds: duration.optional(),
             agentUpvoteAdds: duration.optional(),
@@ -55,7 +57,9 @@ const schema = z.strictObject(
           {
             error: (issue) =>
               issue.code === "unrecognized_keys"
-                ? 'Remove this unknown field. Allowed pruning fields: ttl, humanUpvoteAdds, agentUpvoteAdds (duration strings, such as "90d").'
+                ? issue.keys.includes("database")
+                  ? "Replace prune.database with prune.databaseUrlCommand, a string containing the complete shell command that prints one PostgreSQL URL."
+                  : 'Remove this unknown field. Allowed pruning fields: databaseUrlCommand (a shell command string), ttl, humanUpvoteAdds, agentUpvoteAdds (duration strings, such as "90d").'
                 : 'Expected a pruning settings object, such as {"ttl":"90d","humanUpvoteAdds":"180d","agentUpvoteAdds":"90d"}, or false to disable pruning.',
           },
         ),
@@ -65,7 +69,9 @@ const schema = z.strictObject(
   {
     error: (issue) =>
       issue.code === "unrecognized_keys"
-        ? "Remove this unknown field. Allowed config fields: version, availableToWorkspace, frontmatter, prune."
+        ? issue.keys.includes("database")
+          ? "Replace database with prune.databaseUrlCommand, a string containing the complete shell command that prints one PostgreSQL URL."
+          : "Remove this unknown field. Allowed config fields: version, availableToWorkspace, frontmatter, prune."
         : "Expected a config object with optional version, availableToWorkspace, frontmatter, and prune fields; use {} for defaults.",
   },
 );
@@ -74,7 +80,8 @@ export type Config = z.infer<typeof schema>;
 
 /**
  * Merges config from the Git root down to the owning repo or package directory.
- * Packages can override pruning; only the Git root defines availableToWorkspace and custom fields.
+ * Packages can override pruning and its database command; only the Git root defines sharing
+ * and custom fields.
  *
  * @returns Effective config, the Git root's availableToWorkspace flag, and the local
  * config plus its original text. Init uses the local values to avoid copying inherited

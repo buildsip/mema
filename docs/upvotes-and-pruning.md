@@ -19,8 +19,11 @@
 }
 ```
 
-## `.env` file
+## Database credentials
 
-`mema` resolves `.env` files by traversing upward from the active package directory to the repository root (`.git`).
+Keep your PostgreSQL URL in your existing secrets manager. Ask your agent to configure Mema's
+credential command under `prune.databaseUrlCommand`; the command supplies the URL without committing it to Git.
+Packages inherit the command and may configure their own database.
 
-Priority: `process.env` > package-level `.env` > repository root `.env`.
+Multiple repositories may share one database. The same memory ID shares its upvote history in
+that database. Repeating database setup preserves votes and skips migrations already applied.

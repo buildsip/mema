@@ -83,27 +83,15 @@ Upvotes and pruning prevent your memories from getting stale:
 - **Upvotes**: When a memory helps solve a task, it gets upvoted (by you or the agent). Each upvote extends its lifespan.
 - **Pruning**: Unused memories expire over time if they're not upvoted, so your agent doesn't act on outdated context.
 
-The database stores these upvote events.
+The database stores the upvote events.
 
 If you skip this, upvotes are disabled. The agent can still prune memories manually by searching your codebase to verify if they're still relevant.
 
 ### Option A: Self-Hosted
 
-This must be configured in **every repository** where you want to enable pruning.
-
-1. **Create a database:**
-
 Spin up a PostgreSQL database. Could use **[Neon](https://neon.tech)** or **[Supabase](https://supabase.com)** for free.
 
 > 💡 **Tip:** You can use the **same database** across all your organization's repositories.
-
-1. **Set the environment variable:**
-
-In your `.env` file at the root of your repo:
-
-```bash
-MEMORIES_DATABASE_URL="postgresql://user:password@..."
-```
 
 ### Option B: mema app (Coming Soon)
 

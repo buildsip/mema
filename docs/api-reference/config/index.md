@@ -27,3 +27,4 @@ Unknown keys are rejected. Allowed fields: `version`, `availableToWorkspace`, `f
 - [`availableToWorkspace`](./availableToWorkspace.md)
 - [`frontmatter`](./frontmatter.md)
 - [`prune`](./prune.md)
+- [`prune.databaseUrlCommand`](./databaseUrlCommand.md)

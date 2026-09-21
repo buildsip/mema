@@ -1,4 +1,4 @@
-import { chmod, readFile, rm } from "node:fs/promises";
+import { chmod, cp, readFile, rm } from "node:fs/promises";
 import { build } from "esbuild";
 
 const pkg = JSON.parse(await readFile(new URL("../package.json", import.meta.url), "utf8"));
@@ -18,3 +18,12 @@ await build({
 });
 
 await chmod("dist/index.js", 0o755);
+
+// SQL and Drizzle's journal must ship with the CLI; resolve them from the installed package.
+await cp(
+  new URL("../migrations", import.meta.url),
+  new URL("../dist/migrations", import.meta.url),
+  {
+    recursive: true,
+  },
+);

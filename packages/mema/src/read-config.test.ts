@@ -67,6 +67,71 @@ it("rejects unknown config keys", async () => {
   await expect(readConfig({ project, repo })).rejects.toThrow("Invalid config");
 });
 
+it("inherits the root database URL command without copying it into package config", async () => {
+  const databaseUrlCommand = "doppler secrets get MEMA_DATABASE_URL --plain";
+  await writeFile(
+    join(repo, NAMES.MEMORIES, NAMES.CONFIG_JSON),
+    JSON.stringify({ prune: { databaseUrlCommand } }),
+  );
+  await writeFile(join(project, NAMES.MEMORIES, NAMES.CONFIG_JSON), '{"prune":{}}');
+  const result = await readConfig({ repo, project });
+  expect((result.config.prune || {}).databaseUrlCommand).toBe(databaseUrlCommand);
+  expect((result.local.prune || {}).databaseUrlCommand).toBeUndefined();
+});
+
+it("lets a package replace the inherited command while preserving durations", async () => {
+  await writeFile(
+    join(repo, NAMES.MEMORIES, NAMES.CONFIG_JSON),
+    JSON.stringify({
+      prune: { ttl: "120d", databaseUrlCommand: "doppler secrets get URL --plain" },
+    }),
+  );
+  await writeFile(
+    join(project, NAMES.MEMORIES, NAMES.CONFIG_JSON),
+    JSON.stringify({ prune: { databaseUrlCommand: "./database-url" } }),
+  );
+  const result = await readConfig({ repo, project });
+  expect(result.config.prune).toEqual({ ttl: "120d", databaseUrlCommand: "./database-url" });
+  expect(result.local.prune).toEqual({ databaseUrlCommand: "./database-url" });
+});
+
+it("lets a package configure its database when pruning is disabled at the root", async () => {
+  await writeFile(join(repo, NAMES.MEMORIES, NAMES.CONFIG_JSON), '{"prune":false}');
+  const prune = { databaseUrlCommand: "doppler secrets get URL --plain" };
+  await writeFile(join(project, NAMES.MEMORIES, NAMES.CONFIG_JSON), JSON.stringify({ prune }));
+  expect((await readConfig({ repo, project })).config.prune).toEqual(prune);
+});
+
+it("lets a package disable inherited pruning and its database", async () => {
+  await writeFile(
+    join(repo, NAMES.MEMORIES, NAMES.CONFIG_JSON),
+    JSON.stringify({ prune: { databaseUrlCommand: "./database-url" } }),
+  );
+  await writeFile(join(project, NAMES.MEMORIES, NAMES.CONFIG_JSON), '{"prune":false}');
+  expect((await readConfig({ repo, project })).config.prune).toBe(false);
+});
+
+it.each([{ database: { command: "doppler" } }, { prune: { database: { command: "doppler" } } }])(
+  "explains how to replace the old database shape %j",
+  async (value) => {
+    await writeFile(join(repo, NAMES.MEMORIES, NAMES.CONFIG_JSON), JSON.stringify(value));
+    await expect(readConfig({ repo, project })).rejects.toThrow(
+      "prune.databaseUrlCommand, a string containing the complete shell command",
+    );
+  },
+);
+
+it.each([null, {}, "", "   ", "bad\0command", { command: "doppler", args: [] }, ["doppler"]])(
+  "rejects invalid database URL commands %j",
+  async (databaseUrlCommand) => {
+    await writeFile(
+      join(repo, NAMES.MEMORIES, NAMES.CONFIG_JSON),
+      JSON.stringify({ prune: { databaseUrlCommand } }),
+    );
+    await expect(readConfig({ repo, project })).rejects.toThrow("Invalid config");
+  },
+);
+
 it.each([
   { value: undefined, availableToWorkspace: false },
   { value: {}, availableToWorkspace: false },
