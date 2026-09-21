@@ -86,7 +86,7 @@ The skill and starter instructions are offered during repository setup or accept
 To install the skill separately:
 
 ```bash filename="Terminal"
-npx skills add https://github.com/buildsip/mema/tree/main/packages/mema/skills/mema-memory-writing --global
+npx skills add buildsip/mema --global
 ```
 
 ### CLI install
@@ -95,9 +95,9 @@ Init installs `mema` globally with the launcher that invoked it (`npx` → npm, 
 
 A private development package is installed from the running CLI directory. A published package is installed from the registry. If a newer release exists, init asks before upgrading.
 
-For local development, create `packages/mema/.env`:
+For local development, create `packages/cli/.env`:
 
-```dotenv filename="packages/mema/.env"
+```dotenv filename="packages/cli/.env"
 MEMA_INSTALL_MODE=link
 ```
 
@@ -106,7 +106,7 @@ The CLI loads `.env` from its own package directory, regardless of the current w
 Then run from the source repository:
 
 ```bash filename="Terminal"
-pnpm --dir packages/mema mema init
+pnpm --dir packages/cli mema init
 ```
 
 Link mode runs `pnpm build` followed by `pnpm add -g .` from the running CLI package directory. It skips registry checks and refreshes the global link on every accepted setup, even if the installed version is equal or newer. The bundled writing skill is installed from the same local package when accepted. pnpm must be installed and its global bin directory must be on `PATH`; use `pnpm setup` and restart the shell if needed.

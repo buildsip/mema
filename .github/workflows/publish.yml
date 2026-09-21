@@ -33,10 +33,10 @@ jobs:
 
       - name: Check tag matches package version
         run: |
-          version=$(node -p "require('./packages/mema/package.json').version")
+          version=$(node -p "require('./packages/cli/package.json').version")
 
           if [ "${GITHUB_REF_NAME}" != "v${version}" ]; then
-            echo "Tag ${GITHUB_REF_NAME} does not match packages/mema/package.json version ${version}."
+            echo "Tag ${GITHUB_REF_NAME} does not match packages/cli/package.json version ${version}."
             exit 1
           fi
 
@@ -50,14 +50,14 @@ jobs:
         run: pnpm test
 
       - name: Build CLI
-        run: pnpm --filter ./packages/mema build
+        run: pnpm --filter ./packages/cli build
 
       - name: Check package contents
-        working-directory: packages/mema
+        working-directory: packages/cli
         run: npm pack --dry-run
 
       - name: Publish to npm
-        working-directory: packages/mema
+        working-directory: packages/cli
         run: npm publish --provenance --access public
 
       - name: Create GitHub release

@@ -59,7 +59,7 @@ rerunning init safely skips the migrations already committed.
 
 ## Developing a migration
 
-Edit `packages/mema/src/upvotes.ts`, then run from `packages/mema`:
+Edit `packages/cli/src/upvotes.ts`, then run from `packages/cli`:
 
 ```sh
 pnpm db:generate

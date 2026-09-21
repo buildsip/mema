@@ -1,8 +1,8 @@
 import { copyFileSync, rmSync } from "node:fs";
 import { join } from "node:path";
 
-// Publish the repo's canonical docs from the nested CLI package, then remove the copies.
-for (const name of ["README.md", "LICENSE.md"]) {
+// Copy the repo README and Apache LICENSE into this package for npm pack, then delete the copies.
+for (const name of ["README.md", "LICENSE"]) {
   const target = join(process.cwd(), name);
   if (process.argv[2] === "copy") {
     copyFileSync(join(process.cwd(), "..", "..", name), target);

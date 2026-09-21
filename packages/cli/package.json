@@ -2,7 +2,7 @@
   "name": "mema",
   "version": "0.1.0",
   "description": "Git-native memory for AI coding agents",
-  "license": "UNLICENSED",
+  "license": "Apache-2.0",
   "type": "module",
   "bin": {
     "mema": "./dist/index.js"
@@ -12,7 +12,7 @@
     "skills",
     "templates",
     "README.md",
-    "LICENSE.md"
+    "LICENSE"
   ],
   "scripts": {
     "db:generate": "drizzle-kit generate",
@@ -62,7 +62,7 @@
   "repository": {
     "type": "git",
     "url": "git+https://github.com/buildsip/mema.git",
-    "directory": "packages/mema"
+    "directory": "packages/cli"
   },
   "publishConfig": {
     "access": "public"

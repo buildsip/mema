@@ -41,7 +41,7 @@
   <a href="https://www.npmjs.com/package/mema">
     <img src="https://img.shields.io/npm/v/mema?logo=npm" alt="npm">
   </a>
-  <img src="https://img.shields.io/badge/Node.js-18%2B-brightgreen?style=flat-square" alt="npm">
+  <img src="https://img.shields.io/badge/Node.js-22.5%2B-brightgreen?style=flat-square" alt="Node.js 22.5+">
 </div>
 
 Mema helps your agent access **project, personal, team, and organization** memories at the same time.
