@@ -7,7 +7,7 @@ pruning with `prune: false`.
 ```json
 {
   "prune": {
-    "databaseUrlCommand": "doppler secrets get MEMORIES_DATABASE_URL --plain --project my-project --config dev"
+    "databaseUrlCommand": "doppler secrets get MEMA_DATABASE_URL --plain --project my-project --config dev"
   }
 }
 ```
@@ -44,7 +44,7 @@ Each output stream is limited to 16 KiB and execution to 15 seconds. A timeout o
 failure terminates the shell and its pipeline children. Command text and captured output are
 not included in errors. The URL is not written to config, logged, or assigned to `process.env`.
 
-Mema does not load `.env` files, read `MEMORIES_DATABASE_URL` as a fallback, or maintain a
+Mema does not load `.env` files, read `MEMA_DATABASE_URL` as a fallback, or maintain a
 home-directory credentials map. That name in the example is simply the secret's name in Doppler.
 
 ## Database setup

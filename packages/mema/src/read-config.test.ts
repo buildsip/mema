@@ -68,7 +68,7 @@ it("rejects unknown config keys", async () => {
 });
 
 it("inherits the root database URL command without copying it into package config", async () => {
-  const databaseUrlCommand = "doppler secrets get MEMORIES_DATABASE_URL --plain";
+  const databaseUrlCommand = "doppler secrets get MEMA_DATABASE_URL --plain";
   await writeFile(
     join(repo, NAMES.MEMORIES, NAMES.CONFIG_JSON),
     JSON.stringify({ prune: { databaseUrlCommand } }),

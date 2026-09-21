@@ -44,7 +44,7 @@ vi.mock("@clack/prompts", async (importOriginal) => {
   };
 });
 
-const dbCommand = "doppler secrets get MEMORIES_DATABASE_URL --plain";
+const dbCommand = "doppler secrets get MEMA_DATABASE_URL --plain";
 
 describe("mema init", () => {
   let temp: string;
@@ -62,7 +62,8 @@ describe("mema init", () => {
     vi.mocked(getDatabaseUrl).mockReset().mockResolvedValue("postgresql://example.test/memories");
     vi.mocked(migrateDatabase).mockReset().mockResolvedValue({ applied: 1 });
     vi.mocked(text).mockReset().mockResolvedValue(dbCommand);
-    vi.stubEnv("MEMORIES_DATABASE_URL", "");
+    vi.stubEnv("MEMA_DATABASE_URL", "");
+    vi.stubEnv("MEMA_INSTALL_MODE", undefined);
     vi.stubEnv("npm_config_user_agent", "pnpm/11.24.0 npm/? node/v22.0.0");
     latest = "0.2.0";
     bunMissing = false;
@@ -736,7 +737,7 @@ describe("mema init", () => {
 
   it("does not scaffold if global installation fails", async () => {
     failure = "add";
-    await expect(init({ cwd: root, cliRoot })).rejects.toThrow("Could not add");
+    await expect(init({ cwd: root, cliRoot })).rejects.toThrow("Could not install mema globally");
     expect(existsSync(join(root, NAMES.MEMORIES))).toBe(false);
     expect(outro).not.toHaveBeenCalled();
   });
@@ -855,6 +856,54 @@ describe("mema init", () => {
     await init({ cwd: root, cliRoot });
     expect(log.step).toHaveBeenCalledExactlyOnceWith("Installing mema-memory-writing globally.");
     expect(confirm).toHaveBeenCalledTimes(5);
+  });
+
+  it("rebuilds and links a public development package even when a newer CLI is installed", async () => {
+    published();
+    installed("0.2.0");
+    vi.stubEnv("MEMA_INSTALL_MODE", "link");
+    await init({ cwd: root, cliRoot });
+    const calls = vi.mocked(execFileSync).mock.calls.filter(([command]) => command === "pnpm");
+    expect(calls).toEqual([
+      ["pnpm", ["build"], expect.objectContaining({ cwd: cliRoot, stdio: "pipe" })],
+      ["pnpm", ["add", "-g", "."], expect.objectContaining({ cwd: cliRoot, stdio: "pipe" })],
+    ]);
+    expect(execFileSync).not.toHaveBeenCalledWith("npm", expect.anything(), expect.anything());
+    expect(confirm).toHaveBeenCalledTimes(5);
+    expect(log.warn).not.toHaveBeenCalled();
+    expect(outro).toHaveBeenCalledWith("mema initialized.");
+  });
+
+  it("shows local build and link output in verbose mode", async () => {
+    vi.stubEnv("MEMA_INSTALL_MODE", "link");
+    await init({ cwd: root, cliRoot, verbose: true });
+    for (const args of [["build"], ["add", "-g", "."]]) {
+      expect(execFileSync).toHaveBeenCalledWith(
+        "pnpm",
+        args,
+        expect.objectContaining({ cwd: cliRoot, stdio: "inherit" }),
+      );
+    }
+  });
+
+  it.each(["build", "add"])("stops setup when the local %s fails", async (command) => {
+    vi.stubEnv("MEMA_INSTALL_MODE", "link");
+    failure = command;
+    await expect(init({ cwd: root, cliRoot })).rejects.toThrow("mema init --verbose");
+    expect(existsSync(join(root, NAMES.MEMORIES))).toBe(false);
+    expect(execFileSync).not.toHaveBeenCalledWith("npx", expect.anything(), expect.anything());
+    if (command === "build") {
+      expect(execFileSync).not.toHaveBeenCalledWith("pnpm", ["add", "-g", "."], expect.anything());
+    }
+  });
+
+  it("rejects unknown install modes before installing or saving setup", async () => {
+    vi.stubEnv("MEMA_INSTALL_MODE", "invalid");
+    await expect(init({ cwd: root, cliRoot })).rejects.toThrow(
+      'Set MEMA_INSTALL_MODE to "registry" or "link"',
+    );
+    expect(log.step).not.toHaveBeenCalled();
+    expect(existsSync(join(root, NAMES.MEMORIES))).toBe(false);
   });
 
   it("prompts before upgrading a published global CLI", async () => {

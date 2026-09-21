@@ -7,7 +7,9 @@ export async function getDatabaseUrl({ repo, command }: { repo: string; command:
     output = await runShell({ command, cwd: repo, timeout: 15_000, maxBuffer: 16_384 });
   } catch {
     // Never expose command text, captured output, or process errors containing credentials.
-    throw new Error(`Invalid database url command.`);
+    throw new Error(
+      `The command you entered failed. It should print one PostgreSQL URL. Please try again.`,
+    );
   }
   // Accept the usual single trailing newline, not surrounding logs or multiple values.
   const value = output.replace(/\r?\n$/, "");
@@ -19,7 +21,7 @@ export async function getDatabaseUrl({ repo, command }: { repo: string; command:
     /[\s\0]/.test(value)
   ) {
     throw new Error(
-      "The database command must print exactly one postgres:// or postgresql:// URL, with an optional trailing newline. Remove JSON, labels, logs, and raw whitespace from stdout; percent-encode special characters in the URL, then enter a corrected command during init or update the config and retry mema init.",
+      "The command you entered must print one postgres:// or postgresql:// URL, with an optional trailing newline. Please try again.",
     );
   }
   return value;

@@ -10,13 +10,17 @@ import { NAMES } from "./names";
  * Installs the global CLI through the package manager that launched this process.
  * Keeps an existing install unless a newer release is accepted, falling back to npm
  * for modern Yarn.
- * Before mema is published, installs it from the local CLI directory (`cliRoot`).
- * Once published, installs mema from the registry by name and version.
+ * MEMA_INSTALL_MODE=link rebuilds and links the local package through pnpm.
+ * Private packages also stay local; published packages use the registry by default.
  */
 export async function installCli(
   ctx: { log: Pick<typeof log, "info" | "warn" | "step"> },
   { cwd, cliRoot, verbose = false }: { cwd: string; cliRoot: string; verbose?: boolean },
 ) {
+  const mode = process.env.MEMA_INSTALL_MODE ?? "registry";
+  if (mode !== "registry" && mode !== "link") {
+    throw new Error('Set MEMA_INSTALL_MODE to "registry" or "link", then retry mema init.');
+  }
   const cli = JSON.parse(readFileSync(join(cliRoot, NAMES.PACKAGE_JSON), "utf8"));
   const launcher = getPackageManager();
   let packageManager = launcher.name;
@@ -28,6 +32,22 @@ export async function installCli(
     // Windows package managers commonly launch through .cmd files, which need a shell.
     shell: process.platform === "win32",
   };
+  if (mode === "link") {
+    // Use the CLI's source directory, not the repository being initialized.
+    // Refresh the link on every setup: development changes do not bump the package version.
+    const local = { ...options, cwd: cliRoot, stdio: verbose ? "inherit" : "pipe" } as const;
+    try {
+      ctx.log.step(`Building local ${cli.name} CLI.`);
+      execFileSync("pnpm", ["build"], local);
+      ctx.log.step(`Linking local ${cli.name} CLI globally.`);
+      execFileSync("pnpm", ["add", "-g", "."], local);
+    } catch {
+      throw new Error(
+        "Could not build or link the local mema CLI. Run pnpm i in the mema source repository and ensure pnpm's global bin directory is on PATH (run pnpm setup and restart your shell if needed), then retry mema init --verbose to see the failing command's output. Use MEMA_INSTALL_MODE=registry when running a published package without source files.",
+      );
+    }
+    return;
+  }
   if (packageManager === "yarn") {
     const version = launcher.version;
     if (!version || !valid(version) || gt(version, "2.0.0-0")) {
@@ -111,6 +131,12 @@ export async function installCli(
         : packageManager === "npm"
           ? ["install", "--global", spec]
           : ["add", "-g", spec];
-    execFileSync(packageManager, args, { ...options, stdio: verbose ? "inherit" : "pipe" });
+    try {
+      execFileSync(packageManager, args, { ...options, stdio: verbose ? "inherit" : "pipe" });
+    } catch {
+      throw new Error(
+        `Could not install ${cli.name} globally with ${packageManager}. Check that the package manager can reach its registry and write to its global install directory, then retry mema init --verbose. When developing mema from source, set MEMA_INSTALL_MODE=link to install the local package.`,
+      );
+    }
   }
 }
