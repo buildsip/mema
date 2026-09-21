@@ -83,7 +83,7 @@ Upvotes and pruning prevent your memories from getting stale:
 - **Upvotes**: When a memory helps solve a task, it gets upvoted (by you or the agent). Each upvote extends its lifespan.
 - **Pruning**: Unused memories expire over time if they're not upvoted, so your agent doesn't act on outdated context.
 
-The database stores these upvote events.
+The database stores the upvote events.
 
 If you skip this, upvotes are disabled. The agent can still prune memories manually by searching your codebase to verify if they're still relevant.
 
