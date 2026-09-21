@@ -17,4 +17,3 @@ pnpm build
 ```
 
 To inspect the npm package, run `npm pack --dry-run` in `packages/mema`.
-See [publishing](./publishing.md) for release steps.
