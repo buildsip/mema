@@ -1,15 +1,7 @@
-import { relativePosix } from "@buildsip/file-utils";
+import { loadWorkspaceMemories } from "../load-workspace-memories";
 import type { Command } from "commander";
 import { dirname, relative } from "node:path";
 import MiniSearch from "minisearch";
-import { findRepo } from "../find-repo";
-import { findStores } from "../find-stores";
-import { loadMemories } from "../load-memories";
-import { matchesScope } from "../matches-scope";
-import { normalizeScopes } from "../normalize-scopes";
-import { resolveRepo } from "../resolve-repo";
-import { validateScopes } from "../validate-scopes";
-import type { Memory } from "../memory";
 
 let cached: { stamp: string; index: MiniSearch } | undefined;
 
@@ -38,37 +30,7 @@ export async function search({
   if (!query.trim()) throw new Error("query must not be empty.");
   if (!Number.isSafeInteger(limit) || limit < 1 || !Number.isSafeInteger(offset) || offset < 0)
     throw new Error("limit must be a positive integer and offset a nonnegative integer.");
-  const workspace = await resolveRepo({ roots, repo });
-  const scopes = await validateScopes({ repo: workspace.repo, scope });
-  const { stores } = await findStores({
-    repo: workspace.repo,
-    project: workspace.repo,
-    scopes,
-  });
-  const local = await loadMemories({ stores, repo: workspace.repo });
-  const memories: Memory[] = local.filter((memory) => {
-    if (scopes.some((value) => ["*", "."].includes(value))) return true;
-    // Without an explicit scope, a memory applies to its owning package (or . for the repo).
-    const owner = relativePosix({ from: workspace.repo, to: memory.project }) || ".";
-    const appliesTo = normalizeScopes(memory.frontmatter.scope ?? [owner]);
-    // Check both directions: searching a folder should also find memories scoped to its files.
-    return scopes.some((path) =>
-      appliesTo.some(
-        (scope) => matchesScope({ scope, path }) || matchesScope({ scope: path, path: scope }),
-      ),
-    );
-  });
-  // Other repos contribute only stores with availableToWorkspace; local scopes do not filter those memories.
-  for (const root of workspace.roots) {
-    const other = await findRepo(root).catch(() => undefined);
-    if (!other || other === workspace.repo) continue;
-    const { stores } = await findStores({ repo: other, project: root });
-    memories.push(...(await loadMemories({ stores, repo: other, availableToWorkspaceOnly: true })));
-  }
-  // Overlapping workspace folders can discover the same memory more than once.
-  const unique = [...new Map(memories.map((memory) => [memory.path, memory])).values()].sort(
-    (a, b) => a.path.localeCompare(b.path),
-  );
+  const { memories: unique } = await loadWorkspaceMemories({ roots, repo, scope });
   // Rebuild the index when the selected files or their filesystem metadata change.
   const stamp = JSON.stringify(unique.map((memory) => [memory.path, memory.stamp]));
   if (cached?.stamp !== stamp) {

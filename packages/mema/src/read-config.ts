@@ -5,10 +5,20 @@ import { mergeConfig } from "./merge-config";
 import { NAMES } from "./names";
 import { parseValue } from "./parse-value";
 import { databaseUrlCommandSchema } from "./database-url-command-schema";
+import { parseDays } from "./parse-days";
 
 const duration = z
-  .string({ error: 'Expected a nonempty duration string, such as "90d".' })
-  .min(1, 'Expected a nonempty duration string, such as "90d".');
+  .string({
+    error: 'Use a duration string of positive whole days, such as "90d"; the minimum is "1d".',
+  })
+  .refine((value) => {
+    try {
+      parseDays(value);
+      return true;
+    } catch {
+      return false;
+    }
+  }, 'Use a duration string of positive whole days, such as "90d"; the minimum is "1d". Choose a smaller value if it exceeds the safe integer range in milliseconds.');
 
 // Validate the config envelope with Zod. Custom JSON Schemas remain opaque here.
 const schema = z.strictObject(
@@ -50,17 +60,15 @@ const schema = z.strictObject(
         z.strictObject(
           {
             databaseUrlCommand: databaseUrlCommandSchema.optional(),
-            ttl: duration.optional(),
-            humanUpvoteAdds: duration.optional(),
-            agentUpvoteAdds: duration.optional(),
+            unvotedTtl: duration.optional(),
+            humanUpvoteTtl: duration.optional(),
+            agentUpvoteTtl: duration.optional(),
           },
           {
             error: (issue) =>
               issue.code === "unrecognized_keys"
-                ? issue.keys.includes("database")
-                  ? "Replace prune.database with prune.databaseUrlCommand, a string containing the complete shell command that prints one PostgreSQL URL."
-                  : 'Remove this unknown field. Allowed pruning fields: databaseUrlCommand (a shell command string), ttl, humanUpvoteAdds, agentUpvoteAdds (duration strings, such as "90d").'
-                : 'Expected a pruning settings object, such as {"ttl":"90d","humanUpvoteAdds":"180d","agentUpvoteAdds":"90d"}, or false to disable pruning.',
+                ? 'Remove this unknown field. Allowed pruning fields: databaseUrlCommand (a shell command string), unvotedTtl, humanUpvoteTtl, agentUpvoteTtl (positive whole-day strings, such as "90d").'
+                : 'Expected a pruning settings object, such as {"unvotedTtl":"90d","humanUpvoteTtl":"180d","agentUpvoteTtl":"90d"}, or false to disable pruning.',
           },
         ),
       ])
@@ -69,9 +77,7 @@ const schema = z.strictObject(
   {
     error: (issue) =>
       issue.code === "unrecognized_keys"
-        ? issue.keys.includes("database")
-          ? "Replace database with prune.databaseUrlCommand, a string containing the complete shell command that prints one PostgreSQL URL."
-          : "Remove this unknown field. Allowed config fields: version, availableToWorkspace, frontmatter, prune."
+        ? "Remove this unknown field. Allowed config fields: version, availableToWorkspace, frontmatter, prune."
         : "Expected a config object with optional version, availableToWorkspace, frontmatter, and prune fields; use {} for defaults.",
   },
 );
@@ -80,8 +86,7 @@ export type Config = z.infer<typeof schema>;
 
 /**
  * Merges config from the Git root down to the owning repo or package directory.
- * Packages can override pruning and its database command; only the Git root defines sharing
- * and custom fields.
+ * Only the Git root defines pruning, sharing, and custom fields.
  *
  * @returns Effective config, the Git root's availableToWorkspace flag, and the local
  * config plus its original text. Init uses the local values to avoid copying inherited
@@ -108,6 +113,12 @@ export async function readConfig({ project, repo }: { project: string; repo: str
       );
     }
     const parsed = parseValue({ schema, value, label: `config ${path}` });
+    // Even false is root-only: packages cannot change their repository's pruning policy.
+    if (parent !== repo && Object.hasOwn(parsed, "prune")) {
+      throw new Error(
+        `Remove prune from ${path}. Set it only in the repository root config: ${join(repo, NAMES.MEMORIES, NAMES.CONFIG_JSON)}. Packages inherit the root's pruning settings and cannot override or disable them.`,
+      );
+    }
     // Reject even false in child configs: availableToWorkspace has exactly one owner, the repo.
     if (parent !== repo && Object.hasOwn(parsed, "availableToWorkspace")) {
       throw new Error(

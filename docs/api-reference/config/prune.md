@@ -1,43 +1,45 @@
 # `prune`
 
-Pruning settings, or `false` to disable.
+Root-only settings for upvotes and pruning. Omit the field or use `false` to disable both.
 
-```json
-{
-  "prune": false
-}
-```
-
-```json
+```json filename=".memories/config.json"
 {
   "prune": {
-    "ttl": "90d",
-    "humanUpvoteAdds": "180d",
-    "agentUpvoteAdds": "90d"
+    "databaseUrlCommand": "doppler secrets get MEMORIES_DATABASE_URL --plain",
+    "unvotedTtl": "90d",
+    "humanUpvoteTtl": "180d",
+    "agentUpvoteTtl": "90d"
   }
 }
 ```
 
-| Field                                           | Type                                                |
-| ----------------------------------------------- | --------------------------------------------------- |
-| `ttl`                                           | Duration string, for example `"90d"`                |
-| `humanUpvoteAdds`                               | Duration string                                     |
-| `agentUpvoteAdds`                               | Duration string                                     |
-| [`databaseUrlCommand`](./databaseUrlCommand.md) | Shell command string that prints the PostgreSQL URL |
+## Reference
 
-All fields are optional. Unknown keys are rejected. `true` is not valid.
+| Field                                           | Default  | Description                                                                       |
+| ----------------------------------------------- | -------- | --------------------------------------------------------------------------------- |
+| [`databaseUrlCommand`](./databaseUrlCommand.md) | —        | Shell command that prints one PostgreSQL URL. Required to run enabled operations. |
+| `unvotedTtl`                                    | `"90d"`  | Lifetime from the memory's [`created`](../memory/created.md) date.                |
+| `humanUpvoteTtl`                                | `"180d"` | Lifetime from its last human upvote.                                              |
+| `agentUpvoteTtl`                                | `"90d"`  | Lifetime from its last agent upvote.                                              |
 
-A package may omit `prune` to inherit its parent. `false` disables an inherited object, including its database command. Supplying `{ "ttl": "150d" }` overrides only `ttl` and keeps other inherited settings. A local `databaseUrlCommand` replaces the inherited command.
+Durations accept positive whole-day strings such as `"1d"` or `"90d"`. Zero, fractions, hours, weeks, whitespace, leading zeros, and values exceeding the safe integer range in milliseconds are rejected.
 
-[`mema init`](../cli/init.md) writes `false`, or pruning settings with default durations (keeping existing durations). Every pruning-enabled setup requires a fresh command and saves it in that target's `prune.databaseUrlCommand`, replacing any previously saved command.
+Only the Git-root config may contain `prune`. Packages inherit the entire setting and cannot override it, including with `false`. Unknown keys and `true` are rejected.
 
-The CLI does not run pruning.
+## Expiry
 
-Enabling pruning during init configures the [database credential command](./databaseUrlCommand.md)
-and applies pending database migrations before saving config. Existing data is preserved;
-already applied migrations are skipped. Upvote and pruning operations are not yet exposed.
+A memory becomes eligible when the current time reaches the latest of:
 
-## Related
+- [`created`](../memory/created.md) + `unvotedTtl`.
+- Last human upvote + `humanUpvoteTtl`, if one exists.
+- Last agent upvote + `agentUpvoteTtl`, if one exists.
 
-- [`mema init`](../cli/init.md)
-- [`config.json`](../file-conventions/config-json.md)
+Upvotes do not stack. A later agent vote cannot shorten a human lifetime. Durations apply at read time, so changing config changes eligibility without rewriting votes.
+
+Editing, renaming, or moving the file does not change `created`.
+
+Expiry only makes a memory a [`prune`](../cli/prune.md) candidate. It does not hide search results or delete files.
+
+## Setup
+
+Run [`mema init`](../cli/init.md) from the Git root to enable pruning, configure credentials, and apply pending migrations. Package setup does not prompt for pruning or access the database. Runtime operations never migrate automatically.

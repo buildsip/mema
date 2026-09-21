@@ -1,8 +1,7 @@
 # `prune.databaseUrlCommand`
 
 A complete shell command that prints the PostgreSQL URL. Configure it inside `prune` in
-`.memories/config.json`. Packages inherit it unless they supply another command or disable
-pruning with `prune: false`.
+the Git-root `.memories/config.json`. Packages inherit the root setting and cannot override it.
 
 ```json
 {
@@ -12,12 +11,9 @@ pruning with `prune: false`.
 }
 ```
 
-The value must be a nonempty string without NUL characters. The old `database` object and
-separate `args` field are not supported.
-
 ## Execution
 
-The command runs from the owning Git repository root, including when init targets a package.
+The command runs from the owning Git repository root during root init, upvote, prune, and pruning-enabled updates.
 Its working directory does not guarantee which secrets project it selects: configure explicit
 provider project/environment arguments when needed. The provider CLI must be installed and
 authenticated in the environment running Mema.
@@ -49,13 +45,13 @@ home-directory credentials map. That name in the example is simply the secret's 
 
 ## Database setup
 
-Every accepted `mema init` setup with pruning enabled requires a fresh command in one prompt,
-even when a command is already saved or inherited. Blank input is rejected; saved commands are
+Every accepted root `mema init` setup with pruning enabled requires a fresh command in one prompt,
+even when a command is already saved. Blank input is rejected; saved commands are
 not offered as defaults or executed automatically. A command failure or invalid PostgreSQL URL
 prompts for another command in the same run.
 
 After validation, Mema applies pending bundled migrations and saves the new command under
-`prune.databaseUrlCommand` in the target's config. Package setup leaves the root config unchanged.
+`prune.databaseUrlCommand` in the root config. Package setup neither prompts for credentials nor connects to the database.
 Canceling or a migration failure leaves existing config unchanged. Disabled pruning and declined
 reconfiguration do not execute a command or touch the database.
 

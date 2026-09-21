@@ -17,6 +17,7 @@ Returned paths are absolute memory directories and can be passed to [`update`](.
     "score": 3.2,
     "frontmatter": {
       "id": "11111111-1111-4111-8111-111111111111",
+      "created": "2026-09-19",
       "title": "Axios retry duplication after reconnect"
     },
     "body": "Retry the client once after a reconnect; do not stack interceptors.\n"
@@ -26,14 +27,14 @@ Returned paths are absolute memory directories and can be passed to [`update`](.
 
 ## Reference
 
-| Options | Description |
-| --- | --- |
-| [`--roots <path...>`](./index.md#--roots) | Workspace directories. Required. |
-| [`--repo <path>`](./index.md#--repo) | Git root. Required. |
-| `--query <text>` | Nonempty search string. Required. |
-| `--scope <path...>` | Repository-relative file or directory paths. Default `*` (the whole repo). |
-| `--limit <number>` | Maximum number of ranked hits. Default `50`. Must be a positive integer. |
-| `--offset <number>` | Ranked hits to skip. Default `0`. Must be a nonnegative integer. |
+| Options                                   | Description                                                                |
+| ----------------------------------------- | -------------------------------------------------------------------------- |
+| [`--roots <path...>`](./index.md#--roots) | Workspace directories. Required.                                           |
+| [`--repo <path>`](./index.md#--repo)      | Git root. Required.                                                        |
+| `--query <text>`                          | Nonempty search string. Required.                                          |
+| `--scope <path...>`                       | Repository-relative file or directory paths. Default `*` (the whole repo). |
+| `--limit <number>`                        | Maximum number of ranked hits. Default `50`. Must be a positive integer.   |
+| `--offset <number>`                       | Ranked hits to skip. Default `0`. Must be a nonnegative integer.           |
 
 `--query` of only whitespace is rejected.
 

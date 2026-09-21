@@ -172,6 +172,10 @@ describe("insert and update", () => {
     });
     expect(path).toBe(join(web, NAMES.MEMORIES, NAMES.DATA, "deja-vu-cache"));
     expect((await frontmatter(path)).id).toMatch(/^[0-9a-f-]{36}$/);
+    expect((await frontmatter(path)).created).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    expect(await readFile(join(path, NAMES.MEMORY_MD), "utf8")).toMatch(
+      /^---\nid: [0-9a-f-]{36}\ncreated: \d{4}-\d{2}-\d{2}\n/,
+    );
     expect(existsSync(join(root, NAMES.MEMORIES))).toBe(false);
     expect((await search({ roots, repo: root, query: "parse" }))[0]?.body).toBe(
       "Do not parse --- in Markdown.\n",
@@ -180,7 +184,7 @@ describe("insert and update", () => {
 
   it("updates by path, renames the folder, and preserves attachments and omitted metadata", async () => {
     const old = await memory({ title: "Old title", scope: ["apps/web/auth"], doNotDelete: true });
-    const id = (await frontmatter(old)).id;
+    const { id, created } = await frontmatter(old);
     await writeFile(join(old, "evidence.json"), '{"keep":true}');
     const path = await edit({
       path: old,
@@ -192,6 +196,7 @@ describe("insert and update", () => {
     expect(await readFile(join(path, "evidence.json"), "utf8")).toBe('{"keep":true}');
     expect(await frontmatter(path)).toMatchObject({
       id,
+      created,
       title: "New title",
       scope: ["apps/web/auth"],
       doNotDelete: true,
@@ -477,7 +482,7 @@ describe("insert and update", () => {
     });
     await config({
       project: web,
-      value: { prune: { ttl: "120d" } },
+      value: {},
     });
     for (const project of [root, web, api]) {
       await expect(memory({ project, title: "Bad ticket", ticket: "AB" })).rejects.toThrow(
@@ -1138,7 +1143,7 @@ describe("delete", () => {
     expect(existsSync(path)).toBe(false);
   });
 
-  it("refuses outside paths, shared search hits, and arbitrary files", async () => {
+  it("refuses private sibling paths and arbitrary files", async () => {
     const teamPath = await memory({ project: team, title: "Shared" });
     await expect(deleteMemories({ roots, repo: root, paths: [teamPath] })).rejects.toThrow(
       "outside",
@@ -1237,7 +1242,7 @@ describe("built CLI", () => {
     expect(existsSync(wrong)).toBe(false);
   });
 
-  it.each(["id", "path in JSON", "empty title"])(
+  it.each(["id", "created", "path in JSON", "empty title"])(
     "rejects update input with %s before writing",
     async (invalid) => {
       const path = await memory({ title: "Keep" });
@@ -1245,9 +1250,11 @@ describe("built CLI", () => {
       const input =
         invalid === "id"
           ? { frontmatter: { id: (await frontmatter(path)).id } }
-          : invalid === "empty title"
-            ? { frontmatter: { title: "" } }
-            : { path, body: "new content" };
+          : invalid === "created"
+            ? { frontmatter: { created: "2020-01-01" } }
+            : invalid === "empty title"
+              ? { frontmatter: { title: "" } }
+              : { path, body: "new content" };
       const result = run({
         args: ["update", "--roots", root, "--repo", root, "--path", path],
         input: JSON.stringify(input),
@@ -1630,8 +1637,8 @@ describe("built CLI", () => {
     expect(result.stdout).toContain("update");
     expect(result.stdout).toContain("mcp");
     expect(result.stdout).not.toContain("upsert");
-    expect(result.stdout).not.toContain("prune");
-    expect(result.stdout).not.toContain("upvote");
+    expect(result.stdout).toContain("prune");
+    expect(result.stdout).toContain("upvote");
     expect(result.stdout).not.toContain("sessions");
   });
 });

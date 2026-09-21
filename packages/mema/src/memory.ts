@@ -3,6 +3,8 @@ import { Frontmatter } from "./validate-frontmatter";
 export type Memory = {
   /** Internal memory.md file path; commands expose its parent directory. */
   path: string;
+  /** Git root whose config and database own this memory. */
+  repo: string;
   /** Repo or package directory that owns this memory store. */
   project: string;
   frontmatter: Frontmatter;

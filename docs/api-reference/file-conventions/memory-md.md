@@ -5,6 +5,7 @@ One memory: YAML frontmatter, then Markdown.
 ```md
 ---
 id: 11111111-1111-4111-8111-111111111111
+created: 2026-09-19
 title: Axios reconnect retry
 ---
 

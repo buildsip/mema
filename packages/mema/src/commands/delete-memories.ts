@@ -1,12 +1,10 @@
+import { loadWorkspaceMemories } from "../load-workspace-memories";
+import { selectMemories } from "../select-memories";
 import { isInside } from "@buildsip/file-utils";
 import type { Command } from "commander";
 import { rm } from "node:fs/promises";
 import { dirname, join } from "node:path";
-import { findStores } from "../find-stores";
-import { loadMemories } from "../load-memories";
 import { NAMES } from "../names";
-import { resolveRepo } from "../resolve-repo";
-import { resolveMemoryFile } from "../resolve-memory-file";
 
 /**
  * Deletes selected memory folders, including their attachments.
@@ -25,26 +23,12 @@ export async function deleteMemories({
   paths: string[];
 }) {
   if (!paths.length) throw new Error("Provide at least one memory directory path to delete.");
-  const workspace = await resolveRepo({ roots, repo });
-  const { stores } = await findStores({
-    repo: workspace.repo,
-    project: workspace.repo,
-  });
-  const memories = await loadMemories({
-    stores,
-    repo: workspace.repo,
-  });
-  const byPath = new Map(memories.map((memory) => [memory.path, memory]));
+  const { memories, repos } = await loadWorkspaceMemories({ roots, repo });
+  const batch = await selectMemories({ paths, memories, repos });
   const selected = new Set<string>();
-  // Validate the whole batch before deleting anything, including protected descendants.
-  for (const input of paths) {
-    const canonical = await resolveMemoryFile({ path: input, repo: workspace.repo });
-    const memory = byPath.get(canonical);
-    if (!memory) {
-      throw new Error(
-        `Choose a memory directory inside a repo or package .memories/data store in ${workspace.repo}: ${input}`,
-      );
-    }
+  // Validate all protection flags and descendants before deleting anything.
+  for (const memory of batch) {
+    const canonical = memory.path;
     if (memory.frontmatter.doNotDelete) {
       throw new Error(
         `You cannot delete this memory because doNotDelete is true: ${dirname(canonical)}. Ask the user to delete it.`,

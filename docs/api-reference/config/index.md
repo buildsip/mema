@@ -16,9 +16,9 @@ Unknown keys are rejected. Allowed fields: `version`, `availableToWorkspace`, `f
     }
   },
   "prune": {
-    "ttl": "90d",
-    "humanUpvoteAdds": "180d",
-    "agentUpvoteAdds": "90d"
+    "unvotedTtl": "90d",
+    "humanUpvoteTtl": "180d",
+    "agentUpvoteTtl": "90d"
   }
 }
 ```

@@ -16,21 +16,23 @@ Requires Node.js `>=22.5.0`.
 
 ## Reference
 
-| Options | Description |
-| --- | --- |
-| `-h` or `--help` | Show help. |
+| Options             | Description            |
+| ------------------- | ---------------------- |
+| `-h` or `--help`    | Show help.             |
 | `-V` or `--version` | Print the CLI version. |
 
 ### Commands
 
-| Command | Description |
-| --- | --- |
-| [`init`](./init.md) | Initialize a Git root, then the nearest package. |
-| [`mcp`](./mcp.md) | Serve memory tools over stdio. |
+| Command                 | Description                                             |
+| ----------------------- | ------------------------------------------------------- |
+| [`init`](./init.md)     | Initialize a Git root, then the nearest package.        |
+| [`mcp`](./mcp.md)       | Serve memory tools over stdio.                          |
 | [`search`](./search.md) | Search titles, frontmatter, directory tags, and bodies. |
-| [`insert`](./insert.md) | Create one memory from JSON. |
-| [`update`](./update.md) | Patch one existing memory from JSON. |
-| [`delete`](./delete.md) | Delete memories and their attachments by path. |
+| [`insert`](./insert.md) | Create one memory from JSON.                            |
+| [`update`](./update.md) | Patch one existing memory from JSON.                    |
+| [`delete`](./delete.md) | Delete memories and their attachments by path.          |
+| [`upvote`](./upvote.md) | Record human or agent upvotes.                          |
+| [`prune`](./prune.md)   | List expired memory directories for review.             |
 
 ### `--roots`
 
@@ -58,7 +60,7 @@ JSON must be one object with double-quoted keys. Comments and trailing commas ar
 
 ### Output
 
-Successful `search`, `insert`, `update`, and `delete` print JSON on stdout. MCP installation warnings, if any, are separate `{ "warning": "<instruction>" }` lines on stderr and do not fail the command.
+Successful `search`, `insert`, `update`, `delete`, `upvote`, and `prune` print JSON on stdout. MCP installation warnings, if any, are separate `{ "warning": "<instruction>" }` lines on stderr and do not fail the command.
 
 Command failures print `{ "error": "<message>" }` on stderr, set exit code `1`, and print nothing on stdout. [`init`](./init.md) prints command errors through its interactive UI instead of JSON.
 

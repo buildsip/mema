@@ -40,7 +40,12 @@ it.each([
   "postgresql://localhost/db name",
 ])("rejects invalid output without including its value: %j", async (output) => {
   const command = await script({ code: `process.stdout.write(${JSON.stringify(output)})` });
-  await expect(getDatabaseUrl({ repo, command })).rejects.toThrow("must print exactly one");
+  // Match the complete safe message so invalid command output cannot leak into it.
+  await expect(getDatabaseUrl({ repo, command })).rejects.toThrow(
+    new Error(
+      "The command you entered must print one postgres:// or postgresql:// URL, with an optional trailing newline. Please try again.",
+    ),
+  );
 });
 
 it("does not forward secrets in failed command output or command text", async () => {
@@ -106,7 +111,7 @@ it("stops a pipeline and its child processes within the timeout", async () => {
   });
   try {
     await expect(getDatabaseUrl({ repo, command: `${first} | ${second}` })).rejects.toThrow(
-      "within 15 seconds",
+      "The command you entered failed",
     );
     for (const name of ["first.pid", "second.pid"]) {
       const pid = Number(await readFile(join(repo, name), "utf8"));

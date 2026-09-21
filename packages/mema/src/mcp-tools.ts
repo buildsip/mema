@@ -5,7 +5,10 @@ import { deleteMemories } from "./commands/delete-memories";
 import { insert } from "./commands/insert";
 import { search } from "./commands/search";
 import { update } from "./commands/update";
+import { upvote } from "./commands/upvote";
+import { prune } from "./commands/prune";
 import { describeMemory } from "./describe-memory";
+import { describeSearch } from "./describe-search";
 import { insertSchema } from "./insert-schema";
 import { parseValue } from "./parse-value";
 import { scopeSchema } from "./scope-schema";
@@ -59,7 +62,7 @@ function tool<T, R>({
   description: string;
   schema: z.ZodType<T>;
   run: (input: T) => Promise<R>;
-  instructions?: (args: { result: R; input: T }) => Promise<string>;
+  instructions?: (args: { result: R; input: T }) => Promise<string | undefined>;
   readOnly?: boolean;
   destructive?: boolean;
 }) {
@@ -74,7 +77,8 @@ function tool<T, R>({
       // Preserve the CLI's JSON result and add readable guidance as a separate text block.
       const content: TextContent[] = [{ type: "text", text: JSON.stringify(result, null, 2) }];
       if (instructions) {
-        content.push({ type: "text", text: await instructions({ result, input }) });
+        const text = await instructions({ result, input });
+        if (text) content.push({ type: "text", text });
       }
       return { content };
     },
@@ -85,14 +89,14 @@ function tool<T, R>({
 export const mcpTools = [
   tool({
     name: "insert-memory",
-    description: `Create one memory. Extra frontmatter keys must match frontmatter.custom in the repo-root ${NAMES.MEMORIES}/${NAMES.CONFIG_JSON}. No frontmatter.custom means no extra keys. Call search-memories first; if a related memory can be improved, use update-memory instead. Choose the narrowest scope where the memory provides useful context. For example, a login-session cookie rule used throughout authentication belongs to ["apps/web/auth"]. Use ["*"] only for context useful across the whole repository. Keep the returned path for later edits. After this tool returns, you may add attachments beside ${NAMES.MEMORY_MD} in the returned directory when useful. Attachments are supporting files, such as images or long documents, and are not searchable.`,
+    description: `Create one memory. Always read repo-root ${NAMES.MEMORIES}/${NAMES.CONFIG_JSON} before calling this tool to know what frontmatters.custom fields are allowed. No frontmatter.custom means no extra keys. Call search-memories first; if a related memory can be improved, use update-memory instead. Choose the narrowest scope where the memory provides useful context. For example, a login-session cookie rule used throughout authentication belongs to ["apps/web/auth"]. Use ["*"] only for context useful across the whole repository. Keep the returned path for later edits. After this tool returns, you may add attachments beside ${NAMES.MEMORY_MD} in the returned directory when useful. Attachments are supporting files, such as images or long documents, and are not searchable.`,
     schema: z.strictObject({ ...workspace, ...insertSchema.shape }, { error: inputError }),
     run: insert,
     instructions: ({ result, input }) => describeMemory({ path: result[0]!, repo: input.repo }),
   }),
   tool({
     name: "update-memory",
-    description: `Patch an existing memory. Extra frontmatter keys must match frontmatter.custom in the repo-root ${NAMES.MEMORIES}/${NAMES.CONFIG_JSON}. No frontmatter.custom means no extra keys. Omitted fields keep their values. A scope or title change can move the memory; use the returned path for subsequent calls. Every update repairs the title folder to match the memory's frontmatter title. If doNotEdit blocks the update, ask the user to edit the memory. After this tool returns, you may add attachments beside ${NAMES.MEMORY_MD} in the returned directory when useful. Attachments are supporting files, such as images or long documents, and are not searchable.`,
+    description: `Patch an existing memory in repo. Every successful update, records an agent upvote when pruning is enabled. Always read repo-root ${NAMES.MEMORIES}/${NAMES.CONFIG_JSON} before calling this tool to know what frontmatters.custom fields are allowed. No frontmatter.custom means no extra keys. Omitted fields keep their values. A scope or title change can move the memory; use the returned path for subsequent calls. Every update repairs the title folder to match the memory's frontmatter title. If doNotEdit blocks the update, ask the user to edit the memory. After this tool returns, you may add attachments beside ${NAMES.MEMORY_MD} in the returned directory when useful. Attachments are supporting files, such as images or long documents, and are not searchable.`,
     schema: z.strictObject(
       { ...workspace, path: memoryPath, ...updateSchema.shape },
       { error: inputError },
@@ -103,7 +107,7 @@ export const mcpTools = [
   }),
   tool({
     name: "search-memories",
-    description: `Search saved memories for context relevant to the current task. Read the returned memories and check their claims against the current code before relying on them.`,
+    description: `Search saved memories for context relevant to the current task. If a memory contradicts the code or another memory, tell the user and offer to update or delete it.`,
     schema: z.strictObject(
       {
         ...workspace,
@@ -136,6 +140,7 @@ export const mcpTools = [
       { error: inputError },
     ),
     run: search,
+    instructions: ({ result }) => describeSearch(result),
     readOnly: true,
   }),
   tool({
@@ -158,5 +163,37 @@ export const mcpTools = [
     ),
     run: ({ path, ...input }) => deleteMemories({ ...input, paths: path }),
     destructive: true,
+  }),
+  tool({
+    name: "upvote-memories",
+    description:
+      "Record upvotes for memories that are useful in producing a reply. Don't upvote a memory just because you read it. Updates already record an agent upvote when pruning is enabled; do not use an agent upvote again for the update alone.",
+    schema: z.strictObject(
+      {
+        ...workspace,
+        path: z
+          .array(memoryPath, { error: "Provide path as an array of memory directory paths." })
+          .min(1, "Provide at least one memory directory path to upvote.")
+          .describe("Memory directories returned by memory tools."),
+        actor: z
+          .enum(["human", "agent"], {
+            error:
+              "Use actor human only when the user asks for an upvote; use agent when a memory helped produce a reply.",
+          })
+          .describe(
+            "human when the user asked to upvote; agent when a memory helped produce the reply.",
+          ),
+      },
+      { error: inputError },
+    ),
+    run: ({ path, ...input }) => upvote({ ...input, paths: path }),
+  }),
+  tool({
+    name: "prune-memories",
+    description:
+      "Only call when the user asks to prune or review unused memories. Returns a list of candidates fit for deletion. This tool never deletes memories. Read the candidates, check their relevance against the code, and suggest which to delete or keep.",
+    schema: z.strictObject(workspace, { error: inputError }),
+    run: prune,
+    readOnly: true,
   }),
 ];

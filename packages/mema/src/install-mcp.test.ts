@@ -33,6 +33,8 @@ describe("installMcp", () => {
             "update-memory",
             "search-memories",
             "delete-memories",
+            "upvote-memories",
+            "prune-memories",
           ],
         },
         { local: false },

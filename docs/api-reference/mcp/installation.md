@@ -2,7 +2,7 @@
 
 Every CLI invocation installs or refreshes the global `mema` server entry for agents detected by [add-mcp](https://add-mcp.com/docs/sdk). This includes help, version, [`init`](../cli/init.md), and [`mcp`](../cli/mcp.md).
 
-The registered process is `mema mcp`. There is no installation prompt or saved version check. Existing entries are overwritten, and the four current [tool names](./index.md#tools) are passed as named auto-approvals wherever the agent supports them.
+The registered process is `mema mcp`. There is no installation prompt or saved version check. Existing entries are overwritten, and the six current [tool names](./index.md#tools) are passed as named auto-approvals wherever the agent supports them.
 
 Other server entries are preserved. Configs for undetected agents are not created.
 
@@ -41,6 +41,8 @@ const result = upsertServer(
       "update-memory",
       "search-memories",
       "delete-memories",
+      "upvote-memories",
+      "prune-memories",
     ],
   },
   { local: false },

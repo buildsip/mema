@@ -21,103 +21,55 @@ it.each([
   { value: {}, expected: undefined },
   { value: { prune: false }, expected: false },
   { value: { prune: {} }, expected: {} },
-  { value: { prune: { ttl: "120d" } }, expected: { ttl: "120d" } },
-])("reads pruning settings $value without modifying the file", async ({ value, expected }) => {
-  const path = join(project, NAMES.MEMORIES, NAMES.CONFIG_JSON);
+  { value: { prune: { unvotedTtl: "120d" } }, expected: { unvotedTtl: "120d" } },
+])("reads root pruning settings $value without modifying the file", async ({ value, expected }) => {
+  const path = join(repo, NAMES.MEMORIES, NAMES.CONFIG_JSON);
   const source = JSON.stringify(value);
   await writeFile(path, source);
-  const result = await readConfig({ project, repo });
+  const result = await readConfig({ project: repo, repo });
   expect(result.config.prune).toEqual(expected);
   expect(result.source).toBe(source);
   expect(await readFile(path, "utf8")).toBe(source);
 });
 
-it("inherits an omitted prune field and lets explicit false disable a parent's object", async () => {
-  await writeFile(
-    join(repo, NAMES.MEMORIES, NAMES.CONFIG_JSON),
-    JSON.stringify({ prune: { ttl: "120d", humanUpvoteAdds: "200d" } }),
-  );
+it("inherits all root pruning settings without copying them into packages", async () => {
+  const prune = {
+    unvotedTtl: "120d",
+    humanUpvoteTtl: "200d",
+    databaseUrlCommand: "./database-url",
+  };
+  await writeFile(join(repo, NAMES.MEMORIES, NAMES.CONFIG_JSON), JSON.stringify({ prune }));
   await writeFile(join(project, NAMES.MEMORIES, NAMES.CONFIG_JSON), "{}");
-  expect((await readConfig({ project, repo })).config.prune).toEqual({
-    ttl: "120d",
-    humanUpvoteAdds: "200d",
-  });
-  await writeFile(join(project, NAMES.MEMORIES, NAMES.CONFIG_JSON), '{"prune":false}');
-  expect((await readConfig({ project, repo })).config.prune).toBe(false);
-  await writeFile(join(project, NAMES.MEMORIES, NAMES.CONFIG_JSON), '{"prune":{"ttl":"150d"}}');
-  expect((await readConfig({ project, repo })).config.prune).toEqual({
-    ttl: "150d",
-    humanUpvoteAdds: "200d",
-  });
+  const result = await readConfig({ project, repo });
+  expect(result.config.prune).toEqual(prune);
+  expect(result.local).not.toHaveProperty("prune");
 });
 
-it.each([true, null, "false", { ttl: 90 }, { enabled: "no" }])(
+it.each([false, {}, { unvotedTtl: "120d" }, { databaseUrlCommand: "./url" }])(
+  "rejects every package prune setting %j",
+  async (prune) => {
+    const path = join(project, NAMES.MEMORIES, NAMES.CONFIG_JSON);
+    await writeFile(path, JSON.stringify({ prune }));
+    await expect(readConfig({ project, repo })).rejects.toThrow(`Remove prune from ${path}`);
+  },
+);
+
+it.each([true, null, "false", { unvotedTtl: 90 }, { enabled: "no" }])(
   "rejects invalid prune value %j",
   async (prune) => {
-    await writeFile(join(project, NAMES.MEMORIES, NAMES.CONFIG_JSON), JSON.stringify({ prune }));
+    await writeFile(join(repo, NAMES.MEMORIES, NAMES.CONFIG_JSON), JSON.stringify({ prune }));
     await expect(readConfig({ project, repo })).rejects.toThrow("Invalid config");
   },
 );
 
-it("rejects unknown config keys", async () => {
-  await writeFile(
-    join(project, NAMES.MEMORIES, NAMES.CONFIG_JSON),
-    JSON.stringify({ banana: true }),
-  );
-  await expect(readConfig({ project, repo })).rejects.toThrow("Invalid config");
-});
-
-it("inherits the root database URL command without copying it into package config", async () => {
-  const databaseUrlCommand = "doppler secrets get MEMA_DATABASE_URL --plain";
-  await writeFile(
-    join(repo, NAMES.MEMORIES, NAMES.CONFIG_JSON),
-    JSON.stringify({ prune: { databaseUrlCommand } }),
-  );
-  await writeFile(join(project, NAMES.MEMORIES, NAMES.CONFIG_JSON), '{"prune":{}}');
-  const result = await readConfig({ repo, project });
-  expect((result.config.prune || {}).databaseUrlCommand).toBe(databaseUrlCommand);
-  expect((result.local.prune || {}).databaseUrlCommand).toBeUndefined();
-});
-
-it("lets a package replace the inherited command while preserving durations", async () => {
-  await writeFile(
-    join(repo, NAMES.MEMORIES, NAMES.CONFIG_JSON),
-    JSON.stringify({
-      prune: { ttl: "120d", databaseUrlCommand: "doppler secrets get URL --plain" },
-    }),
-  );
-  await writeFile(
-    join(project, NAMES.MEMORIES, NAMES.CONFIG_JSON),
-    JSON.stringify({ prune: { databaseUrlCommand: "./database-url" } }),
-  );
-  const result = await readConfig({ repo, project });
-  expect(result.config.prune).toEqual({ ttl: "120d", databaseUrlCommand: "./database-url" });
-  expect(result.local.prune).toEqual({ databaseUrlCommand: "./database-url" });
-});
-
-it("lets a package configure its database when pruning is disabled at the root", async () => {
-  await writeFile(join(repo, NAMES.MEMORIES, NAMES.CONFIG_JSON), '{"prune":false}');
-  const prune = { databaseUrlCommand: "doppler secrets get URL --plain" };
-  await writeFile(join(project, NAMES.MEMORIES, NAMES.CONFIG_JSON), JSON.stringify({ prune }));
-  expect((await readConfig({ repo, project })).config.prune).toEqual(prune);
-});
-
-it("lets a package disable inherited pruning and its database", async () => {
-  await writeFile(
-    join(repo, NAMES.MEMORIES, NAMES.CONFIG_JSON),
-    JSON.stringify({ prune: { databaseUrlCommand: "./database-url" } }),
-  );
-  await writeFile(join(project, NAMES.MEMORIES, NAMES.CONFIG_JSON), '{"prune":false}');
-  expect((await readConfig({ repo, project })).config.prune).toBe(false);
-});
-
-it.each([{ database: { command: "doppler" } }, { prune: { database: { command: "doppler" } } }])(
-  "explains how to replace the old database shape %j",
-  async (value) => {
-    await writeFile(join(repo, NAMES.MEMORIES, NAMES.CONFIG_JSON), JSON.stringify(value));
-    await expect(readConfig({ repo, project })).rejects.toThrow(
-      "prune.databaseUrlCommand, a string containing the complete shell command",
+it.each(["0d", "-1d", "1.5d", "12h", "2w", "90d12h", " 1d", "1d ", "01d", "999999999999999999d"])(
+  "rejects invalid day duration %s",
+  async (duration) => {
+    await writeFile(
+      join(repo, NAMES.MEMORIES, NAMES.CONFIG_JSON),
+      JSON.stringify({ prune: { unvotedTtl: duration } }),
     );
+    await expect(readConfig({ project, repo })).rejects.toThrow("positive whole days");
   },
 );
 
@@ -142,7 +94,7 @@ it.each([
   async ({ value, availableToWorkspace }) => {
     if (value !== undefined)
       await writeFile(join(repo, NAMES.MEMORIES, NAMES.CONFIG_JSON), JSON.stringify(value));
-    await writeFile(join(project, NAMES.MEMORIES, NAMES.CONFIG_JSON), '{"prune":false}');
+    await writeFile(join(project, NAMES.MEMORIES, NAMES.CONFIG_JSON), "{}");
     expect((await readConfig({ project: repo, repo })).availableToWorkspace).toBe(
       availableToWorkspace,
     );
@@ -188,7 +140,7 @@ it.each([false, true])(
   "identifies the removed prune.enabled option (%s) as an unknown field",
   async (value) => {
     const path = join(repo, NAMES.MEMORIES, NAMES.CONFIG_JSON);
-    await writeFile(path, JSON.stringify({ prune: { enabled: value, ttl: "90d" } }));
+    await writeFile(path, JSON.stringify({ prune: { enabled: value, unvotedTtl: "90d" } }));
     await expect(readConfig({ project, repo })).rejects.toThrow(
       /Remove this unknown field. Allowed pruning fields[^\n]*\n  → at prune.enabled/,
     );
@@ -203,18 +155,18 @@ it.each([
     expected: "Expected a boolean: true",
   },
   {
-    value: { prune: { ttl: 90 } },
-    field: "prune.ttl",
-    expected: 'Expected a nonempty duration string, such as "90d"',
+    value: { prune: { unvotedTtl: 90 } },
+    field: "prune.unvotedTtl",
+    expected: 'Use a duration string of positive whole days, such as "90d"',
   },
   {
-    value: { prune: { humanUpvoteAdds: [] } },
-    field: "prune.humanUpvoteAdds",
+    value: { prune: { humanUpvoteTtl: [] } },
+    field: "prune.humanUpvoteTtl",
     expected: "duration string",
   },
   {
-    value: { prune: { agentUpvoteAdds: "" } },
-    field: "prune.agentUpvoteAdds",
+    value: { prune: { agentUpvoteTtl: "" } },
+    field: "prune.agentUpvoteTtl",
     expected: "duration string",
   },
   { value: { prune: { typo: 1 } }, field: "prune.typo", expected: "Allowed pruning fields" },
@@ -243,7 +195,7 @@ it("includes the config file and JSON syntax guidance for malformed JSON", async
   );
 });
 
-it("inherits the root schema unchanged through package pruning overrides", async () => {
+it("inherits the root schema and pruning unchanged through packages", async () => {
   const custom = {
     $defs: { ticket: { type: "string", pattern: "^ENG-" } },
     properties: {
@@ -255,10 +207,13 @@ it("inherits the root schema unchanged through package pruning overrides", async
   };
   await writeFile(
     join(repo, NAMES.MEMORIES, NAMES.CONFIG_JSON),
-    JSON.stringify({ frontmatter: { custom }, prune: { ttl: "90d", humanUpvoteAdds: "180d" } }),
+    JSON.stringify({
+      frontmatter: { custom },
+      prune: { unvotedTtl: "90d", humanUpvoteTtl: "180d" },
+    }),
   );
   const path = join(project, NAMES.MEMORIES, NAMES.CONFIG_JSON);
-  const source = JSON.stringify({ frontmatter: {}, prune: { ttl: "120d" } });
+  const source = JSON.stringify({ frontmatter: {} });
   await writeFile(path, source);
   const nested = join(project, "nested");
   await mkdir(nested);
@@ -266,7 +221,7 @@ it("inherits the root schema unchanged through package pruning overrides", async
   for (const directory of [project, nested]) {
     const result = await readConfig({ project: directory, repo });
     expect(result.config.frontmatter?.custom).toEqual(custom);
-    expect(result.config.prune).toEqual({ ttl: "120d", humanUpvoteAdds: "180d" });
+    expect(result.config.prune).toEqual({ unvotedTtl: "90d", humanUpvoteTtl: "180d" });
     expect(result.local).not.toHaveProperty("frontmatter.custom");
   }
   expect(await readFile(path, "utf8")).toBe(source);

@@ -50,8 +50,7 @@ export async function init({
   await assertNoSymlinks({ path: configPath, base: root });
   const directory = lstatSync(memories, { throwIfNoEntry: false });
   if (directory && !directory.isDirectory()) throw new Error(`Expected a directory: ${memories}`);
-  const { config, local, source } =
-    project === root ? repoConfig : await readConfig({ project, repo: root });
+  const { local, source } = project === root ? repoConfig : await readConfig({ project, repo: root });
 
   intro("mema init");
   if (project !== nearest) {
@@ -71,10 +70,10 @@ export async function init({
     }
   }
   let url: string | undefined;
-  const prune = config.prune || undefined;
+  // Reconfiguration uses the same defaults as first-time setup, not the saved settings.
   const answers = await group<{
     availableToWorkspace: boolean | symbol | undefined;
-    prune: boolean | symbol;
+    prune: boolean | symbol | undefined;
     databaseUrlCommand: string | undefined;
     labels: boolean | symbol;
     skill: boolean | symbol | undefined;
@@ -88,11 +87,14 @@ export async function init({
           ? confirm({
               message:
                 "Make all memories in this repository available to the other projects in this workspace?",
-              initialValue: config.availableToWorkspace ?? false,
+              initialValue: false,
             })
           : undefined,
-      prune: () => confirm({ message: "Enable pruning?", initialValue: Boolean(config.prune) }),
-      // Require fresh input on every accepted setup, even if a command is saved or inherited.
+      prune: () =>
+        project === root
+          ? confirm({ message: "Enable pruning?", initialValue: true })
+          : undefined,
+      // Require fresh input on every accepted root setup, even if a command is saved.
       databaseUrlCommand: async ({ results }) => {
         if (!results.prune) return undefined;
         while (true) {
@@ -140,15 +142,19 @@ export async function init({
     // Keep the repo-wide setting out of package config files,
     // because `availableToWorkspace` is only set at the root of a repository.
     ...(project === root ? { availableToWorkspace: answers.availableToWorkspace } : {}),
-    // False overrides an enabled ancestor; omitting prune would inherit it.
-    prune: answers.prune
+    // Packages inherit the root policy without copying it into their config.
+    ...(project === root
       ? {
-          ttl: prune?.ttl ?? "90d",
-          humanUpvoteAdds: prune?.humanUpvoteAdds ?? "180d",
-          agentUpvoteAdds: prune?.agentUpvoteAdds ?? "90d",
-          databaseUrlCommand: answers.databaseUrlCommand,
+          prune: answers.prune
+            ? {
+                unvotedTtl: "90d",
+                humanUpvoteTtl: "180d",
+                agentUpvoteTtl: "90d",
+                databaseUrlCommand: answers.databaseUrlCommand,
+              }
+            : false,
         }
-      : false,
+      : {}),
   };
 
   const settingsPath = join(root, NAMES.VSCODE, NAMES.SETTINGS_JSON);

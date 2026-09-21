@@ -24,7 +24,7 @@ Custom fields go next to [`title`](../memory/title.md) in YAML and in insert/upd
 
 ## Schema changes
 
-Existing files are not migrated or revalidated against custom schema changes when read. [`search`](../cli/search.md) keeps their custom fields searchable, and [`delete`](../cli/delete.md) can still remove them. Built-in fields such as `id`, `title`, and protection flags are always validated.
+Existing files are not migrated or revalidated against custom schema changes when read. [`search`](../cli/search.md) keeps their custom fields searchable, and [`delete`](../cli/delete.md) can still remove them. Built-in fields such as `id`, `created`, `title`, and protection flags are always validated.
 
 Adding an optional field leaves old memories valid. Adding a required field leaves old memories searchable, but the next insert or update must include it. For example, after adding `"required": ["ticket"]`, updating an old memory without `ticket` fails until it is supplied in `frontmatter`.
 

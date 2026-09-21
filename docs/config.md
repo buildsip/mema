@@ -50,7 +50,7 @@ Existing memories remain searchable when you add, change, or remove custom field
 
 ## prune
 
-Optional. Default value:
+Setup enables pruning by default. Omitting this field or setting it to `false` disables pruning:
 
 ```json
 {
@@ -63,34 +63,24 @@ Providing an object enables pruning:
 ```json
 {
   "prune": {
-    "ttl": "90d",
-    "humanUpvoteAdds": "180d",
-    "agentUpvoteAdds": "90d"
+    "unvotedTtl": "90d",
+    "humanUpvoteTtl": "180d",
+    "agentUpvoteTtl": "90d"
   }
 }
 ```
 
-### ttl
-
-Memory must be at least this old to be eligible for pruning.
-
-### humanUpvoteAdds
-
-A human upvote adds this duration to the memory's lifetime.
-
-### agentUpvoteAdds
-
-An agent upvote adds this duration to the memory's lifetime.
-
-### databaseUrlCommand
-
-A command that prints the database connection string.
-
 > [!WARNING]
 > This field can only be configured at the root of the repo.
 
-## `config.json` Resolution
+### Lifetimes
 
-Packages inherit settings from `.memories/config.json` files in their parent directories, up to the Git repository root.
+- `unvotedTtl`: lifetime from the memory's `created` date. Default `"90d"`.
+- `humanUpvoteTtl`: lifetime from its last human upvote. Default `"180d"`.
+- `agentUpvoteTtl`: lifetime from its last agent upvote. Default `"90d"`.
 
-A package can define its own pruning settings. Omitted values inherit the parent's settings; supplied values override them.
+Use positive whole days such as `"90d"`, with a minimum of `"1d"`. The memory becomes eligible for review when all applicable lifetimes have elapsed. Upvotes do not stack or shorten a longer lifetime.
+
+### databaseUrlCommand
+
+A command that supplies the database connection string.

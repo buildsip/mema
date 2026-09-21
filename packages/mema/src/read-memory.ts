@@ -48,5 +48,5 @@ export async function readMemory({
     label: `frontmatter ${path}`,
     path: ["frontmatter"],
   });
-  return { path, project, stamp, frontmatter, body: parsed.body };
+  return { path, project, repo, stamp, frontmatter, body: parsed.body };
 }
