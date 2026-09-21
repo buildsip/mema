@@ -24,25 +24,7 @@ importers:
         specifier: 5.9.2
         version: 5.9.2
 
-  packages/file-utils:
-    devDependencies:
-      '@repo/typescript-config':
-        specifier: workspace:*
-        version: link:../typescript-config
-      '@types/node':
-        specifier: ^25.9.1
-        version: 25.9.6
-      oxfmt:
-        specifier: ^0.50.0
-        version: 0.50.0
-      typescript:
-        specifier: 5.9.2
-        version: 5.9.2
-      vitest:
-        specifier: ^4.0.18
-        version: 4.1.11(@types/node@25.9.6)(vite@8.3.0(@types/node@25.9.6)(esbuild@0.28.2)(tsx@4.23.13)(yaml@2.9.1))
-
-  packages/mema:
+  packages/cli:
     dependencies:
       '@clack/prompts':
         specifier: ^1.5.1
@@ -111,6 +93,24 @@ importers:
       oxlint:
         specifier: ^1.65.0
         version: 1.82.0
+      typescript:
+        specifier: 5.9.2
+        version: 5.9.2
+      vitest:
+        specifier: ^4.0.18
+        version: 4.1.11(@types/node@25.9.6)(vite@8.3.0(@types/node@25.9.6)(esbuild@0.28.2)(tsx@4.23.13)(yaml@2.9.1))
+
+  packages/file-utils:
+    devDependencies:
+      '@repo/typescript-config':
+        specifier: workspace:*
+        version: link:../typescript-config
+      '@types/node':
+        specifier: ^25.9.1
+        version: 25.9.6
+      oxfmt:
+        specifier: ^0.50.0
+        version: 0.50.0
       typescript:
         specifier: 5.9.2
         version: 5.9.2

@@ -18,6 +18,6 @@ function run(command, args, cwd) {
   }
 }
 
-run("pnpm", ["version", bump, "--message", "chore: release mema@%s"], "packages/mema");
+run("pnpm", ["version", bump, "--message", "chore: release mema@%s"], "packages/cli");
 run("git", ["push"]);
 run("git", ["push", "--follow-tags"]);

@@ -4,7 +4,7 @@
   "private": true,
   "description": "mema development workspace",
   "keywords": [],
-  "license": "UNLICENSED",
+  "license": "Apache-2.0",
   "author": "",
   "type": "module",
   "main": "index.js",
@@ -13,9 +13,9 @@
     "lint": "oxlint --report-unused-disable-directives",
     "lint:fix": "oxlint --fix --fix-suggestions",
     "format": "oxfmt --write \"**/*.{ts,tsx,md}\"",
-    "test": "pnpm --filter @buildsip/file-utils test && pnpm --filter ./packages/mema test",
+    "test": "pnpm --filter @buildsip/file-utils test && pnpm --filter ./packages/cli test",
     "typecheck": "pnpm -r --parallel typecheck",
-    "build": "pnpm --filter ./packages/mema build"
+    "build": "pnpm --filter ./packages/cli build"
   },
   "devDependencies": {
     "@types/node": "^25.9.1",
