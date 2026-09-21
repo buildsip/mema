@@ -81,7 +81,7 @@ acme-memories/                            # separate Git repo, organization memo
 Upvotes and pruning prevent your memories from getting stale:
 
 - **Upvotes**: When a memory helps solve a task, it gets upvoted (by you or the agent). Each upvote extends its lifespan.
-- **Pruning**: Unused memories expire over time if they're not upvoted, so your agent doesn't act on outdated context.
+- **Pruning**: When you ask to prune, the agent reviews expired memories and suggests updates or deletions.
 
 The database stores the upvote events.
 

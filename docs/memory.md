@@ -36,6 +36,7 @@ Frontmatter fields act as searchable tags.
 ```bash
 ---
 id: 7fe24e91-4808-4f80-bc39-5d86f7a74be0          # DO NOT CHANGE
+created: 2026-09-19                               # DO NOT CHANGE
 title: Axios retry duplication after reconnect
 scope:
   - apps        # Includes every app beneath this directory
@@ -52,6 +53,10 @@ Content
 #### id
 
 Required. Stable identifier for this memory. Don't change it. Used to track the memory across renames, and for upvotes when those are enabled.
+
+#### created
+
+Required. UTC calendar date when the memory was inserted (`YYYY-MM-DD`). Don't change it. Pruning uses this date for the unvoted lifetime.
 
 #### title
 
@@ -94,6 +99,7 @@ Example:
 ```bash
 ---
 id: 7fe24e91-4808-4f80-bc39-5d86f7a74be0
+created: 2026-09-19
 title: Axios retry duplication after reconnect
 
 anchors:

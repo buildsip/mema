@@ -1,7 +1,7 @@
 # Database migrations
 
 Mema uses Drizzle ORM with `pg`. PostgreSQL is optional and stores upvote events, not memory
-content. Database setup is implemented; upvote and pruning CLI/MCP operations are not yet exposed.
+content. [`upvote`](./cli/upvote.md), pruning-enabled [`update`](./cli/update.md), and [`prune`](./cli/prune.md) use this ledger. Runtime operations do not apply migrations.
 
 Before opening a connection, Mema converts the legacy `sslmode` values `prefer`, `require`, and
 `verify-ca` to `verify-full`. This preserves pg's current certificate and hostname verification

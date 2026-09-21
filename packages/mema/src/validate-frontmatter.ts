@@ -35,7 +35,7 @@ export function validateFrontmatter({
   });
   const custom = Object.fromEntries(
     Object.entries(frontmatter).filter(
-      ([key]) => !["id", "title", "scope", "doNotEdit", "doNotDelete"].includes(key),
+      ([key]) => !["id", "created", "title", "scope", "doNotEdit", "doNotDelete"].includes(key),
     ),
   );
   const schema = config.frontmatter?.custom;

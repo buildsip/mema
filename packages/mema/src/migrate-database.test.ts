@@ -1,52 +1,28 @@
+import { startDatabase } from "./test/start-database";
 import { randomUUID } from "node:crypto";
 import { cp, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
-import { createServer } from "node:net";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { readMigrationFiles } from "drizzle-orm/migrator";
-import EmbeddedPostgres from "embedded-postgres";
 import { Client } from "pg";
 import { afterAll, beforeAll, beforeEach, expect, it } from "vitest";
 import { migrateDatabase } from "./migrate-database";
 import { upvotes } from "./upvotes";
 
 let temp: string;
-let server: EmbeddedPostgres;
+let close: (() => Promise<void>) | undefined;
 let client: Client;
 let url: string;
 const migrationsFolder = fileURLToPath(new URL("../dist/migrations", import.meta.url));
 
 beforeAll(async () => {
   temp = await mkdtemp(join(tmpdir(), "mema-postgres-"));
-  // Let the OS choose a local port so this suite can run alongside other PostgreSQL instances.
-  const listener = createServer();
-  await new Promise<void>((resolve, reject) => {
-    listener.once("error", reject);
-    listener.listen(0, "127.0.0.1", resolve);
-  });
-  const address = listener.address();
-  if (!address || typeof address === "string") throw new Error("Expected a TCP test port.");
-  const port = address.port;
-  await new Promise<void>((resolve, reject) =>
-    listener.close((error) => (error ? reject(error) : resolve())),
-  );
-  server = new EmbeddedPostgres({
-    databaseDir: join(temp, "data"),
-    user: "postgres",
-    password: "test-only",
-    port,
-    persistent: false,
-    postgresFlags: ["-c", "listen_addresses=127.0.0.1", "-c", `unix_socket_directories=${temp}`],
-    onLog: () => {},
-    onError: () => {},
-  });
-  await server.initialise();
-  await server.start();
-  url = `postgresql://postgres:test-only@127.0.0.1:${port}/postgres`;
-  client = new Client({ connectionString: url });
-  await client.connect();
+  const database = await startDatabase(temp);
+  client = database.client;
+  url = database.url;
+  close = database.close;
 }, 30_000);
 
 beforeEach(async () => {
@@ -54,8 +30,7 @@ beforeEach(async () => {
 });
 
 afterAll(async () => {
-  await client?.end();
-  await server?.stop();
+  await close?.();
   if (temp) await rm(temp, { recursive: true, force: true });
 }, 30_000);
 

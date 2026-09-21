@@ -2,7 +2,7 @@ import { z } from "zod";
 import { frontmatterSchema } from "./frontmatter-schema";
 import { scopeSchema } from "./scope-schema";
 
-/** New memories need their content and scope; the command generates their stable ID. */
+/** New memories need their content and scope; the command generates id and created. */
 export const insertSchema = z.strictObject(
   {
     body: z
@@ -12,10 +12,14 @@ export const insertSchema = z.strictObject(
       .describe("Markdown content for the memory."),
     frontmatter: frontmatterSchema
       .extend({ scope: scopeSchema })
-      // Custom fields are allowed, but caller IDs must not pass through as custom metadata.
+      // Custom fields are allowed, but generated fields must not pass through as metadata.
       .refine((value) => !Object.hasOwn(value, "id"), {
         path: ["id"],
-        message: "Omit id. Update preserves the stored ID.",
+        message: "Omit id. Insert generates it; update preserves the stored ID.",
+      })
+      .refine((value) => !Object.hasOwn(value, "created"), {
+        path: ["created"],
+        message: "Omit created. Insert writes the UTC calendar date; update preserves it.",
       }),
   },
   {

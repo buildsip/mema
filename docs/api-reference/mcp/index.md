@@ -4,21 +4,23 @@ The `mema` MCP server exposes memory commands over stdio. See [installation](./i
 
 ## Tools
 
-| Tool | Description |
-| --- | --- |
-| [`insert-memory`](./insert-memory.md) | Create one memory. |
-| [`update-memory`](./update-memory.md) | Patch an existing memory. |
-| [`search-memories`](./search-memories.md) | Search saved memories. |
-| [`delete-memories`](./delete-memories.md) | Delete memories and attachments. |
+| Tool                                      | Description                                 |
+| ----------------------------------------- | ------------------------------------------- |
+| [`insert-memory`](./insert-memory.md)     | Create one memory.                          |
+| [`update-memory`](./update-memory.md)     | Patch an existing memory.                   |
+| [`search-memories`](./search-memories.md) | Search saved memories.                      |
+| [`delete-memories`](./delete-memories.md) | Delete memories and attachments.            |
+| [`upvote-memories`](./upvote-memories.md) | Record a batch of human or agent upvotes.   |
+| [`prune-memories`](./prune-memories.md)   | List expired memory directories for review. |
 
 ## Shared parameters
 
 Every tool requires these fields:
 
-| Parameter | Type | Description |
-| --- | --- | --- |
-| `roots` | `string[]` | Absolute paths of every workspace folder, including shared memory repositories. Must contain at least one directory. |
-| `repo` | `string` | Absolute Git root of the active project, inside one of `roots`. Package directories are rejected. |
+| Parameter | Type       | Description                                                                                                          |
+| --------- | ---------- | -------------------------------------------------------------------------------------------------------------------- |
+| `roots`   | `string[]` | Absolute paths of every workspace folder, including shared memory repositories. Must contain at least one directory. |
+| `repo`    | `string`   | Absolute Git root of the active project, inside one of `roots`. Package directories are rejected.                    |
 
 ```json
 {
@@ -48,7 +50,7 @@ Success returns the same JSON as the corresponding CLI command in the first text
 
 The server stays available after tool errors. Its initialize response reports the running package version.
 
-After either write tool returns, the agent may add attachments beside `memory.md` in the returned directory when useful. Attachments are supporting files, such as images or long documents, and are not searchable. The success response includes this guidance.
+After insert or update returns, the agent may add attachments beside `memory.md` in the returned directory when useful. Attachments are supporting files, such as images or long documents, and are not searchable. The success response includes this guidance.
 
 ### Categorization guidance
 

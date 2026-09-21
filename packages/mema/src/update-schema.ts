@@ -14,6 +14,10 @@ export const updateSchema = z.strictObject(
         path: ["id"],
         message: "Omit id. Insert generates it; update preserves the stored ID.",
       })
+      .refine((value) => !Object.hasOwn(value, "created"), {
+        path: ["created"],
+        message: "Omit created. Insert writes the UTC calendar date; update preserves it.",
+      })
       .optional(),
   },
   {

@@ -75,10 +75,10 @@ async function call({ name, args = {} }: { name: string; args?: Record<string, u
 }
 
 describe("MCP stdio server", () => {
-  it("advertises exactly four tools, field descriptions, required fields, and the package version", async () => {
+  it("advertises exactly six tools, field descriptions, required fields, and the package version", async () => {
     const client = await connect();
     const pkg = JSON.parse(await readFile(new URL("../package.json", import.meta.url), "utf8"));
-    expect(pkg.bin).toEqual({ "mema": "./dist/index.js" });
+    expect(pkg.bin).toEqual({ mema: "./dist/index.js" });
     expect(client.getServerVersion()).toEqual({ name: "mema", version: pkg.version });
     const { tools } = await client.listTools();
     expect(tools.map((tool) => tool.name)).toEqual([
@@ -86,6 +86,8 @@ describe("MCP stdio server", () => {
       "update-memory",
       "search-memories",
       "delete-memories",
+      "upvote-memories",
+      "prune-memories",
     ]);
     for (const tool of tools) {
       expect(tool.inputSchema.required).toEqual(expect.arrayContaining(["roots", "repo"]));
@@ -304,7 +306,7 @@ describe("MCP stdio server", () => {
   it("warns without breaking the protocol when no agents are installed", async () => {
     await rm(join(home, ".cursor"), { recursive: true });
     const client = await connect();
-    expect((await client.listTools()).tools).toHaveLength(4);
+    expect((await client.listTools()).tools).toHaveLength(6);
     expect(stderr).toContain("No installed agents were detected");
     expect(stderr).toContain("api-reference/mcp/installation.md");
   });
@@ -318,7 +320,7 @@ describe("automatic MCP installation", () => {
     for (const args of [["--help"], ["--version"], ["init", "--help"]]) {
       await writeFile(
         config,
-        JSON.stringify({ mcpServers: { other, "mema": { command: "old-mem", args: ["old"] } } }),
+        JSON.stringify({ mcpServers: { other, mema: { command: "old-mem", args: ["old"] } } }),
       );
       const result = spawnSync(process.execPath, [cli, ...args], {
         cwd: repo,
@@ -335,7 +337,7 @@ describe("automatic MCP installation", () => {
         expect(result.stdout).not.toContain("Memory MCP tools added to:");
       }
       const next = JSON.parse(await readFile(config, "utf8"));
-      expect(next.mcpServers).toEqual({ other, "mema": { command: "mema", args: ["mcp"] } });
+      expect(next.mcpServers).toEqual({ other, mema: { command: "mema", args: ["mcp"] } });
     }
     const settings = JSON.parse(await readFile(join(home, ".claude/settings.json"), "utf8"));
     expect(settings.permissions.allow).toEqual([
@@ -343,6 +345,8 @@ describe("automatic MCP installation", () => {
       "mcp__mema__update-memory",
       "mcp__mema__search-memories",
       "mcp__mema__delete-memories",
+      "mcp__mema__upvote-memories",
+      "mcp__mema__prune-memories",
     ]);
     expect(existsSync(join(repo, ".cursor"))).toBe(false);
   });

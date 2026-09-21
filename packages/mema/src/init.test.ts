@@ -170,7 +170,12 @@ describe("mema init", () => {
     expect(JSON.parse(readFileSync(join(memories, NAMES.CONFIG_JSON), "utf8"))).toEqual({
       version: 1,
       availableToWorkspace: false,
-      prune: false,
+      prune: {
+        unvotedTtl: "90d",
+        humanUpvoteTtl: "180d",
+        agentUpvoteTtl: "90d",
+        databaseUrlCommand: dbCommand,
+      },
     });
     expect(readdirSync(memories)).toEqual([NAMES.CONFIG_JSON]);
     expect(existsSync(join(web, NAMES.MEMORIES))).toBe(false);
@@ -186,7 +191,9 @@ describe("mema init", () => {
     ).toBe(false);
     expect(confirm).toHaveBeenCalledTimes(5);
     expect(outro).toHaveBeenCalledWith("mema initialized.");
-    expect(log.info).not.toHaveBeenCalled();
+    expect(getDatabaseUrl).toHaveBeenCalledExactlyOnceWith({ repo: root, command: dbCommand });
+    expect(migrateDatabase).toHaveBeenCalledOnce();
+    expect(log.info).toHaveBeenCalledExactlyOnceWith("Applied 1 database migration(s).");
   });
 
   it.each(["", "src"])("initializes the repo first from a nested package's %j", async (subdir) => {
@@ -195,7 +202,12 @@ describe("mema init", () => {
       {
         version: 1,
         availableToWorkspace: false,
-        prune: false,
+        prune: {
+          unvotedTtl: "90d",
+          humanUpvoteTtl: "180d",
+          agentUpvoteTtl: "90d",
+          databaseUrlCommand: dbCommand,
+        },
       },
     );
     expect(existsSync(join(web, NAMES.MEMORIES))).toBe(false);
@@ -219,11 +231,8 @@ describe("mema init", () => {
       await init({ cwd: join(web, subdir), cliRoot });
       expect(
         JSON.parse(readFileSync(join(web, NAMES.MEMORIES, NAMES.CONFIG_JSON), "utf8")),
-      ).toEqual({
-        version: 1,
-        prune: false,
-      });
-      expect(confirm).toHaveBeenCalledTimes(2);
+      ).toEqual({ version: 1 });
+      expect(confirm).toHaveBeenCalledTimes(1);
       expect(
         vi.mocked(confirm).mock.calls.some(([options]) => options.message.includes("workspace")),
       ).toBe(false);
@@ -245,16 +254,15 @@ describe("mema init", () => {
     expect(readFileSync(path, "utf8")).toBe(source);
     expect(JSON.parse(readFileSync(join(web, NAMES.MEMORIES, NAMES.CONFIG_JSON), "utf8"))).toEqual({
       version: 1,
-      prune: false,
     });
-    expect(confirm).toHaveBeenCalledTimes(2);
+    expect(confirm).toHaveBeenCalledTimes(1);
     expect(outro).toHaveBeenLastCalledWith("mema initialized.");
   });
 
   it("preserves an existing package config while completing first-time repo setup", async () => {
     mkdirSync(join(web, NAMES.MEMORIES, NAMES.DATA), { recursive: true });
     const path = join(web, NAMES.MEMORIES, NAMES.CONFIG_JSON);
-    const source = '{"prune":{"ttl":"120d"}}';
+    const source = '{"prune":{"unvotedTtl":"120d"}}';
     writeFileSync(path, source);
     writeFileSync(join(web, NAMES.MEMORIES, NAMES.DATA, "keep.txt"), "keep");
     await init({ cwd: web, cliRoot });
@@ -264,7 +272,12 @@ describe("mema init", () => {
       {
         version: 1,
         availableToWorkspace: false,
-        prune: false,
+        prune: {
+          unvotedTtl: "90d",
+          humanUpvoteTtl: "180d",
+          agentUpvoteTtl: "90d",
+          databaseUrlCommand: dbCommand,
+        },
       },
     );
     expect(confirm).toHaveBeenCalledTimes(5);
@@ -274,7 +287,7 @@ describe("mema init", () => {
     existing({});
     mkdirSync(join(web, NAMES.MEMORIES));
     const path = join(web, NAMES.MEMORIES, NAMES.CONFIG_JSON);
-    const source = '{"prune":false}';
+    const source = "{}";
     writeFileSync(path, source);
     await init({ cwd: join(web, "src"), cliRoot });
     expect(confirm).toHaveBeenCalledExactlyOnceWith({
@@ -348,17 +361,20 @@ describe("mema init", () => {
     expect(outro).toHaveBeenCalledWith("mema unchanged.");
   });
 
-  it("replaces the command while preserving custom settings, durations, and memories", async () => {
+  it.each([
+    false,
+    {
+      unvotedTtl: "120d",
+      humanUpvoteTtl: "200d",
+      agentUpvoteTtl: "100d",
+      databaseUrlCommand: "secrets read",
+    },
+  ])("resets setup defaults while preserving custom schemas and memories (%j)", async (prune) => {
     const value = {
       version: 1,
       availableToWorkspace: true,
       frontmatter: { custom: { properties: { ticket: { type: "string" } } } },
-      prune: {
-        ttl: "120d",
-        humanUpvoteAdds: "200d",
-        agentUpvoteAdds: "100d",
-        databaseUrlCommand: "secrets read",
-      },
+      prune,
     };
     existing(value);
     mkdirSync(join(root, NAMES.MEMORIES, NAMES.DATA));
@@ -366,10 +382,20 @@ describe("mema init", () => {
     vi.mocked(confirm).mockResolvedValueOnce(true);
     await init({ cwd: root, cliRoot });
     expect(JSON.parse(readFileSync(join(root, NAMES.MEMORIES, NAMES.CONFIG_JSON), "utf8"))).toEqual(
-      { ...value, prune: { ...value.prune, databaseUrlCommand: dbCommand } },
+      {
+        version: 1,
+        availableToWorkspace: false,
+        frontmatter: value.frontmatter,
+        prune: {
+          unvotedTtl: "90d",
+          humanUpvoteTtl: "180d",
+          agentUpvoteTtl: "90d",
+          databaseUrlCommand: dbCommand,
+        },
+      },
     );
     expect(readFileSync(join(root, NAMES.MEMORIES, NAMES.DATA, "keep.txt"), "utf8")).toBe("keep");
-    expect(vi.mocked(confirm).mock.calls[1]?.[0].initialValue).toBe(true);
+    expect(vi.mocked(confirm).mock.calls[1]?.[0].initialValue).toBe(false);
     expect(vi.mocked(confirm).mock.calls[2]?.[0].initialValue).toBe(true);
   });
 
@@ -377,13 +403,12 @@ describe("mema init", () => {
     existing({
       availableToWorkspace: true,
       frontmatter: { custom: { properties: { ticket: { type: "string" } } } },
-      prune: { ttl: "120d" },
+      prune: { unvotedTtl: "120d" },
     });
     vi.mocked(confirm).mockResolvedValueOnce(false).mockResolvedValueOnce(false);
     await init({ cwd: web, cliRoot });
     expect(JSON.parse(readFileSync(join(web, NAMES.MEMORIES, NAMES.CONFIG_JSON), "utf8"))).toEqual({
       version: 1,
-      prune: false,
     });
     expect(vi.mocked(confirm).mock.calls[0]?.[0].initialValue).toBe(true);
   });
@@ -451,9 +476,9 @@ describe("mema init", () => {
       await init({ cwd: root, cliRoot });
       const value = JSON.parse(readFileSync(join(root, NAMES.MEMORIES, NAMES.CONFIG_JSON), "utf8"));
       expect(value.prune).toEqual({
-        ttl: "90d",
-        humanUpvoteAdds: "180d",
-        agentUpvoteAdds: "90d",
+        unvotedTtl: "90d",
+        humanUpvoteTtl: "180d",
+        agentUpvoteTtl: "90d",
         databaseUrlCommand: dbCommand,
       });
       expect(getDatabaseUrl).toHaveBeenCalledWith({ repo: root, command: dbCommand });
@@ -477,6 +502,7 @@ describe("mema init", () => {
   );
 
   it("does not resolve credentials or migrate when pruning is disabled", async () => {
+    vi.mocked(confirm).mockResolvedValueOnce(false).mockResolvedValueOnce(false);
     await init({ cwd: root, cliRoot });
     expect(getDatabaseUrl).not.toHaveBeenCalled();
     expect(migrateDatabase).not.toHaveBeenCalled();
@@ -513,39 +539,38 @@ describe("mema init", () => {
     expect(getDatabaseUrl).toHaveBeenCalledExactlyOnceWith({ repo: root, command: dbCommand });
   });
 
-  it("requires fresh input during package setup even when the root has a command", async () => {
-    const settings = { prune: { ttl: "120d", databaseUrlCommand: "root-command" } };
+  it("inherits pruning during package setup without prompting, connecting, or migrating", async () => {
+    const settings = { prune: { unvotedTtl: "120d", databaseUrlCommand: "root-command" } };
     existing(settings);
     await init({ cwd: web, cliRoot });
-    expect(text).toHaveBeenCalledOnce();
-    expect(getDatabaseUrl).toHaveBeenCalledExactlyOnceWith({ repo: root, command: dbCommand });
-    const value = JSON.parse(readFileSync(join(web, NAMES.MEMORIES, NAMES.CONFIG_JSON), "utf8"));
-    expect(value.prune).toEqual({
-      ttl: "120d",
-      humanUpvoteAdds: "180d",
-      agentUpvoteAdds: "90d",
-      databaseUrlCommand: dbCommand,
+    expect(text).not.toHaveBeenCalled();
+    expect(getDatabaseUrl).not.toHaveBeenCalled();
+    expect(migrateDatabase).not.toHaveBeenCalled();
+    expect(JSON.parse(readFileSync(join(web, NAMES.MEMORIES, NAMES.CONFIG_JSON), "utf8"))).toEqual({
+      version: 1,
     });
     expect(JSON.parse(readFileSync(join(root, NAMES.MEMORIES, NAMES.CONFIG_JSON), "utf8"))).toEqual(
       settings,
     );
+    expect(
+      vi.mocked(confirm).mock.calls.some(([options]) => options.message === "Enable pruning?"),
+    ).toBe(false);
   });
 
-  it("replaces a package's own saved command on reconfiguration", async () => {
-    existing({ prune: false });
-    mkdirSync(join(web, NAMES.MEMORIES));
-    writeFileSync(
-      join(web, NAMES.MEMORIES, NAMES.CONFIG_JSON),
-      JSON.stringify({ prune: { databaseUrlCommand: "package-command" } }),
-    );
-    vi.mocked(confirm).mockResolvedValueOnce(true);
-    await init({ cwd: web, cliRoot });
-    expect(getDatabaseUrl).toHaveBeenCalledExactlyOnceWith({ repo: root, command: dbCommand });
-    expect(
-      JSON.parse(readFileSync(join(web, NAMES.MEMORIES, NAMES.CONFIG_JSON), "utf8")).prune
-        .databaseUrlCommand,
-    ).toBe(dbCommand);
-  });
+  it.each([false, {}, { databaseUrlCommand: "package-command" }])(
+    "rejects package pruning %j before setup",
+    async (prune) => {
+      existing({ prune: false });
+      mkdirSync(join(web, NAMES.MEMORIES));
+      const path = join(web, NAMES.MEMORIES, NAMES.CONFIG_JSON);
+      const source = JSON.stringify({ prune });
+      writeFileSync(path, source);
+      await expect(init({ cwd: web, cliRoot })).rejects.toThrow("Remove prune");
+      expect(readFileSync(path, "utf8")).toBe(source);
+      expect(confirm).not.toHaveBeenCalled();
+      expect(getDatabaseUrl).not.toHaveBeenCalled();
+    },
+  );
 
   it("disables pruning without running the saved database command", async () => {
     existing({ prune: { databaseUrlCommand: "old-command" } });
@@ -561,35 +586,14 @@ describe("mema init", () => {
     expect(text).not.toHaveBeenCalled();
   });
 
-  it("stores a package command without enabling pruning at the root", async () => {
-    const settings = {
-      version: 1,
-      availableToWorkspace: true,
-      prune: false,
-      frontmatter: { custom: {} },
-    };
-    existing(settings);
-    vi.mocked(confirm).mockResolvedValueOnce(true);
-    await init({ cwd: web, cliRoot });
-    expect(JSON.parse(readFileSync(join(root, NAMES.MEMORIES, NAMES.CONFIG_JSON), "utf8"))).toEqual(
-      settings,
-    );
-    expect(
-      JSON.parse(readFileSync(join(web, NAMES.MEMORIES, NAMES.CONFIG_JSON), "utf8")).prune
-        .databaseUrlCommand,
-    ).toBe(dbCommand);
-    expect(getDatabaseUrl).toHaveBeenCalledWith({ repo: root, command: dbCommand });
-  });
-
-  it("leaves root and package configuration untouched if migration fails", async () => {
+  it("leaves package pruning disabled when the root disables it", async () => {
     existing({ prune: false });
-    const path = join(root, NAMES.MEMORIES, NAMES.CONFIG_JSON);
-    const before = readFileSync(path, "utf8");
-    vi.mocked(confirm).mockResolvedValueOnce(true);
-    vi.mocked(migrateDatabase).mockRejectedValue(new Error("Database setup failed."));
-    await expect(init({ cwd: web, cliRoot })).rejects.toThrow("Database setup failed");
-    expect(readFileSync(path, "utf8")).toBe(before);
-    expect(existsSync(join(web, NAMES.MEMORIES))).toBe(false);
+    await init({ cwd: web, cliRoot });
+    expect(JSON.parse(readFileSync(join(web, NAMES.MEMORIES, NAMES.CONFIG_JSON), "utf8"))).toEqual({
+      version: 1,
+    });
+    expect(getDatabaseUrl).not.toHaveBeenCalled();
+    expect(migrateDatabase).not.toHaveBeenCalled();
   });
 
   it("asks again after invalid output and saves only the successful command", async () => {
@@ -617,7 +621,8 @@ describe("mema init", () => {
     vi.mocked(text)
       .mockResolvedValueOnce("wrong-command")
       .mockResolvedValueOnce(cancelled as symbol);
-    await expect(init({ cwd: web, cliRoot })).rejects.toThrow("cancelled");
+    vi.mocked(confirm).mockResolvedValueOnce(true);
+    await expect(init({ cwd: root, cliRoot })).rejects.toThrow("cancelled");
     expect(getDatabaseUrl).toHaveBeenCalledExactlyOnceWith({
       repo: root,
       command: "wrong-command",
@@ -625,34 +630,6 @@ describe("mema init", () => {
     expect(readFileSync(path, "utf8")).toBe(before);
     expect(migrateDatabase).not.toHaveBeenCalled();
     expect(existsSync(join(web, NAMES.MEMORIES))).toBe(false);
-  });
-
-  it("leaves root edits during package setup unchanged", async () => {
-    existing({ prune: false });
-    const path = join(root, NAMES.MEMORIES, NAMES.CONFIG_JSON);
-    const updated = '{"prune":false,"availableToWorkspace":true}';
-    vi.mocked(confirm).mockImplementationOnce(async () => {
-      writeFileSync(path, updated);
-      return true;
-    });
-    await init({ cwd: web, cliRoot });
-    expect(readFileSync(path, "utf8")).toBe(updated);
-    expect(
-      JSON.parse(readFileSync(join(web, NAMES.MEMORIES, NAMES.CONFIG_JSON), "utf8")).prune
-        .databaseUrlCommand,
-    ).toBe(dbCommand);
-  });
-
-  it("cancels package credential input without saving or using the inherited command", async () => {
-    existing({ prune: { databaseUrlCommand: "old-command" } });
-    const path = join(root, NAMES.MEMORIES, NAMES.CONFIG_JSON);
-    const before = readFileSync(path, "utf8");
-    vi.mocked(text).mockResolvedValueOnce(cancelled as symbol);
-    await expect(init({ cwd: web, cliRoot })).rejects.toThrow("cancelled");
-    expect(readFileSync(path, "utf8")).toBe(before);
-    expect(existsSync(join(web, NAMES.MEMORIES))).toBe(false);
-    expect(getDatabaseUrl).not.toHaveBeenCalled();
-    expect(migrateDatabase).not.toHaveBeenCalled();
   });
 
   it("leaves the saved command untouched when database setup fails", async () => {
@@ -1022,7 +999,7 @@ describe("mema init", () => {
         [...args, "mema@0.2.0"],
         expect.objectContaining({ cwd: web }),
       );
-      expect(vi.mocked(confirm).mock.calls[2]?.[0].message).toContain("0.1.0 to 0.2.0");
+      expect(vi.mocked(confirm).mock.calls[1]?.[0].message).toContain("0.1.0 to 0.2.0");
     },
   );
 
@@ -1094,12 +1071,15 @@ describe("mema init", () => {
   it("preserves config changed while the prompts were open", async () => {
     existing({ prune: false });
     vi.mocked(confirm).mockImplementationOnce(async () => {
-      writeFileSync(join(root, NAMES.MEMORIES, NAMES.CONFIG_JSON), '{"prune":{"ttl":"500d"}}');
+      writeFileSync(
+        join(root, NAMES.MEMORIES, NAMES.CONFIG_JSON),
+        '{"prune":{"unvotedTtl":"500d"}}',
+      );
       return true;
     });
     await expect(init({ cwd: root, cliRoot })).rejects.toThrow("Settings changed");
     expect(readFileSync(join(root, NAMES.MEMORIES, NAMES.CONFIG_JSON), "utf8")).toBe(
-      '{"prune":{"ttl":"500d"}}',
+      '{"prune":{"unvotedTtl":"500d"}}',
     );
   });
 

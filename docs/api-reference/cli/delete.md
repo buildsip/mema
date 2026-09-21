@@ -12,15 +12,15 @@ The whole selection is validated before anything is deleted.
 
 ## Reference
 
-| Options | Description |
-| --- | --- |
-| [`--roots <path...>`](./index.md#--roots) | Workspace directories. Required. |
-| [`--repo <path>`](./index.md#--repo) | Git root. Required. |
-| `--path <path...>` | Memory directories containing `memory.md`. Repeatable. Required. |
+| Options                                   | Description                                                      |
+| ----------------------------------------- | ---------------------------------------------------------------- |
+| [`--roots <path...>`](./index.md#--roots) | Workspace directories. Required.                                 |
+| [`--repo <path>`](./index.md#--repo)      | Git root. Required.                                              |
+| `--path <path...>`                        | Memory directories containing `memory.md`. Repeatable. Required. |
 
 Relative paths resolve from the CLI working directory. Duplicate paths are ignored.
 
-Each path must be a memory in `--repo`. Paths in another workspace repo are rejected.
+Paths may span the active repo and other workspace repos visible to [`search`](./search.md). Other repos must set `availableToWorkspace: true` in their root config. Private sibling repos and paths outside discovered stores are rejected. Delete does not require pruning or access the database.
 
 [`doNotDelete`](../memory/doNotDelete.md) rejects the whole batch. [`doNotEdit`](../memory/doNotEdit.md) does not.
 

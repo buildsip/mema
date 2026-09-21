@@ -1,6 +1,7 @@
 import type { Command } from "commander";
 import { randomUUID } from "node:crypto";
 import type { z } from "zod";
+import { formatCreated } from "../created-date";
 import { insertSchema } from "../insert-schema";
 import { parseValue } from "../parse-value";
 import { placeMemory } from "../place-memory";
@@ -8,7 +9,7 @@ import { readJsonInput } from "../read-json-input";
 import { resolveRepo } from "../resolve-repo";
 import { saveMemory } from "../save-memory";
 
-/** Creates one memory with a generated ID and returns its saved directory path in an array. */
+/** Creates one memory with a generated ID and created date; returns its directory path. */
 export async function insert({
   roots,
   repo,
@@ -25,7 +26,15 @@ export async function insert({
   });
   const workspace = await resolveRepo({ roots, repo });
   const { project, scope } = await placeMemory({ repo: workspace.repo, scope: input.scope });
-  const frontmatter = { ...input, id: randomUUID(), title: input.title.trim(), scope };
+  // id and created go first so YAML lists them above caller fields. Callers cannot
+  // supply either key; insertSchema rejects them before this merge.
+  const frontmatter = {
+    id: randomUUID(),
+    created: formatCreated(Date.now()),
+    ...input,
+    title: input.title.trim(),
+    scope,
+  };
   // A missing scope in the stored file means the owning store supplies the whole scope.
   if (scope === undefined) delete frontmatter.scope;
   return saveMemory({

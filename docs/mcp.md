@@ -1,6 +1,6 @@
 # MCP Tools
 
-The MCP gives your agent four ways to work with memories.
+The MCP gives your agent six ways to work with memories.
 
 ### `insert-memory`
 
@@ -15,6 +15,8 @@ Memories about one package live with that package; repository-wide memories live
 Updates an existing memory.
 
 Changing scope can move the memory to another package or the repo root. Every update also repairs the memory folder's name to match the title, even if the title did not change.
+
+When pruning is enabled, every successful update also records an agent upvote.
 
 Updates respect `doNotEdit` and refuse to overwrite another folder or move a folder containing other memories.
 
@@ -51,4 +53,12 @@ More advanced search becomes useful when a system stores much larger amounts of 
 
 ### `delete-memories`
 
-Deletes memories. Respects `doNotDelete`.
+Deletes memories and attachments across the active repo and available workspace repos. Respects `doNotDelete`.
+
+### `upvote-memories`
+
+Upvotes useful memories. User-requested upvotes are recorded as `human`; memories that help the agent produce a reply receive `agent` upvotes. Memories in repositories with pruning enabled receive upvotes; the rest are reported as skipped because pruning is disabled.
+
+### `prune-memories`
+
+Called when you ask to prune. Lists expired memories across the active repo and available workspace repos, excluding protected memories and repos with pruning disabled. The agent reviews the candidates against the code before suggesting changes. The tool itself never deletes anything.

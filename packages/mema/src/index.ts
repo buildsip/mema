@@ -7,6 +7,8 @@ import { fileURLToPath } from "node:url";
 import { cancel, log } from "@clack/prompts";
 import { Command } from "commander";
 import { registerDeleteCommand } from "./commands/delete-memories";
+import { registerUpvoteCommand } from "./commands/upvote";
+import { registerPruneCommand } from "./commands/prune";
 import { registerInitCommand } from "./commands/init";
 import { registerSearchCommand } from "./commands/search";
 import { registerInsertCommand } from "./commands/insert";
@@ -28,6 +30,8 @@ registerSearchCommand({ program });
 registerInsertCommand({ program });
 registerUpdateCommand({ program });
 registerDeleteCommand({ program });
+registerUpvoteCommand({ program });
+registerPruneCommand({ program });
 program
   .command("mcp")
   .description("Serve memory tools over MCP using stdin and stdout.")

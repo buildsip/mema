@@ -24,29 +24,30 @@ Stdout is a one-element JSON array of the saved absolute memory directory path. 
 
 ## Reference
 
-| Options | Description |
-| --- | --- |
+| Options                                   | Description                      |
+| ----------------------------------------- | -------------------------------- |
 | [`--roots <path...>`](./index.md#--roots) | Workspace directories. Required. |
-| [`--repo <path>`](./index.md#--repo) | Git root. Required. |
-| [`--input <file>`](./index.md#--input) | JSON file, or `-` for stdin. |
+| [`--repo <path>`](./index.md#--repo)      | Git root. Required.              |
+| [`--input <file>`](./index.md#--input)    | JSON file, or `-` for stdin.     |
 
 ### Input
 
-| Field | Type | Required |
-| --- | --- | --- |
-| `body` | nonempty string | Yes |
-| `frontmatter` | object | Yes |
+| Field         | Type            | Required |
+| ------------- | --------------- | -------- |
+| `body`        | nonempty string | Yes      |
+| `frontmatter` | object          | Yes      |
 
 Unknown top-level keys are rejected. Put title, scope, protection flags, and custom fields inside `frontmatter`.
 
-| `frontmatter` field | Required |
-| --- | --- |
-| [`title`](../memory/title.md) | Yes |
-| [`scope`](../memory/scope.md) | Yes. Nonempty array. |
-| [`doNotEdit`](../memory/doNotEdit.md) | No |
-| [`doNotDelete`](../memory/doNotDelete.md) | No |
-| [`id`](../memory/id.md) | Omit. Generated on write. |
-| Custom fields | No. Must be declared in [`frontmatter.custom`](../config/frontmatter.md). |
+| `frontmatter` field                       | Required                                                                  |
+| ----------------------------------------- | ------------------------------------------------------------------------- |
+| [`title`](../memory/title.md)             | Yes                                                                       |
+| [`scope`](../memory/scope.md)             | Yes. Nonempty array.                                                      |
+| [`doNotEdit`](../memory/doNotEdit.md)     | No                                                                        |
+| [`doNotDelete`](../memory/doNotDelete.md) | No                                                                        |
+| [`id`](../memory/id.md)                   | Omit. Generated on write.                                                 |
+| [`created`](../memory/created.md)         | Omit. Written on insert.                                                  |
+| Custom fields                             | No. Must be declared in [`frontmatter.custom`](../config/frontmatter.md). |
 
 ## Examples
 

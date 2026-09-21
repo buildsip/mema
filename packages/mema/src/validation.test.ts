@@ -16,6 +16,11 @@ it.each([
     expected: "Omit id",
   },
   {
+    field: "frontmatter.created",
+    input: { created: "2020-01-01" },
+    expected: "Omit created",
+  },
+  {
     field: "frontmatter.scope",
     input: { scope: "apps/web" },
     expected: "Expected a nonempty array of repository-relative",
@@ -92,7 +97,7 @@ it("names unknown top-level keys and explains where memory fields belong", () =>
 it("reports the invalid entry in a stored scope array", () => {
   expect(() =>
     validateFrontmatter({
-      value: { id: "id", title: "Title", scope: ["apps/web", 1] },
+      value: { id: "id", title: "Title", created: "2025-04-01", scope: ["apps/web", 1] },
       config: {},
       path: "/repo/memory.md",
     }),
@@ -104,25 +109,46 @@ it("reports the invalid entry in a stored scope array", () => {
 it.each(["apps/web", "*", []])("rejects stored scope outside the array contract: %j", (scope) => {
   expect(() =>
     validateFrontmatter({
-      value: { id: "id", title: "Title", scope },
+      value: { id: "id", title: "Title", created: "2025-04-01", scope },
       config: {},
       path: "/repo/memory.md",
     }),
   ).toThrow("frontmatter.scope");
 });
 
-it("requires the stored ID while allowing scope to be inherited", () => {
-  const value = { id: "id", title: "Title" };
+it("requires stored id and created while allowing scope to be omitted", () => {
+  const value = { id: "id", title: "Title", created: "2025-04-01" };
   expect(validateFrontmatter({ value, config: {}, path: "/repo/memory.md" })).toEqual(value);
+  expect(
+    validateFrontmatter({
+      value: { id: "id", title: "Title", created: new Date(Date.UTC(2025, 3, 1)) },
+      config: {},
+      path: "/repo/memory.md",
+    }),
+  ).toEqual(value);
   expect(() =>
     validateFrontmatter({ value: { title: "Title" }, config: {}, path: "/repo/memory.md" }),
   ).toThrow("frontmatter.id");
+  expect(() =>
+    validateFrontmatter({
+      value: { id: "id", title: "Title" },
+      config: {},
+      path: "/repo/memory.md",
+    }),
+  ).toThrow("frontmatter.created");
+  expect(() =>
+    validateFrontmatter({
+      value: { id: "id", title: "Title", created: "2026-02-31" },
+      config: {},
+      path: "/repo/memory.md",
+    }),
+  ).toThrow("YYYY-MM-DD");
 });
 
 it("keeps Ajv custom schema validation and reports required fields, array indices, and enum choices", () => {
   expect(() =>
     validateFrontmatter({
-      value: { id: "id", title: "Title", status: "unknown", anchors: [42] },
+      value: { id: "id", title: "Title", created: "2025-04-01", status: "unknown", anchors: [42] },
       path: "/repo/memory.md",
       config: {
         frontmatter: {
@@ -169,6 +195,11 @@ it.each([
     error: "Omit id",
   },
   {
+    value: { frontmatter: { created: "2020-01-01" } },
+    field: "frontmatter.created",
+    error: "Omit created",
+  },
+  {
     value: { frontmatter: { title: null } },
     field: "frontmatter.title",
     error: "Expected a nonempty string",
@@ -200,6 +231,19 @@ it.each(["provided-id", null])("rejects caller-supplied IDs on insert: %s", (id)
       },
     }),
   ).toThrow(/Omit id[^\n]*\n  → at frontmatter.id/);
+});
+
+it.each(["2020-01-01", null])("rejects caller-supplied created dates on insert: %s", (created) => {
+  expect(() =>
+    parseValue({
+      schema: insertSchema,
+      label: "insert input",
+      value: {
+        body: "body",
+        frontmatter: { title: "Title", scope: ["*"], created },
+      },
+    }),
+  ).toThrow(/Omit created[^\n]*\n  → at frontmatter.created/);
 });
 
 it("accepts an empty patch for a folder-name repair", () => {

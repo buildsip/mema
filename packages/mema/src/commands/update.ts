@@ -12,9 +12,11 @@ import { resolveRepo } from "../resolve-repo";
 import { resolveMemoryFile } from "../resolve-memory-file";
 import { saveMemory } from "../save-memory";
 import { updateSchema } from "../update-schema";
+import { readPruneConfig } from "../read-prune-config";
+import { recordUpvotes } from "../record-upvotes";
 
 /**
- * Updates only supplied fields on an existing memory; its stored ID never changes.
+ * Updates only supplied fields on an existing memory; id and created never change.
  * Even a path-only update repairs the title folder and returns its directory path in an array.
  */
 export async function update({
@@ -64,7 +66,12 @@ export async function update({
   const fields = Object.fromEntries(
     Object.entries(input.frontmatter ?? {}).filter(([, value]) => value !== undefined),
   );
-  const frontmatter = { ...existing.frontmatter, ...fields, id: existing.frontmatter.id };
+  const frontmatter = {
+    ...existing.frontmatter,
+    ...fields,
+    id: existing.frontmatter.id,
+    created: existing.frontmatter.created,
+  };
   if (input.frontmatter?.title !== undefined) {
     frontmatter.title = input.frontmatter.title.trim();
   }
@@ -79,13 +86,30 @@ export async function update({
       frontmatter.scope = placement.scope;
     }
   }
-  return saveMemory({
+  const prune = await readPruneConfig(workspace.repo);
+  const saved = await saveMemory({
     repo: workspace.repo,
     project,
     frontmatter,
     body: input.body === undefined ? existing.body : `${input.body.replace(/\s*$/, "")}\n`,
     existing,
   });
+  if (prune) {
+    try {
+      await recordUpvotes({
+        repo: workspace.repo,
+        command: prune.command,
+        ids: [existing.frontmatter.id],
+        actor: "agent",
+      });
+    } catch (error) {
+      // A title/scope change may have moved the file. Give the caller its new retry path.
+      throw new Error(
+        `The memory was saved at ${saved[0]}, but its agent upvote failed. ${error instanceof Error ? error.message : "Check the database and retry."} Retry only the upvote with upvote-memories using the same roots and repo, path ${JSON.stringify(saved)}, and actor "agent" (CLI: mema upvote with the same --roots and --repo, this --path, and --actor agent). The content is already saved, even if this update set doNotEdit.`,
+      );
+    }
+  }
+  return saved;
 }
 
 /** Registers path-based updates with optional body and frontmatter patches. */
