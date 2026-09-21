@@ -97,6 +97,24 @@ Init installs `mema` globally with the launcher that invoked it (`npx` → npm, 
 
 A private development package is installed from the running CLI directory. A published package is installed from the registry. If a newer release exists, init asks before upgrading.
 
+For local development, create `packages/mema/.env`:
+
+```dotenv filename="packages/mema/.env"
+MEMA_INSTALL_MODE=link
+```
+
+The CLI loads `.env` from its own package directory, regardless of the current working directory. Existing environment variables take precedence. The file is ignored by Git and excluded from the published package.
+
+Then run from the source repository:
+
+```bash filename="Terminal"
+pnpm --dir packages/mema mema init
+```
+
+Link mode runs `pnpm build` followed by `pnpm add -g .` from the running CLI package directory. It skips registry checks and refreshes the global link on every accepted setup, even if the installed version is equal or newer. The bundled writing skill is installed from the same local package when accepted. pnpm must be installed and its global bin directory must be on `PATH`; use `pnpm setup` and restart the shell if needed.
+
+Unset `MEMA_INSTALL_MODE` or set it to `registry` for the normal installation behavior. Other values stop setup with an error.
+
 ## Examples
 
 ### First run inside a package

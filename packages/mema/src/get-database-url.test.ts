@@ -20,14 +20,14 @@ async function script({ name = "print url.cjs", code }: { name?: string; code: s
 }
 
 it("runs quoted commands in the given repo and leaves the environment unchanged", async () => {
-  vi.stubEnv("MEMORIES_DATABASE_URL", "keep-the-global-value");
+  vi.stubEnv("MEMA_DATABASE_URL", "keep-the-global-value");
   const url = "postgresql://user:private%20password@localhost/memories";
   await writeFile(join(repo, "url.txt"), url);
   const command = await script({
     code: "process.stdout.write(require('node:fs').readFileSync('url.txt', 'utf8') + '\\r\\n')",
   });
   expect(await getDatabaseUrl({ repo, command })).toBe(url);
-  expect(process.env.MEMORIES_DATABASE_URL).toBe("keep-the-global-value");
+  expect(process.env.MEMA_DATABASE_URL).toBe("keep-the-global-value");
 });
 
 it.each([
@@ -48,7 +48,7 @@ it("does not forward secrets in failed command output or command text", async ()
     code: "console.log('SECRET'); console.error('SECRET'); process.exit(1)",
   });
   const promise = getDatabaseUrl({ repo, command: `${command} SECRET` });
-  await expect(promise).rejects.toThrow("Could not retrieve");
+  await expect(promise).rejects.toThrow("The command you entered failed");
   await expect(promise).rejects.not.toThrow("SECRET");
 });
 
@@ -71,7 +71,7 @@ it("does not run the second command when the first command in && fails", async (
     code: "require('node:fs').writeFileSync('ran.txt', 'yes'); console.log('postgres://localhost/db')",
   });
   await expect(getDatabaseUrl({ repo, command: `${fail} && ${read}` })).rejects.toThrow(
-    "Could not retrieve",
+    "The command you entered failed",
   );
   await expect(readFile(join(repo, "ran.txt"))).rejects.toMatchObject({ code: "ENOENT" });
 });
@@ -92,7 +92,7 @@ it("supports a pipeline that extracts a URL from JSON", async () => {
 it.each(["stdout", "stderr"])("rejects excessive %s without exposing it", async (stream) => {
   const command = await script({ code: `process.${stream}.write('SECRET'.repeat(4000))` });
   const promise = getDatabaseUrl({ repo, command });
-  await expect(promise).rejects.toThrow("Could not retrieve");
+  await expect(promise).rejects.toThrow("The command you entered failed");
   await expect(promise).rejects.not.toThrow("SECRET");
 });
 

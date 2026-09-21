@@ -6,10 +6,10 @@ export async function promptDatabaseCommand() {
   const command = await text({
     message:
       "Paste the command that prints your PostgreSQL URL. It will run from the repository root.",
-    placeholder: "doppler secrets get MEMORIES_DATABASE_URL --plain",
+    placeholder: "doppler secrets get MEMA_DATABASE_URL --plain",
     validate: (value) => {
       if (!databaseUrlCommandSchema.safeParse(value).success)
-        return "Enter the full command that prints only the URL, such as doppler secrets get MEMORIES_DATABASE_URL --plain. Do not paste the URL itself.";
+        return "Enter the full command that prints only the URL, such as doppler secrets get MEMA_DATABASE_URL --plain. Do not paste the URL itself.";
     },
   });
   if (isCancel(command)) throw new Error("mema init cancelled.");

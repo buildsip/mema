@@ -2,6 +2,7 @@ import { readMigrationFiles } from "drizzle-orm/migrator";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { migrate } from "drizzle-orm/node-postgres/migrator";
 import { Client } from "pg";
+import { normalizeDatabaseUrl } from "./normalize-database-url";
 
 /** Marks our actionable errors so raw driver errors never expose connection details. */
 class MigrationError extends Error {}
@@ -21,7 +22,7 @@ export async function migrateDatabase({
   try {
     // Construct inside the try as malformed TLS options can fail before connect().
     client = new Client({
-      connectionString: url,
+      connectionString: normalizeDatabaseUrl(url),
       connectionTimeoutMillis: 10_000,
       statement_timeout: 30_000,
       application_name: "mema-init",

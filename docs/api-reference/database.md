@@ -3,6 +3,12 @@
 Mema uses Drizzle ORM with `pg`. PostgreSQL is optional and stores upvote events, not memory
 content. Database setup is implemented; upvote and pruning CLI/MCP operations are not yet exposed.
 
+Before opening a connection, Mema converts the legacy `sslmode` values `prefer`, `require`, and
+`verify-ca` to `verify-full`. This preserves pg's current certificate and hostname verification
+and removes its warning about future SSL defaults. Explicit `uselibpqcompat=true` and other SSL
+modes are preserved. Only the URL passed to pg changes; the credential command and its saved
+configuration stay unchanged.
+
 ## Shared event table
 
 One `mema.upvotes` table is shared by all repositories using the database:
