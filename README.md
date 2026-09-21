@@ -44,7 +44,7 @@
   <img src="https://img.shields.io/badge/Node.js-18%2B-brightgreen?style=flat-square" alt="npm">
 </div>
 
-Mema helps your agent access **project, personal, team, or organization** memories at the same time.
+Mema helps your agent access **project, personal, team, and organization** memories at the same time.
 
 ```bash
 repo/
@@ -54,7 +54,7 @@ repo/
 │       └── .memories/                    # scoped to web
 │           └── data/
 │               ├── errors/               # custom dir names, organize as you want
-│               │   └── webpack-error/
+│               │   └── webpack-error/    # the memory directory, named after the memory's title
 │               │       ├── memory.md     # the memory file
 │               │       └── error.png     # attachment
 │               ├── gotchas/
