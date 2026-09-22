@@ -1,6 +1,6 @@
 <p align="center">
   <picture>
-    <img src="docs/assets/banner.png" alt="banner" width="600">
+    <img src="docs/assets/banner.svg" alt="banner" width="600">
   </picture>
 </p>
 
@@ -38,13 +38,13 @@
 </div>
 
 <div align="center">
-  <a href="https://www.npmjs.com/package/mema">
-    <img src="https://img.shields.io/npm/v/mema?logo=npm" alt="npm">
+  <a href="https://www.npmjs.com/package/tiramisu">
+    <img src="https://img.shields.io/npm/v/tiramisu?logo=npm" alt="npm">
   </a>
   <img src="https://img.shields.io/badge/Node.js-22.5%2B-brightgreen?style=flat-square" alt="Node.js 22.5+">
 </div>
 
-Mema helps your agent access **project, personal, team, and organization** memories at the same time.
+Tiramisu helps your agent access **project, personal, team, and organization** memories at the same time.
 
 ```bash
 repo/
@@ -93,7 +93,7 @@ Spin up a PostgreSQL database. Could use **[Neon](https://neon.tech)** or **[Sup
 
 > 💡 **Tip:** You can use the **same database** across all your organization's repositories.
 
-### Option B: mema app (Coming Soon)
+### Option B: tiramisu app (Coming Soon)
 
 Don't want to manage a database?
 
@@ -107,10 +107,10 @@ This step is useful for teams. If you're a solo dev, you could skip to [Step 3](
 
 1. Create one repo for each set of memories you want to keep separate. For example, you might create one per team, one shared across the company, and a personal repo for memories that only apply to you.
 2. To "import" the memories, add the repos to your IDE **workspace** and to your agent harness **workspace**.
-3. Install `mema` in each repo:
+3. Install `tiramisu` in each repo:
 
 ```bash
-npx mema init
+npx tiramisu init
 ```
 
 When asked if you want to make these memories available to other projects in this workspace, answer **yes**.
@@ -120,7 +120,7 @@ When asked if you want to make these memories available to other projects in thi
 Inside your **project**, run:
 
 ```bash
-npx mema init
+npx tiramisu init
 ```
 
 Under the hood, this installs the CLI, the MCP tools, and configures your repo.

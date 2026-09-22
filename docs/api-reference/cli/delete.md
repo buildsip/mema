@@ -1,9 +1,9 @@
-# mema delete
+# tiramisu delete
 
-`mema delete` removes memory folders, including attachments.
+`tiramisu delete` removes memory folders, including attachments.
 
 ```bash filename="Terminal"
-mema delete --roots /repo --repo /repo --path /repo/.memories/data/staging-db-weekly-reset
+tiramisu delete --roots /repo --repo /repo --path /repo/.memories/data/staging-db-weekly-reset
 ```
 
 Stdout is a JSON array of deleted absolute memory directory paths, descendants before parents.
@@ -35,7 +35,7 @@ Delete can remove a memory whose custom fields no longer match the current schem
 ### Multiple memories
 
 ```bash filename="Terminal"
-mema delete --roots /repo --repo /repo \
+tiramisu delete --roots /repo --repo /repo \
   --path /repo/.memories/data/one \
   --path /repo/.memories/data/two
 ```
@@ -43,7 +43,7 @@ mema delete --roots /repo --repo /repo \
 ### Nested memories
 
 ```bash filename="Terminal"
-mema delete --roots /repo --repo /repo \
+tiramisu delete --roots /repo --repo /repo \
   --path /repo/.memories/data/parent/nested \
   --path /repo/.memories/data/parent
 ```

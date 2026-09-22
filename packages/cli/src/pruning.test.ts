@@ -29,13 +29,13 @@ const now = Date.parse("2026-01-01T00:00:00Z");
 const migrationsFolder = fileURLToPath(new URL("../dist/migrations", import.meta.url));
 
 beforeAll(async () => {
-  temp = await realpath(await mkdtemp(join(tmpdir(), "mema-pruning-")));
+  temp = await realpath(await mkdtemp(join(tmpdir(), "tiramisu-pruning-")));
   const database = await startDatabase(temp);
   ({ client, url, close } = database);
 }, 30_000);
 
 beforeEach(async () => {
-  await client.query("DROP SCHEMA IF EXISTS mema CASCADE");
+  await client.query("DROP SCHEMA IF EXISTS tiramisu CASCADE");
   await migrateDatabase({ url, migrationsFolder });
   folder = await mkdtemp(join(temp, "workspace-"));
   repo = await makeRepo("app");
@@ -106,7 +106,7 @@ async function memory({
 
 async function vote({ id, actor, at }: { id: string; actor: "human" | "agent"; at: number }) {
   await client.query(
-    "INSERT INTO mema.upvotes (id, memory_id, actor, created_at) VALUES ($1, $2, $3, $4)",
+    "INSERT INTO tiramisu.upvotes (id, memory_id, actor, created_at) VALUES ($1, $2, $3, $4)",
     [randomUUID(), id, actor, new Date(at)],
   );
 }
@@ -178,7 +178,7 @@ it("records mixed-repo batches once per path and allows deletion across the same
   expect(
     await upvote({ roots, repo, paths: [one.path, two.path, one.path], actor: "human" }),
   ).toEqual({ upvoted: [one.path, two.path], skipped: [] });
-  const rows = (await client.query("SELECT memory_id, actor FROM mema.upvotes ORDER BY memory_id"))
+  const rows = (await client.query("SELECT memory_id, actor FROM tiramisu.upvotes ORDER BY memory_id"))
     .rows;
   expect(rows).toEqual([one.id, two.id].sort().map((id) => ({ memory_id: id, actor: "human" })));
   await configure({ repo, enabled: false });
@@ -217,7 +217,7 @@ it.each(["active", "shared"])(
         },
       ],
     });
-    expect((await client.query("SELECT memory_id, actor FROM mema.upvotes")).rows).toEqual([
+    expect((await client.query("SELECT memory_id, actor FROM tiramisu.upvotes")).rows).toEqual([
       { memory_id: voted.id, actor: "agent" },
     ]);
   },
@@ -236,7 +236,7 @@ it.each([false, undefined])(
     const one = await memory();
     const two = await memory({ owner: team });
     // Missing tables would fail any accidental vote write in this disabled batch.
-    await client.query("DROP SCHEMA mema CASCADE");
+    await client.query("DROP SCHEMA tiramisu CASCADE");
     expect(
       await upvote({ roots: [repo, team], repo, paths: [one.path, two.path], actor: "human" }),
     ).toEqual({
@@ -264,7 +264,7 @@ it("validates the entire upvote/delete selection before any mutation", async () 
   await expect(deleteMemories({ roots, repo, paths: [one.path, two.path] })).rejects.toThrow(
     "outside",
   );
-  expect((await client.query("SELECT * FROM mema.upvotes")).rowCount).toBe(0);
+  expect((await client.query("SELECT * FROM tiramisu.upvotes")).rowCount).toBe(0);
   expect(existsSync(one.path)).toBe(true);
   await configure({
     repo: hidden,
@@ -274,7 +274,7 @@ it("validates the entire upvote/delete selection before any mutation", async () 
   await expect(
     upvote({ roots, repo, paths: [one.path, two.path], actor: "agent" }),
   ).rejects.toThrow("Set prune.databaseUrlCommand");
-  expect((await client.query("SELECT * FROM mema.upvotes")).rowCount).toBe(0);
+  expect((await client.query("SELECT * FROM tiramisu.upvotes")).rowCount).toBe(0);
 });
 
 it("keeps cross-repo protected and nested deletion checks", async () => {
@@ -299,12 +299,12 @@ it("records agent votes for renamed, package-moved, and empty updates, and skips
     frontmatter: { title: "New title", scope: ["web"] },
   });
   await update({ roots: [repo], repo, path: moved! });
-  expect((await client.query("SELECT memory_id, actor FROM mema.upvotes")).rows).toEqual([
+  expect((await client.query("SELECT memory_id, actor FROM tiramisu.upvotes")).rows).toEqual([
     { memory_id: entry.id, actor: "agent" },
     { memory_id: entry.id, actor: "agent" },
   ]);
   await configure({ repo, enabled: false });
-  await client.query("DROP SCHEMA mema CASCADE");
+  await client.query("DROP SCHEMA tiramisu CASCADE");
   await expect(
     update({ roots: [repo], repo, path: moved!, body: "No database needed" }),
   ).resolves.toEqual([moved]);
@@ -312,7 +312,7 @@ it("records agent votes for renamed, package-moved, and empty updates, and skips
 
 it("reports a saved update path when the database fails and never migrates implicitly", async () => {
   const entry = await memory();
-  await client.query("DROP SCHEMA mema CASCADE");
+  await client.query("DROP SCHEMA tiramisu CASCADE");
   const moved = join(repo, ".memories/data/renamed");
   const result = update({
     roots: [repo],
@@ -321,11 +321,11 @@ it("reports a saved update path when the database fails and never migrates impli
     frontmatter: { title: "Renamed", doNotEdit: true },
   });
   await expect(result).rejects.toThrow(`memory was saved at ${moved}`);
-  await expect(result).rejects.toThrow("Run mema init");
+  await expect(result).rejects.toThrow("Run tiramisu init");
   await expect(result).rejects.toThrow("Retry only the upvote");
   expect(existsSync(moved)).toBe(true);
   expect(
-    (await client.query("SELECT to_regclass('mema.upvotes') AS name")).rows[0].name,
+    (await client.query("SELECT to_regclass('tiramisu.upvotes') AS name")).rows[0].name,
   ).toBeNull();
   // The recovery instruction must still work after the saved update protects the file.
   await migrateDatabase({ url, migrationsFolder });
@@ -334,7 +334,7 @@ it("reports a saved update path when the database fails and never migrates impli
     upvoted: [moved],
     skipped: [],
   });
-  expect((await client.query("SELECT memory_id, actor FROM mema.upvotes")).rows).toEqual([
+  expect((await client.query("SELECT memory_id, actor FROM tiramisu.upvotes")).rows).toEqual([
     { memory_id: entry.id, actor: "agent" },
   ]);
 });
@@ -400,7 +400,7 @@ it("runs upvote and prune through CLI JSON and MCP contracts", async () => {
     actor: "agent",
   });
   expect(upvoted.content).toEqual([{ type: "text", text: JSON.stringify(result, null, 2) }]);
-  expect((await client.query("SELECT actor FROM mema.upvotes ORDER BY actor")).rows).toEqual([
+  expect((await client.query("SELECT actor FROM tiramisu.upvotes ORDER BY actor")).rows).toEqual([
     { actor: "agent" },
     { actor: "human" },
   ]);

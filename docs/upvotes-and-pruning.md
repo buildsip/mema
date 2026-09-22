@@ -22,7 +22,7 @@
 
 ## Database credentials
 
-Keep your PostgreSQL URL in your existing secrets manager. Ask your agent to configure Mema's
+Keep your PostgreSQL URL in your existing secrets manager. Ask your agent to configure Tiramisu's
 credential command under `prune.databaseUrlCommand`; the command supplies the URL without committing it to Git.
 
 Multiple repositories may share one database. The same memory ID shares its upvote history in

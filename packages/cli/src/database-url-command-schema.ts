@@ -7,5 +7,5 @@ export const databaseUrlCommandSchema = z
   })
   .refine((value) => Boolean(value.trim()) && !value.includes("\0"), {
     error:
-      "Enter a nonempty shell command without NUL characters, such as doppler secrets get MEMA_DATABASE_URL --plain.",
+      "Enter a nonempty shell command without NUL characters, such as doppler secrets get TIRAMISU_DATABASE_URL --plain.",
   });

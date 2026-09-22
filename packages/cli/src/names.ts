@@ -9,7 +9,7 @@ export enum NAMES {
   TEMPLATES = "templates",
   /** Bundled skills that users can install globally. */
   SKILLS = "skills",
-  MEMORY_WRITING_SKILL = "mema-memory-writing",
+  MEMORY_WRITING_SKILL = "tiramisu-memory-writing",
   SKILL_MD = "SKILL.md",
   /** Marks a package directory that can own a memory store. */
   PACKAGE_JSON = "package.json",

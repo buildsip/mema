@@ -2,7 +2,7 @@
 
 This repository is a pnpm monorepo:
 
-- `packages/cli`: the publishable `mema` CLI and MCP server.
+- `packages/cli`: the publishable `tiramisu` package. The command is `tiramisu`.
 - `packages/file-utils`: private filesystem helpers bundled into the CLI.
 - `packages/typescript-config`: private shared TypeScript settings.
 

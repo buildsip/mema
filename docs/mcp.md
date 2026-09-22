@@ -41,15 +41,15 @@ Examples:
 
 **Good to know**: Upvotes or recency don't affect results.
 
-#### Why doesn't mema use vector search or reranking?
+#### Why doesn't tiramisu use vector search or reranking?
 
-mema doesn't store every session. It stores short, selected memories that are meant to remain useful over time.
+tiramisu doesn't store every session. It stores short, selected memories that are meant to remain useful over time.
 
 Search is also narrowed by scope, so an agent working in one package doesn't have to search memories from unrelated parts of the repo.
 
 That keeps the search space small. BM25 is enough without adding embeddings, vector databases, or reranking.
 
-More advanced search becomes useful when a system stores much larger amounts of noisy data, such as full session history. mema avoids creating that problem in the first place.
+More advanced search becomes useful when a system stores much larger amounts of noisy data, such as full session history. tiramisu avoids creating that problem in the first place.
 
 ### `delete-memories`
 

@@ -4,6 +4,7 @@ import { existsSync, lstatSync, mkdirSync, readFileSync, realpathSync, rmdirSync
 import { join } from "node:path";
 import { confirm, group, intro, isCancel, log, outro } from "@clack/prompts";
 import { applyEdits, findNodeAtLocation, modify, parseTree, type ParseError } from "jsonc-parser";
+import { CLI_NAME } from "../cli-name";
 import { findRepo } from "../find-repo";
 import { installCli } from "../install-cli";
 import { installWritingSkill } from "../install-writing-skill";
@@ -52,10 +53,10 @@ export async function init({
   if (directory && !directory.isDirectory()) throw new Error(`Expected a directory: ${memories}`);
   const { local, source } = project === root ? repoConfig : await readConfig({ project, repo: root });
 
-  intro("mema init");
+  intro(`${CLI_NAME} init`);
   if (project !== nearest) {
     log.info(
-      `First-time setup: initializing the repository at ${root}. Run mema init again from this package to configure it.`,
+      `First-time setup: initializing the repository at ${root}. Run ${CLI_NAME} init again from this package to configure it.`,
     );
   }
   if (source !== undefined) {
@@ -63,7 +64,7 @@ export async function init({
       message: `${name} is already initialized. Reconfigure its settings?`,
       initialValue: false,
     });
-    if (isCancel(update)) throw new Error("mema init cancelled.");
+    if (isCancel(update)) throw new Error(`${CLI_NAME} init cancelled.`);
     if (!update) {
       outro(`${name} unchanged.`);
       return;
@@ -132,7 +133,7 @@ export async function init({
     },
     {
       onCancel: () => {
-        throw new Error("mema init cancelled.");
+        throw new Error(`${CLI_NAME} init cancelled.`);
       },
     },
   );

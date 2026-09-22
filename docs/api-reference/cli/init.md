@@ -1,15 +1,15 @@
-# mema init
+# tiramisu init
 
-`mema init` writes [`.memories/config.json`](../file-conventions/config-json.md) and installs the global `mema` CLI. Run it from anywhere inside a Git working tree.
+`tiramisu init` writes [`.memories/config.json`](../file-conventions/config-json.md) and installs the `tiramisu` package globally. Run it from anywhere inside a Git working tree.
 
 Like every CLI invocation, it also refreshes [global MCP installation](../mcp/installation.md), even if memory reconfiguration is skipped.
 
 ```bash filename="Terminal"
-mema init
+tiramisu init
 ```
 
 ```bash filename="Terminal"
-mema init --verbose
+tiramisu init --verbose
 ```
 
 ## Reference
@@ -44,7 +44,7 @@ Setup uses the same defaults on every run, including reconfiguration. Existing m
 | Install the global memory-writing skill?                                               | Configuring the Git root. Default `true`. Reinstalls the bundled skill even if an older copy is already installed.                                                                          |
 | Add starter instructions for when to store or update memories to the root `AGENTS.md`? | Configuring the Git root. Default `true`. Independent of skill installation.                                                                                                                |
 
-Canceling any prompt exits with `mema init cancelled.`
+Canceling any prompt exits with `tiramisu init cancelled.`
 
 When configuring the Git root with pruning enabled, init executes the newly entered [database command](../config/databaseUrlCommand.md) and
 applies pending [database migrations](../database.md) before saving configuration. Repeated
@@ -75,30 +75,30 @@ Tab labels edit `.vscode/settings.json` at the Git root (JSONC comments are pres
 
 `data/` is not created here. See [`data/`](../file-conventions/data.md).
 
-If accepted, starter instructions are appended to the root `AGENTS.md`, creating it if needed. Existing text is preserved. The added section explains when to insert or update a memory and refers to the writing skill if installed. Keep its `<!-- mema:instructions -->` marker when customizing it: later init runs leave that section unchanged. The writing guidelines themselves are not added to `AGENTS.md`.
+If accepted, starter instructions are appended to the root `AGENTS.md`, creating it if needed. Existing text is preserved. The added section explains when to insert or update a memory and refers to the writing skill if installed. Keep its `<!-- tiramisu:instructions -->` marker when customizing it: later init runs leave that section unchanged. The writing guidelines themselves are not added to `AGENTS.md`.
 
 ### Writing skill
 
-After consent, init runs `npx --yes skills add <bundled-skill-path> --global --yes` to install `mema-memory-writing` through Vercel's Skills CLI. The skill ships with the mema package, so installation uses the guidelines from the running version. Accepted installations replace previous copies, including when setting up another repository.
+After consent, init runs `npx --yes skills add <bundled-skill-path> --global --yes` to install `tiramisu-memory-writing` through Vercel's Skills CLI. The skill ships with the tiramisu package, so installation uses the guidelines from the running version. Accepted installations replace previous copies, including when setting up another repository.
 
-The skill and starter instructions are offered during repository setup or accepted root reconfiguration, not package-only setup. Installation failures stop setup before its files are written; retry with `mema init --verbose` or decline skill installation to continue without it.
+The skill and starter instructions are offered during repository setup or accepted root reconfiguration, not package-only setup. Installation failures stop setup before its files are written; retry with `tiramisu init --verbose` or decline skill installation to continue without it.
 
 To install the skill separately:
 
 ```bash filename="Terminal"
-npx skills add buildsip/mema --global
+npx skills add buildsip/tiramisu --global
 ```
 
 ### CLI install
 
-Init installs `mema` globally with the launcher that invoked it (`npx` → npm, `pnpm dlx` → pnpm, `bunx --bun` → bun). Direct invocation without launcher metadata uses npm. Yarn Berry uses npm for the global install; Yarn Classic uses `yarn global add`.
+Init installs `tiramisu` globally with the launcher that invoked it (`npx` → npm, `pnpm dlx` → pnpm, `bunx --bun` → bun). Direct invocation without launcher metadata uses npm. Yarn Berry uses npm for the global install; Yarn Classic uses `yarn global add`.
 
 A private development package is installed from the running CLI directory. A published package is installed from the registry. If a newer release exists, init asks before upgrading.
 
 For local development, create `packages/cli/.env`:
 
 ```dotenv filename="packages/cli/.env"
-MEMA_INSTALL_MODE=link
+TIRAMISU_INSTALL_MODE=link
 ```
 
 The CLI loads `.env` from its own package directory, regardless of the current working directory. Existing environment variables take precedence. The file is ignored by Git and excluded from the published package.
@@ -106,12 +106,12 @@ The CLI loads `.env` from its own package directory, regardless of the current w
 Then run from the source repository:
 
 ```bash filename="Terminal"
-pnpm --dir packages/cli mema init
+pnpm --dir packages/cli tiramisu init
 ```
 
 Link mode runs `pnpm build` followed by `pnpm add -g .` from the running CLI package directory. It skips registry checks and refreshes the global link on every accepted setup, even if the installed version is equal or newer. The bundled writing skill is installed from the same local package when accepted. pnpm must be installed and its global bin directory must be on `PATH`; use `pnpm setup` and restart the shell if needed.
 
-Unset `MEMA_INSTALL_MODE` or set it to `registry` for the normal installation behavior. Other values stop setup with an error.
+Unset `TIRAMISU_INSTALL_MODE` or set it to `registry` for the normal installation behavior. Other values stop setup with an error.
 
 ## Examples
 
@@ -119,13 +119,13 @@ Unset `MEMA_INSTALL_MODE` or set it to `registry` for the normal installation be
 
 ```bash filename="Terminal"
 cd apps/web
-mema init
+tiramisu init
 ```
 
 Writes `/repo/.memories/config.json`. The UI tells you to run init again from this package to configure it.
 
 ```bash filename="Terminal"
-mema init
+tiramisu init
 ```
 
 Writes `/repo/apps/web/.memories/config.json` without `availableToWorkspace`.
@@ -134,7 +134,7 @@ Writes `/repo/apps/web/.memories/config.json` without `availableToWorkspace`.
 
 ```bash filename="Terminal"
 cd /repo
-mema init
+tiramisu init
 ```
 
 Confirms before overwriting that root config. Existing `memory.md` files stay.

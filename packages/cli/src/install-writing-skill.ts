@@ -2,6 +2,7 @@ import type { log } from "@clack/prompts";
 import { execFileSync } from "node:child_process";
 import { accessSync } from "node:fs";
 import { join } from "node:path";
+import { CLI_NAME } from "./cli-name";
 import { NAMES } from "./names";
 
 /** Installs the bundled skill through Vercel's CLI on every accepted setup, refreshing older copies. */
@@ -22,7 +23,7 @@ export function installWritingSkill(
     });
   } catch (error) {
     throw new Error(
-      "Could not install the mema-memory-writing skill. Check that npx is available and can reach npm, then run mema init --verbose again. You can decline the skill installation to continue without it.",
+      `Could not install the tiramisu-memory-writing skill. Check that npx is available and can reach npm, then run ${CLI_NAME} init --verbose again. You can decline the skill installation to continue without it.`,
       { cause: error },
     );
   }

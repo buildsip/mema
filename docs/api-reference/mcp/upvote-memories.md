@@ -1,6 +1,6 @@
 # upvote-memories
 
-Records upvotes using [`mema upvote`](../cli/upvote.md)'s batch and database rules.
+Records upvotes using [`tiramisu upvote`](../cli/upvote.md)'s batch and database rules.
 
 ```json
 {

@@ -42,4 +42,4 @@ Expiry only makes a memory a [`prune`](../cli/prune.md) candidate. It does not h
 
 ## Setup
 
-Run [`mema init`](../cli/init.md) from the Git root to enable pruning, configure credentials, and apply pending migrations. Package setup does not prompt for pruning or access the database. Runtime operations never migrate automatically.
+Run [`tiramisu init`](../cli/init.md) from the Git root to enable pruning, configure credentials, and apply pending migrations. Package setup does not prompt for pruning or access the database. Runtime operations never migrate automatically.

@@ -1,9 +1,9 @@
-# mema prune
+# tiramisu prune
 
-`mema prune` lists every expired, unprotected memory directory for review. It never deletes anything.
+`tiramisu prune` lists every expired, unprotected memory directory for review. It never deletes anything.
 
 ```bash filename="Terminal"
-mema prune --roots /app /team --repo /app
+tiramisu prune --roots /app /team --repo /app
 ```
 
 ```json

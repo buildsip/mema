@@ -1,4 +1,5 @@
 import { join } from "node:path";
+import { CLI_NAME } from "./cli-name";
 import { NAMES } from "./names";
 import { parseDays } from "./parse-days";
 import { readConfig } from "./read-config";
@@ -9,7 +10,7 @@ export async function readPruneConfig(repo: string) {
   if (!config.prune) return undefined;
   if (!config.prune.databaseUrlCommand) {
     throw new Error(
-      `Set prune.databaseUrlCommand in ${join(repo, NAMES.MEMORIES, NAMES.CONFIG_JSON)} to a shell command that prints one PostgreSQL URL, then run mema init from ${repo} to initialize the database and retry.`,
+      `Set prune.databaseUrlCommand in ${join(repo, NAMES.MEMORIES, NAMES.CONFIG_JSON)} to a shell command that prints one PostgreSQL URL, then run ${CLI_NAME} init from ${repo} to initialize the database and retry.`,
     );
   }
   return {

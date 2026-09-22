@@ -24,9 +24,9 @@ describe("installMcp", () => {
     for (const agent of ["cursor", "claude-code"]) {
       expect(upsertServer).toHaveBeenCalledWith(
         agent,
-        "mema",
+        "tiramisu",
         {
-          command: "mema",
+          command: "tiramisu",
           args: ["mcp"],
           autoApproveTools: [
             "insert-memory",

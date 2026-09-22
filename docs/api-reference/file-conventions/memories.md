@@ -2,7 +2,7 @@
 
 The memory store directory. Allowed only at a package root or the Git root.
 
-[`mema init`](../cli/init.md) creates it when writing the first [`config.json`](./config-json.md) for that target. [`mema insert`](../cli/insert.md) can create it when placing a memory in a package that has no store yet.
+[`tiramisu init`](../cli/init.md) creates it when writing the first [`config.json`](./config-json.md) for that target. [`tiramisu insert`](../cli/insert.md) can create it when placing a memory in a package that has no store yet.
 
 It must be a directory. A file at that path is rejected.
 

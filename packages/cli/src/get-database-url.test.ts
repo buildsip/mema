@@ -6,7 +6,7 @@ import { getDatabaseUrl } from "./get-database-url";
 
 let repo: string;
 beforeEach(async () => {
-  repo = await mkdtemp(join(tmpdir(), "mema db command "));
+  repo = await mkdtemp(join(tmpdir(), "tiramisu db command "));
 });
 afterEach(async () => {
   vi.unstubAllEnvs();
@@ -20,14 +20,14 @@ async function script({ name = "print url.cjs", code }: { name?: string; code: s
 }
 
 it("runs quoted commands in the given repo and leaves the environment unchanged", async () => {
-  vi.stubEnv("MEMA_DATABASE_URL", "keep-the-global-value");
+  vi.stubEnv("TIRAMISU_DATABASE_URL", "keep-the-global-value");
   const url = "postgresql://user:private%20password@localhost/memories";
   await writeFile(join(repo, "url.txt"), url);
   const command = await script({
     code: "process.stdout.write(require('node:fs').readFileSync('url.txt', 'utf8') + '\\r\\n')",
   });
   expect(await getDatabaseUrl({ repo, command })).toBe(url);
-  expect(process.env.MEMA_DATABASE_URL).toBe("keep-the-global-value");
+  expect(process.env.TIRAMISU_DATABASE_URL).toBe("keep-the-global-value");
 });
 
 it.each([

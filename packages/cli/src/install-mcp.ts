@@ -1,8 +1,8 @@
 import { agents, detectGlobalAgents, upsertServer } from "add-mcp";
+import { CLI_NAME } from "./cli-name";
 import { mcpTools } from "./mcp-tools";
 
-const help =
-  'Install the mema MCP server manually with command mema and arguments ["mcp"], then restart the agent. See https://github.com/buildsip/mema/blob/main/api-reference/mcp/installation.md';
+const help = `Install the tiramisu MCP server manually with command ${CLI_NAME} and arguments ["mcp"], then restart the agent. See https://github.com/buildsip/tiramisu/blob/main/api-reference/mcp/installation.md`;
 
 /** Refreshes detected agents and returns the display names of successful installations. */
 export async function installMcp(ctx: { log: { warn: (message: string) => void } }) {
@@ -18,9 +18,9 @@ export async function installMcp(ctx: { log: { warn: (message: string) => void }
         // Explicit global scope avoids project config changes. No cached version can go stale.
         const result = upsertServer(
           agent,
-          "mema",
+          "tiramisu",
           {
-            command: "mema",
+            command: CLI_NAME,
             args: ["mcp"],
             autoApproveTools: mcpTools.map((tool) => tool.name),
           },
@@ -28,7 +28,7 @@ export async function installMcp(ctx: { log: { warn: (message: string) => void }
         );
         if (!result.success) {
           ctx.log.warn(
-            `Could not install mema for ${agent} at ${result.path}: ${result.error ?? "unknown error"}. Fix this agent's config and run the CLI again. ${help}`,
+            `Could not install tiramisu for ${agent} at ${result.path}: ${result.error ?? "unknown error"}. Fix this agent's config and run the CLI again. ${help}`,
           );
         } else {
           // Report only agents whose config was saved, including refreshed installations.
@@ -37,7 +37,7 @@ export async function installMcp(ctx: { log: { warn: (message: string) => void }
       } catch (error) {
         // The SDK returns failures today; keep going if an adapter throws in a future release.
         ctx.log.warn(
-          `Could not install mema for ${agent}: ${error instanceof Error ? error.message : String(error)}. ${help}`,
+          `Could not install tiramisu for ${agent}: ${error instanceof Error ? error.message : String(error)}. ${help}`,
         );
       }
     }

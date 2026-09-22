@@ -18,7 +18,7 @@ let url: string;
 const migrationsFolder = fileURLToPath(new URL("../dist/migrations", import.meta.url));
 
 beforeAll(async () => {
-  temp = await mkdtemp(join(tmpdir(), "mema-postgres-"));
+  temp = await mkdtemp(join(tmpdir(), "tiramisu-postgres-"));
   const database = await startDatabase(temp);
   client = database.client;
   url = database.url;
@@ -26,7 +26,7 @@ beforeAll(async () => {
 }, 30_000);
 
 beforeEach(async () => {
-  await client.query("DROP SCHEMA IF EXISTS mema CASCADE");
+  await client.query("DROP SCHEMA IF EXISTS tiramisu CASCADE");
 });
 
 afterAll(async () => {
@@ -34,7 +34,7 @@ afterAll(async () => {
   if (temp) await rm(temp, { recursive: true, force: true });
 }, 30_000);
 
-/** Writes a test-only next release without editing the migration files shipped by Mema. */
+/** Writes a test-only next release without editing the migration files shipped by Tiramisu. */
 async function nextRelease(sql: string) {
   const folder = await mkdtemp(join(temp, "release-"));
   await cp(migrationsFolder, folder, { recursive: true });
@@ -69,11 +69,11 @@ it("migrates once and preserves votes when another repo initializes the same dat
     db.insert(upvotes).values({ id, memoryId: "existing-memory", actor: "agent" }),
   ).rejects.toThrow();
   await expect(
-    client.query("INSERT INTO mema.upvotes (id, memory_id, actor) VALUES ($1, 'memory', 'robot')", [
+    client.query("INSERT INTO tiramisu.upvotes (id, memory_id, actor) VALUES ($1, 'memory', 'robot')", [
       randomUUID(),
     ]),
   ).rejects.toThrow();
-  expect((await client.query("SELECT * FROM mema.__drizzle_migrations")).rowCount).toBe(1);
+  expect((await client.query("SELECT * FROM tiramisu.__drizzle_migrations")).rowCount).toBe(1);
 });
 
 it("serializes concurrent initialization across separate connections", async () => {
@@ -81,7 +81,7 @@ it("serializes concurrent initialization across separate connections", async () 
     Array.from({ length: 4 }, () => migrateDatabase({ url, migrationsFolder })),
   );
   expect(results.map((result) => result.applied).sort()).toEqual([0, 0, 0, 1]);
-  expect((await client.query("SELECT * FROM mema.__drizzle_migrations")).rowCount).toBe(1);
+  expect((await client.query("SELECT * FROM tiramisu.__drizzle_migrations")).rowCount).toBe(1);
 });
 
 it("applies only a new migration on a populated database and refuses an older client afterward", async () => {
@@ -89,17 +89,17 @@ it("applies only a new migration on a populated database and refuses an older cl
   await drizzle(client)
     .insert(upvotes)
     .values({ id: randomUUID(), memoryId: "memory", actor: "agent" });
-  const before = (await client.query("SELECT * FROM mema.upvotes")).rows;
-  const folder = await nextRelease("ALTER TABLE mema.upvotes ADD COLUMN note text;");
+  const before = (await client.query("SELECT * FROM tiramisu.upvotes")).rows;
+  const folder = await nextRelease("ALTER TABLE tiramisu.upvotes ADD COLUMN note text;");
   expect(await migrateDatabase({ url, migrationsFolder: folder })).toEqual({ applied: 1 });
   expect(
-    (await client.query("SELECT id, memory_id, actor, created_at FROM mema.upvotes")).rows,
+    (await client.query("SELECT id, memory_id, actor, created_at FROM tiramisu.upvotes")).rows,
   ).toEqual(before);
   expect(await migrateDatabase({ url, migrationsFolder: folder })).toEqual({ applied: 0 });
   await expect(migrateDatabase({ url, migrationsFolder })).rejects.toThrow(
     "history does not match",
   );
-  expect((await client.query("SELECT * FROM mema.__drizzle_migrations")).rowCount).toBe(2);
+  expect((await client.query("SELECT * FROM tiramisu.__drizzle_migrations")).rowCount).toBe(2);
 });
 
 it("rolls back failed pending SQL and its history without losing existing votes", async () => {
@@ -107,42 +107,42 @@ it("rolls back failed pending SQL and its history without losing existing votes"
   await drizzle(client)
     .insert(upvotes)
     .values({ id: randomUUID(), memoryId: "memory", actor: "human" });
-  const before = (await client.query("SELECT * FROM mema.upvotes")).rows;
+  const before = (await client.query("SELECT * FROM tiramisu.upvotes")).rows;
   const folder = await nextRelease(
-    "CREATE TABLE mema.partial (id integer);\n--> statement-breakpoint\nSELECT missing_column FROM mema.upvotes;",
+    "CREATE TABLE tiramisu.partial (id integer);\n--> statement-breakpoint\nSELECT missing_column FROM tiramisu.upvotes;",
   );
   await expect(migrateDatabase({ url, migrationsFolder: folder })).rejects.toThrow(
     "Database setup failed",
   );
-  expect((await client.query("SELECT * FROM mema.upvotes")).rows).toEqual(before);
+  expect((await client.query("SELECT * FROM tiramisu.upvotes")).rows).toEqual(before);
   expect(
-    (await client.query("SELECT to_regclass('mema.partial') AS name")).rows[0].name,
+    (await client.query("SELECT to_regclass('tiramisu.partial') AS name")).rows[0].name,
   ).toBeNull();
-  expect((await client.query("SELECT * FROM mema.__drizzle_migrations")).rowCount).toBe(1);
+  expect((await client.query("SELECT * FROM tiramisu.__drizzle_migrations")).rowCount).toBe(1);
   // Failed attempts release the lock, so the installed release can still initialize normally.
   expect(await migrateDatabase({ url, migrationsFolder })).toEqual({ applied: 0 });
 });
 
 it("refuses an existing schema without migration history, regardless of its data", async () => {
   await client.query(
-    "CREATE SCHEMA mema; CREATE TABLE mema.keep (value text); INSERT INTO mema.keep VALUES ('keep')",
+    "CREATE SCHEMA tiramisu; CREATE TABLE tiramisu.keep (value text); INSERT INTO tiramisu.keep VALUES ('keep')",
   );
   await expect(migrateDatabase({ url, migrationsFolder })).rejects.toThrow(
     "without its migration history",
   );
-  expect((await client.query("SELECT * FROM mema.keep")).rows).toEqual([{ value: "keep" }]);
+  expect((await client.query("SELECT * FROM tiramisu.keep")).rows).toEqual([{ value: "keep" }]);
   expect(
-    (await client.query("SELECT to_regclass('mema.upvotes') AS name")).rows[0].name,
+    (await client.query("SELECT to_regclass('tiramisu.upvotes') AS name")).rows[0].name,
   ).toBeNull();
 });
 
 it("refuses edited migration history without modifying it", async () => {
   await migrateDatabase({ url, migrationsFolder });
-  await client.query("UPDATE mema.__drizzle_migrations SET hash = 'modified'");
+  await client.query("UPDATE tiramisu.__drizzle_migrations SET hash = 'modified'");
   await expect(migrateDatabase({ url, migrationsFolder })).rejects.toThrow(
     "history does not match",
   );
-  expect((await client.query("SELECT hash FROM mema.__drizzle_migrations")).rows).toEqual([
+  expect((await client.query("SELECT hash FROM tiramisu.__drizzle_migrations")).rows).toEqual([
     { hash: "modified" },
   ]);
 });
@@ -174,9 +174,9 @@ it("can retry a failed first migration while rejecting untracked objects beside 
   await expect(migrateDatabase({ url, migrationsFolder: folder })).rejects.toThrow(
     "Database setup failed",
   );
-  expect((await client.query("SELECT * FROM mema.__drizzle_migrations")).rowCount).toBe(0);
-  await client.query("CREATE TABLE mema.untracked (id integer)");
+  expect((await client.query("SELECT * FROM tiramisu.__drizzle_migrations")).rowCount).toBe(0);
+  await client.query("CREATE TABLE tiramisu.untracked (id integer)");
   await expect(migrateDatabase({ url, migrationsFolder })).rejects.toThrow("existing objects");
-  await client.query("DROP TABLE mema.untracked");
+  await client.query("DROP TABLE tiramisu.untracked");
   expect(await migrateDatabase({ url, migrationsFolder })).toEqual({ applied: 1 });
 });

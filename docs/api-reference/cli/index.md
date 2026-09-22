@@ -1,14 +1,14 @@
-# mema CLI
+# CLI
 
-The `mema` CLI reads and writes Git-native memories.
+`tiramisu` reads and writes Git-native memories. Agents run the same command.
 
 Basic usage:
 
 ```bash filename="Terminal"
-mema [command] [options]
+tiramisu [command] [options]
 ```
 
-Running `mema` with no command prints help.
+Running `tiramisu` with no command prints help.
 
 Every invocation also refreshes [global MCP installation](../mcp/installation.md).
 
@@ -39,7 +39,7 @@ Requires Node.js `>=22.5.0`.
 Required on memory commands. [`init`](./init.md) and [`mcp`](./mcp.md) do not take this flag. Workspace directories. Repeat the flag or pass multiple paths.
 
 ```bash filename="Terminal"
-mema search --roots /workspace/app --roots /workspace/team --repo /workspace/app --query cache
+tiramisu search --roots /workspace/app --roots /workspace/team --repo /workspace/app --query cache
 ```
 
 Each path must be a directory. The CLI canonicalizes it with `realpath`. Duplicate roots are ignored.

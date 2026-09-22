@@ -4,7 +4,7 @@ import { mcpTools } from "./mcp-tools";
 
 /** Registers schemas and callbacks with the SDK, which handles discovery and input validation. */
 export function createMcpServer({ version }: { version: string }) {
-  const server = new McpServer({ name: "mema", version });
+  const server = new McpServer({ name: "tiramisu", version });
   for (const tool of mcpTools) {
     server.registerTool(
       tool.name,

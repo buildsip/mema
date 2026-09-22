@@ -1,9 +1,9 @@
 # Database migrations
 
-Mema uses Drizzle ORM with `pg`. PostgreSQL is optional and stores upvote events, not memory
+Tiramisu uses Drizzle ORM with `pg`. PostgreSQL is optional and stores upvote events, not memory
 content. [`upvote`](./cli/upvote.md), pruning-enabled [`update`](./cli/update.md), and [`prune`](./cli/prune.md) use this ledger. Runtime operations do not apply migrations.
 
-Before opening a connection, Mema converts the legacy `sslmode` values `prefer`, `require`, and
+Before opening a connection, Tiramisu converts the legacy `sslmode` values `prefer`, `require`, and
 `verify-ca` to `verify-full`. This preserves pg's current certificate and hostname verification
 and removes its warning about future SSL defaults. Explicit `uselibpqcompat=true` and other SSL
 modes are preserved. Only the URL passed to pg changes; the credential command and its saved
@@ -11,7 +11,7 @@ configuration stay unchanged.
 
 ## Shared event table
 
-One `mema.upvotes` table is shared by all repositories using the database:
+One `tiramisu.upvotes` table is shared by all repositories using the database:
 
 | Column       | PostgreSQL type            | Meaning                                                             |
 | ------------ | -------------------------- | ------------------------------------------------------------------- |
@@ -28,27 +28,27 @@ to a second database copy of those memories. `actor` records a category, not an 
 
 ## Initialization and upgrades
 
-`mema init` with pruning enabled checks migration history every time setup is accepted,
+`tiramisu init` with pruning enabled checks migration history every time setup is accepted,
 including when another repository has already initialized the same database. It never decides
 whether to migrate based on existing votes or `config.json.version`.
 
 1. Collect and validate a fresh [`prune.databaseUrlCommand` credential command](./config/databaseUrlCommand.md) and execute it from the owning repository root.
-2. Open a dedicated PostgreSQL connection and acquire Mema's database-local advisory lock.
+2. Open a dedicated PostgreSQL connection and acquire Tiramisu's database-local advisory lock.
 3. Verify that stored migration timestamps and SQL hashes are an exact prefix of this release's
    bundled migrations. Refuse unknown, edited, or newer history before applying migrations.
 4. Apply only the pending migrations using Drizzle. Pending SQL and its history records are
    committed together; failures roll back that transaction.
 5. Close the connection, releasing the lock even if setup fails.
 
-History lives in `mema.__drizzle_migrations`, separate from other applications' Drizzle history.
-Applied migrations are immutable. The first setup creates `mema.upvotes`; later identical runs
+History lives in `tiramisu.__drizzle_migrations`, separate from other applications' Drizzle history.
+Applied migrations are immutable. The first setup creates `tiramisu.upvotes`; later identical runs
 do nothing. Upgrading applies new reviewed SQL to the existing schema, preserving its votes.
 Do not use `drizzle-kit push`, drop/recreate the schema, or edit history to force compatibility.
 
-An existing `mema` schema without a migration journal is refused even if its tables are empty.
+An existing `tiramisu` schema without a migration journal is refused even if its tables are empty.
 An empty journal from a failed first migration can be retried when it contains no application
 tables. Missing history must be restored from backup, or setup must target a different database.
-Unrelated schemas and tables are outside Mema's migrations.
+Unrelated schemas and tables are outside Tiramisu's migrations.
 
 Migrations run only during accepted init with pruning enabled, not ordinary memory operations.
 After upgrading the installed package, rerun init from the repository root, accept reconfiguration,

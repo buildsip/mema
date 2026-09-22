@@ -3,6 +3,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { isAbsolute, join } from "node:path";
 import { confirm, isCancel, type log } from "@clack/prompts";
 import { gt, valid } from "semver";
+import { CLI_NAME } from "./cli-name";
 import { getPackageManager } from "./get-package-manager";
 import { NAMES } from "./names";
 
@@ -10,16 +11,16 @@ import { NAMES } from "./names";
  * Installs the global CLI through the package manager that launched this process.
  * Keeps an existing install unless a newer release is accepted, falling back to npm
  * for modern Yarn.
- * MEMA_INSTALL_MODE=link rebuilds and links the local package through pnpm.
+ * TIRAMISU_INSTALL_MODE=link rebuilds and links the local package through pnpm.
  * Private packages also stay local; published packages use the registry by default.
  */
 export async function installCli(
   ctx: { log: Pick<typeof log, "info" | "warn" | "step"> },
   { cwd, cliRoot, verbose = false }: { cwd: string; cliRoot: string; verbose?: boolean },
 ) {
-  const mode = process.env.MEMA_INSTALL_MODE ?? "registry";
+  const mode = process.env.TIRAMISU_INSTALL_MODE ?? "registry";
   if (mode !== "registry" && mode !== "link") {
-    throw new Error('Set MEMA_INSTALL_MODE to "registry" or "link", then retry mema init.');
+    throw new Error(`Set TIRAMISU_INSTALL_MODE to "registry" or "link", then retry ${CLI_NAME} init.`);
   }
   const cli = JSON.parse(readFileSync(join(cliRoot, NAMES.PACKAGE_JSON), "utf8"));
   const launcher = getPackageManager();
@@ -43,7 +44,7 @@ export async function installCli(
       execFileSync("pnpm", ["add", "-g", "."], local);
     } catch {
       throw new Error(
-        "Could not build or link the local mema CLI. Run pnpm i in the mema source repository and ensure pnpm's global bin directory is on PATH (run pnpm setup and restart your shell if needed), then retry mema init --verbose to see the failing command's output. Use MEMA_INSTALL_MODE=registry when running a published package without source files.",
+        `Could not build or link the local tiramisu CLI. Run pnpm i in the tiramisu source repository and ensure pnpm's global bin directory is on PATH (run pnpm setup and restart your shell if needed), then retry ${CLI_NAME} init --verbose to see the failing command's output. Use TIRAMISU_INSTALL_MODE=registry when running a published package without source files.`,
       );
     }
     return;
@@ -83,7 +84,8 @@ export async function installCli(
     installedPath && existsSync(installedPath)
       ? JSON.parse(readFileSync(installedPath, "utf8"))
       : undefined;
-  if (installed && (!valid(installed.version) || !installed.bin?.["mema"]))
+  // An unrelated package published under the same name will not expose this bin.
+  if (installed && (!valid(installed.version) || typeof installed.bin?.[CLI_NAME] !== "string"))
     throw new Error(
       `The global ${cli.name} package is not this CLI. Resolve that package name conflict before initializing.`,
     );
@@ -116,7 +118,7 @@ export async function installCli(
       message: `Upgrade ${cli.name} from ${installed?.version ?? version} to ${latest}?`,
       initialValue: true,
     });
-    if (isCancel(upgrade)) throw new Error("mema init cancelled.");
+    if (isCancel(upgrade)) throw new Error(`${CLI_NAME} init cancelled.`);
     if (upgrade) {
       version = latest;
       install = true;
@@ -135,7 +137,7 @@ export async function installCli(
       execFileSync(packageManager, args, { ...options, stdio: verbose ? "inherit" : "pipe" });
     } catch {
       throw new Error(
-        `Could not install ${cli.name} globally with ${packageManager}. Check that the package manager can reach its registry and write to its global install directory, then retry mema init --verbose. When developing mema from source, set MEMA_INSTALL_MODE=link to install the local package.`,
+        `Could not install ${cli.name} globally with ${packageManager}. Check that the package manager can reach its registry and write to its global install directory, then retry ${CLI_NAME} init --verbose. When developing tiramisu from source, set TIRAMISU_INSTALL_MODE=link to install the local package.`,
       );
     }
   }

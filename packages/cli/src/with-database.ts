@@ -1,5 +1,6 @@
 import { drizzle, type NodePgDatabase } from "drizzle-orm/node-postgres";
 import { Client } from "pg";
+import { CLI_NAME } from "./cli-name";
 import { getDatabaseUrl } from "./get-database-url";
 
 /**
@@ -23,7 +24,7 @@ export async function withDatabase<T>({
       connectionString: url,
       connectionTimeoutMillis: 10_000,
       statement_timeout: 30_000,
-      application_name: "mema",
+      application_name: "tiramisu",
     });
     client.on("error", () => {});
     await client.connect();
@@ -31,7 +32,7 @@ export async function withDatabase<T>({
     return await run(drizzle(client));
   } catch {
     throw new Error(
-      `The memory database operation failed for ${repo}. Check that prune.databaseUrlCommand prints a reachable PostgreSQL URL and its role can SELECT and INSERT in mema.upvotes. Run mema init from ${repo} if the schema is missing or outdated, then retry. Check database server logs for connection, permission, or query failures.`,
+      `The memory database operation failed for ${repo}. Check that prune.databaseUrlCommand prints a reachable PostgreSQL URL and its role can SELECT and INSERT in tiramisu.upvotes. Run ${CLI_NAME} init from ${repo} if the schema is missing or outdated, then retry. Check database server logs for connection, permission, or query failures.`,
     );
   } finally {
     await client?.end().catch(() => {});

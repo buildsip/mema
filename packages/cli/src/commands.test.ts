@@ -1632,7 +1632,7 @@ describe("built CLI", () => {
   it("lists only this increment's commands and exits successfully for help", () => {
     const result = run({ args: ["--help"] });
     expect(result.status).toBe(0);
-    expect(result.stdout).toContain("Usage: mema");
+    expect(result.stdout).toContain("Usage: tiramisu");
     expect(result.stdout).toContain("insert");
     expect(result.stdout).toContain("update");
     expect(result.stdout).toContain("mcp");
