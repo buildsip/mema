@@ -1,9 +1,9 @@
-# mema mcp
+# tiramisu mcp
 
 Starts the [MCP server](../mcp/index.md) over stdio.
 
 ```bash filename="Terminal"
-mema mcp
+tiramisu mcp
 ```
 
 ## Reference

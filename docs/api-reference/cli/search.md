@@ -1,9 +1,9 @@
-# mema search
+# tiramisu search
 
-`mema search` ranks memories by title, frontmatter, directory tags, and Markdown body.
+`tiramisu search` ranks memories by title, frontmatter, directory tags, and Markdown body.
 
 ```bash filename="Terminal"
-mema search --roots /repo --repo /repo --query "axios retry"
+tiramisu search --roots /repo --repo /repo --query "axios retry"
 ```
 
 Stdout is a JSON array. No matches print `[]`.
@@ -67,19 +67,19 @@ Search validates each store's config and built-in memory fields. Custom fields r
 ### Paginate
 
 ```bash filename="Terminal"
-mema search --roots /repo --repo /repo --query cache --limit 1 --offset 1
+tiramisu search --roots /repo --repo /repo --query cache --limit 1 --offset 1
 ```
 
 ### Limit to a tree
 
 ```bash filename="Terminal"
-mema search --roots /repo --repo /repo --query cache --scope apps/web
+tiramisu search --roots /repo --repo /repo --query cache --scope apps/web
 ```
 
 ### Several areas
 
 ```bash filename="Terminal"
-mema search --roots /repo --repo /repo --query cache --scope apps/web --scope apps/api
+tiramisu search --roots /repo --repo /repo --query cache --scope apps/web --scope apps/api
 ```
 
 Hits are unioned, not duplicated.
@@ -87,7 +87,7 @@ Hits are unioned, not duplicated.
 ### Shared workspace repo
 
 ```bash filename="Terminal"
-mema search --roots /repo --roots /team --repo /repo --query cache --scope apps/web
+tiramisu search --roots /repo --roots /team --repo /repo --query cache --scope apps/web
 ```
 
 ## Related

@@ -1,6 +1,6 @@
 # MCP
 
-The `mema` MCP server exposes memory commands over stdio. See [installation](./installation.md) to connect an agent.
+The `tiramisu` MCP server exposes memory commands over stdio. See [installation](./installation.md) to connect an agent.
 
 ## Tools
 

@@ -1,6 +1,6 @@
 # API Reference
 
-mema API Reference.
+tiramisu API Reference.
 
 - [CLI](./cli/index.md): Commands, shared flags, and JSON output.
 - [MCP](./mcp/index.md): Agent installation, tools, and structured arguments.

@@ -10,7 +10,7 @@ it.each(["prefer", "require", "verify-ca"])(
   "keeps certificate verification without a driver warning for sslmode=%s",
   (mode) => {
     const warn = vi.spyOn(process, "emitWarning");
-    const value = normalizeDatabaseUrl(`${url}?sslmode=${mode}&application_name=mema%20test`);
+    const value = normalizeDatabaseUrl(`${url}?sslmode=${mode}&application_name=tiramisu%20test`);
     expect(new URL(value).searchParams.get("sslmode")).toBe("verify-full");
     // Construct the real driver without connecting, so this checks its TLS parsing too.
     const client = new Client({ connectionString: value });
@@ -18,7 +18,7 @@ it.each(["prefer", "require", "verify-ca"])(
     expect(client.user).toBe("user");
     expect(client.password).toBe("p@ss+word");
     expect(client.database).toBe("memories");
-    expect(new URL(value).searchParams.get("application_name")).toBe("mema test");
+    expect(new URL(value).searchParams.get("application_name")).toBe("tiramisu test");
     expect(warn).not.toHaveBeenCalled();
   },
 );

@@ -78,8 +78,8 @@ describe("MCP stdio server", () => {
   it("advertises exactly six tools, field descriptions, required fields, and the package version", async () => {
     const client = await connect();
     const pkg = JSON.parse(await readFile(new URL("../package.json", import.meta.url), "utf8"));
-    expect(pkg.bin).toEqual({ mema: "./dist/index.js" });
-    expect(client.getServerVersion()).toEqual({ name: "mema", version: pkg.version });
+    expect(pkg.bin).toEqual({ tiramisu: "./dist/index.js" });
+    expect(client.getServerVersion()).toEqual({ name: "tiramisu", version: pkg.version });
     const { tools } = await client.listTools();
     expect(tools.map((tool) => tool.name)).toEqual([
       "insert-memory",
@@ -320,7 +320,7 @@ describe("automatic MCP installation", () => {
     for (const args of [["--help"], ["--version"], ["init", "--help"]]) {
       await writeFile(
         config,
-        JSON.stringify({ mcpServers: { other, mema: { command: "old-mem", args: ["old"] } } }),
+        JSON.stringify({ mcpServers: { other, tiramisu: { command: "old-mem", args: ["old"] } } }),
       );
       const result = spawnSync(process.execPath, [cli, ...args], {
         cwd: repo,
@@ -337,16 +337,16 @@ describe("automatic MCP installation", () => {
         expect(result.stdout).not.toContain("Memory MCP tools added to:");
       }
       const next = JSON.parse(await readFile(config, "utf8"));
-      expect(next.mcpServers).toEqual({ other, mema: { command: "mema", args: ["mcp"] } });
+      expect(next.mcpServers).toEqual({ other, tiramisu: { command: "tiramisu", args: ["mcp"] } });
     }
     const settings = JSON.parse(await readFile(join(home, ".claude/settings.json"), "utf8"));
     expect(settings.permissions.allow).toEqual([
-      "mcp__mema__insert-memory",
-      "mcp__mema__update-memory",
-      "mcp__mema__search-memories",
-      "mcp__mema__delete-memories",
-      "mcp__mema__upvote-memories",
-      "mcp__mema__prune-memories",
+      "mcp__tiramisu__insert-memory",
+      "mcp__tiramisu__update-memory",
+      "mcp__tiramisu__search-memories",
+      "mcp__tiramisu__delete-memories",
+      "mcp__tiramisu__upvote-memories",
+      "mcp__tiramisu__prune-memories",
     ]);
     expect(existsSync(join(repo, ".cursor"))).toBe(false);
   });
@@ -366,8 +366,8 @@ describe("automatic MCP installation", () => {
     );
     expect(result.status).toBe(0);
     expect(JSON.parse(result.stdout)).toEqual([]);
-    expect(JSON.parse(result.stderr).warning).toContain("Could not install mema for cursor");
+    expect(JSON.parse(result.stderr).warning).toContain("Could not install tiramisu for cursor");
     const config = JSON.parse(await readFile(join(home, ".claude.json"), "utf8"));
-    expect(config.mcpServers["mema"].command).toBe("mema");
+    expect(config.mcpServers["tiramisu"].command).toBe("tiramisu");
   });
 });

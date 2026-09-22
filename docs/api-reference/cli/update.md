@@ -1,9 +1,9 @@
-# mema update
+# tiramisu update
 
-`mema update` patches one existing memory. Only supplied fields change.
+`tiramisu update` patches one existing memory. Only supplied fields change.
 
 ```bash filename="Terminal"
-mema update --roots /repo --repo /repo --path /repo/apps/web/.memories/data/axios-retry-duplication-after-reconnect --input update.json
+tiramisu update --roots /repo --repo /repo --path /repo/apps/web/.memories/data/axios-retry-duplication-after-reconnect --input update.json
 ```
 
 ```json
@@ -67,7 +67,7 @@ Writes validate custom fields against the repository root schema before publicat
 ### Repair the title folder
 
 ```bash filename="Terminal"
-mema update --roots /repo --repo /repo --path /repo/.memories/data/wrong-folder <<'EOF'
+tiramisu update --roots /repo --repo /repo --path /repo/.memories/data/wrong-folder <<'EOF'
 {}
 EOF
 ```

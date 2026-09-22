@@ -14,9 +14,9 @@ Omitted or `false` keeps the memories local to that repo.
 
 Only the root value is used. Package configs cannot override it.
 
-[`mema init`](../cli/init.md) asks this only when configuring the Git root.
+[`tiramisu init`](../cli/init.md) asks this only when configuring the Git root.
 
 ## Related
 
 - [`search`](../cli/search.md)
-- [`mema init`](../cli/init.md)
+- [`tiramisu init`](../cli/init.md)

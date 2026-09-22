@@ -11,7 +11,7 @@ permissions:
 
 jobs:
   publish:
-    name: Publish mema
+    name: Publish tiramisu
     runs-on: ubuntu-latest
 
     steps:

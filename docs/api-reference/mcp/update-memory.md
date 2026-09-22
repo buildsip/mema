@@ -1,6 +1,6 @@
 # update-memory
 
-Patches one memory using [`mema update`](../cli/update.md)'s validation and movement rules.
+Patches one memory using [`tiramisu update`](../cli/update.md)'s validation and movement rules.
 
 ```json
 {

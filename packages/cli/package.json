@@ -1,5 +1,5 @@
 {
-  "name": "mema",
+  "name": "tiramisu",
   "version": "0.1.0",
   "description": "Git-native memory for AI coding agents",
   "keywords": [
@@ -20,7 +20,7 @@
   "license": "Apache-2.0",
   "type": "module",
   "bin": {
-    "mema": "./dist/index.js"
+    "tiramisu": "./dist/index.js"
   },
   "files": [
     "dist",
@@ -32,7 +32,7 @@
   "scripts": {
     "db:generate": "drizzle-kit generate",
     "build": "node scripts/build.mjs",
-    "mema": "pnpm build && node ./dist/index.js",
+    "tiramisu": "pnpm build && node ./dist/index.js",
     "format": "oxfmt --write src scripts",
     "test": "pnpm build && vitest run",
     "typecheck": "tsc --noEmit",
@@ -70,13 +70,13 @@
     "typescript": "5.9.2",
     "vitest": "^4.0.18"
   },
-  "homepage": "https://github.com/buildsip/mema#readme",
+  "homepage": "https://github.com/buildsip/tiramisu#readme",
   "bugs": {
-    "url": "https://github.com/buildsip/mema/issues"
+    "url": "https://github.com/buildsip/tiramisu/issues"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/buildsip/mema.git",
+    "url": "git+https://github.com/buildsip/tiramisu.git",
     "directory": "packages/cli"
   },
   "publishConfig": {

@@ -1,6 +1,6 @@
 # prune-memories
 
-Lists candidates using [`mema prune`](../cli/prune.md)'s discovery and expiry rules. Call only when the user requests pruning or a review of unused memories.
+Lists candidates using [`tiramisu prune`](../cli/prune.md)'s discovery and expiry rules. Call only when the user requests pruning or a review of unused memories.
 
 ```json
 {

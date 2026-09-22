@@ -1,6 +1,6 @@
 # delete-memories
 
-Deletes selected memories and their attachments using [`mema delete`](../cli/delete.md)'s batch validation rules.
+Deletes selected memories and their attachments using [`tiramisu delete`](../cli/delete.md)'s batch validation rules.
 
 ```json
 {

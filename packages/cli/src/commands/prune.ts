@@ -1,5 +1,6 @@
 import type { Command } from "commander";
 import { dirname } from "node:path";
+import { CLI_NAME } from "../cli-name";
 import { createdMillis } from "../created-date";
 import { loadWorkspaceMemories } from "../load-workspace-memories";
 import { readPruneConfig } from "../read-prune-config";
@@ -36,7 +37,7 @@ export async function prune({ roots, repo }: { roots: string[]; repo: string }) 
   }
   if (!enabled)
     throw new Error(
-      "Pruning is disabled in every available repository. Ask the user to run mema init from a repository's Git root to enable pruning, then retry.",
+      `Pruning is disabled in every available repository. Ask the user to run ${CLI_NAME} init from a repository's Git root to enable pruning, then retry.`,
     );
   return candidates.sort((a, b) => a.localeCompare(b));
 }

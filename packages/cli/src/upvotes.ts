@@ -2,7 +2,7 @@ import { sql } from "drizzle-orm";
 import { check, index, pgSchema, text, timestamp, uuid } from "drizzle-orm/pg-core";
 
 /** Git owns memory content; this shared table records events for stable memory IDs. */
-export const upvotes = pgSchema("mema").table(
+export const upvotes = pgSchema("tiramisu").table(
   "upvotes",
   {
     id: uuid("id").primaryKey(),

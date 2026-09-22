@@ -1,6 +1,6 @@
 # search-memories
 
-Searches memories using [`mema search`](../cli/search.md)'s ranking and store discovery rules.
+Searches memories using [`tiramisu search`](../cli/search.md)'s ranking and store discovery rules.
 
 ```json
 {

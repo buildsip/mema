@@ -44,9 +44,9 @@ vi.mock("@clack/prompts", async (importOriginal) => {
   };
 });
 
-const dbCommand = "doppler secrets get MEMA_DATABASE_URL --plain";
+const dbCommand = "doppler secrets get TIRAMISU_DATABASE_URL --plain";
 
-describe("mema init", () => {
+describe("tiramisu init", () => {
   let temp: string;
   let root: string;
   let web: string;
@@ -62,8 +62,8 @@ describe("mema init", () => {
     vi.mocked(getDatabaseUrl).mockReset().mockResolvedValue("postgresql://example.test/memories");
     vi.mocked(migrateDatabase).mockReset().mockResolvedValue({ applied: 1 });
     vi.mocked(text).mockReset().mockResolvedValue(dbCommand);
-    vi.stubEnv("MEMA_DATABASE_URL", "");
-    vi.stubEnv("MEMA_INSTALL_MODE", undefined);
+    vi.stubEnv("TIRAMISU_DATABASE_URL", "");
+    vi.stubEnv("TIRAMISU_INSTALL_MODE", undefined);
     vi.stubEnv("npm_config_user_agent", "pnpm/11.24.0 npm/? node/v22.0.0");
     latest = "0.2.0";
     bunMissing = false;
@@ -85,7 +85,7 @@ describe("mema init", () => {
             throw Object.assign(new Error("No global packages"), {
               stderr: `error: No package.json was found for directory "${dirname(globalRoot)}"`,
             });
-          return `${dirname(globalRoot)} node_modules (1 installed)\n└── mema@0.1.0\n`;
+          return `${dirname(globalRoot)} node_modules (1 installed)\n└── tiramisu@0.1.0\n`;
         }
         if (command === "view" || command === "info")
           return JSON.stringify(args[0] === "yarn" ? { type: "inspect", data: latest } : latest);
@@ -108,7 +108,7 @@ describe("mema init", () => {
     temp = realpathSync(mkdtempSync(join(tmpdir(), "mem-init-")));
     root = join(temp, "repo with spaces");
     web = join(root, "apps", "web");
-    cliRoot = join(temp, "mema source");
+    cliRoot = join(temp, "tiramisu source");
     globalRoot = join(temp, "global with spaces", NAMES.NODE_MODULES);
     mkdirSync(join(web, "src"), { recursive: true });
     mkdirSync(join(cliRoot, "scripts"), { recursive: true });
@@ -121,15 +121,15 @@ describe("mema init", () => {
     mkdirSync(join(cliRoot, NAMES.SKILLS, NAMES.MEMORY_WRITING_SKILL), { recursive: true });
     writeFileSync(
       join(cliRoot, NAMES.SKILLS, NAMES.MEMORY_WRITING_SKILL, NAMES.SKILL_MD),
-      readFileSync(new URL("../skills/mema-memory-writing/SKILL.md", import.meta.url), "utf8"),
+      readFileSync(new URL("../skills/tiramisu-memory-writing/SKILL.md", import.meta.url), "utf8"),
     );
     writeFileSync(
       join(cliRoot, NAMES.PACKAGE_JSON),
       JSON.stringify({
-        name: "mema",
+        name: "tiramisu",
         version: "0.1.0",
         private: true,
-        bin: { mema: "dist/index.js" },
+        bin: { tiramisu: "dist/index.js" },
       }),
     );
     writeFileSync(join(root, NAMES.PACKAGE_JSON), '{"name":"@acme/monorepo"}');
@@ -149,10 +149,14 @@ describe("mema init", () => {
   }
 
   function installed(version: string) {
-    mkdirSync(join(globalRoot, "mema"), { recursive: true });
+    mkdirSync(join(globalRoot, "tiramisu"), { recursive: true });
     writeFileSync(
-      join(globalRoot, "mema", NAMES.PACKAGE_JSON),
-      JSON.stringify({ name: "mema", version, bin: { mema: "dist/index.js" } }),
+      join(globalRoot, "tiramisu", NAMES.PACKAGE_JSON),
+      JSON.stringify({
+        name: "tiramisu",
+        version,
+        bin: { tiramisu: "dist/index.js" },
+      }),
     );
   }
 
@@ -160,7 +164,7 @@ describe("mema init", () => {
     vi.stubEnv("npm_config_user_agent", "npm/11.0.0 node/v22.0.0");
     writeFileSync(
       join(cliRoot, NAMES.PACKAGE_JSON),
-      JSON.stringify({ name: "mema", version: "0.1.0", bin: { mema: "dist/index.js" } }),
+      JSON.stringify({ name: "tiramisu", version: "0.1.0", bin: { tiramisu: "dist/index.js" } }),
     );
   }
 
@@ -190,7 +194,7 @@ describe("mema init", () => {
         .mock.calls.some(([, args]) => Array.isArray(args) && ["build", "view"].includes(args[0]!)),
     ).toBe(false);
     expect(confirm).toHaveBeenCalledTimes(5);
-    expect(outro).toHaveBeenCalledWith("mema initialized.");
+    expect(outro).toHaveBeenCalledWith("tiramisu initialized.");
     expect(getDatabaseUrl).toHaveBeenCalledExactlyOnceWith({ repo: root, command: dbCommand });
     expect(migrateDatabase).toHaveBeenCalledOnce();
     expect(log.info).toHaveBeenCalledExactlyOnceWith("Applied 1 database migration(s).");
@@ -214,14 +218,14 @@ describe("mema init", () => {
     expect(existsSync(join(web, "src", NAMES.MEMORIES))).toBe(false);
     expect(confirm).toHaveBeenCalledTimes(5);
     expect(log.info).toHaveBeenCalledWith(
-      `First-time setup: initializing the repository at ${root}. Run mema init again from this package to configure it.`,
+      `First-time setup: initializing the repository at ${root}. Run tiramisu init again from this package to configure it.`,
     );
     expect(execFileSync).toHaveBeenCalledWith(
       "pnpm",
       ["add", "-g", cliRoot],
       expect.objectContaining({ cwd: root }),
     );
-    expect(outro).toHaveBeenCalledWith("mema initialized.");
+    expect(outro).toHaveBeenCalledWith("tiramisu initialized.");
   });
 
   it.each(["", "src"])(
@@ -239,7 +243,7 @@ describe("mema init", () => {
       expect(readFileSync(join(root, NAMES.MEMORIES, NAMES.CONFIG_JSON), "utf8")).toBe("{}");
       expect(existsSync(join(web, "src", NAMES.MEMORIES))).toBe(false);
       expect(log.info).not.toHaveBeenCalled();
-      expect(outro).toHaveBeenCalledWith("mema initialized.");
+      expect(outro).toHaveBeenCalledWith("tiramisu initialized.");
       expect(existsSync(join(root, NAMES.VSCODE, NAMES.SETTINGS_JSON))).toBe(true);
     },
   );
@@ -256,7 +260,7 @@ describe("mema init", () => {
       version: 1,
     });
     expect(confirm).toHaveBeenCalledTimes(1);
-    expect(outro).toHaveBeenLastCalledWith("mema initialized.");
+    expect(outro).toHaveBeenLastCalledWith("tiramisu initialized.");
   });
 
   it("preserves an existing package config while completing first-time repo setup", async () => {
@@ -291,13 +295,13 @@ describe("mema init", () => {
     writeFileSync(path, source);
     await init({ cwd: join(web, "src"), cliRoot });
     expect(confirm).toHaveBeenCalledExactlyOnceWith({
-      message: "mema is already initialized. Reconfigure its settings?",
+      message: "tiramisu is already initialized. Reconfigure its settings?",
       initialValue: false,
     });
     expect(readFileSync(path, "utf8")).toBe(source);
     expect(readFileSync(join(root, NAMES.MEMORIES, NAMES.CONFIG_JSON), "utf8")).toBe("{}");
     expect(log.step).not.toHaveBeenCalled();
-    expect(outro).toHaveBeenCalledWith("mema unchanged.");
+    expect(outro).toHaveBeenCalledWith("tiramisu unchanged.");
   });
 
   it.each(["", '{"broken":', '{"version":2}'])(
@@ -321,7 +325,7 @@ describe("mema init", () => {
         "-c",
         "user.name=Mem Test",
         "-c",
-        "user.email=mema@example.test",
+        "user.email=tiramisu@example.test",
         "-c",
         "commit.gpgsign=false",
         "commit",
@@ -340,7 +344,7 @@ describe("mema init", () => {
     expect(existsSync(join(worktree, NAMES.MEMORIES, NAMES.CONFIG_JSON))).toBe(true);
     expect(existsSync(join(nested, NAMES.MEMORIES))).toBe(false);
     expect(existsSync(join(root, NAMES.MEMORIES))).toBe(false);
-    expect(outro).toHaveBeenCalledWith("mema initialized.");
+    expect(outro).toHaveBeenCalledWith("tiramisu initialized.");
   });
 
   it("fails outside Git before prompting or installing", async () => {
@@ -358,7 +362,7 @@ describe("mema init", () => {
     );
     expect(confirm).toHaveBeenCalledOnce();
     expect(log.step).not.toHaveBeenCalled();
-    expect(outro).toHaveBeenCalledWith("mema unchanged.");
+    expect(outro).toHaveBeenCalledWith("tiramisu unchanged.");
   });
 
   it.each([
@@ -714,7 +718,7 @@ describe("mema init", () => {
 
   it("does not scaffold if global installation fails", async () => {
     failure = "add";
-    await expect(init({ cwd: root, cliRoot })).rejects.toThrow("Could not install mema globally");
+    await expect(init({ cwd: root, cliRoot })).rejects.toThrow("Could not install tiramisu globally");
     expect(existsSync(join(root, NAMES.MEMORIES))).toBe(false);
     expect(outro).not.toHaveBeenCalled();
   });
@@ -773,7 +777,7 @@ describe("mema init", () => {
       await init({ cwd: root, cliRoot });
       const text = readFileSync(path, "utf8");
       expect(text.startsWith(previous)).toBe(true);
-      expect(text.match(/<!-- mema:instructions -->/g)).toHaveLength(1);
+      expect(text.match(/<!-- tiramisu:instructions -->/g)).toHaveLength(1);
       if (previous.includes("\r\n")) expect(text.replaceAll("\r\n", "")).not.toContain("\n");
     },
   );
@@ -799,7 +803,7 @@ describe("mema init", () => {
     const path = join(root, NAMES.AGENTS_MD);
     writeFileSync(path, "Existing team instructions");
     failure = "skills";
-    await expect(init({ cwd: root, cliRoot })).rejects.toThrow("mema init --verbose");
+    await expect(init({ cwd: root, cliRoot })).rejects.toThrow("tiramisu init --verbose");
     expect(readFileSync(path, "utf8")).toBe("Existing team instructions");
     expect(existsSync(join(root, NAMES.MEMORIES))).toBe(false);
     expect(existsSync(join(root, NAMES.VSCODE))).toBe(false);
@@ -831,14 +835,14 @@ describe("mema init", () => {
   it("skips reinstalling an equal or newer private global CLI", async () => {
     installed("0.2.0");
     await init({ cwd: root, cliRoot });
-    expect(log.step).toHaveBeenCalledExactlyOnceWith("Installing mema-memory-writing globally.");
+    expect(log.step).toHaveBeenCalledExactlyOnceWith("Installing tiramisu-memory-writing globally.");
     expect(confirm).toHaveBeenCalledTimes(5);
   });
 
   it("rebuilds and links a public development package even when a newer CLI is installed", async () => {
     published();
     installed("0.2.0");
-    vi.stubEnv("MEMA_INSTALL_MODE", "link");
+    vi.stubEnv("TIRAMISU_INSTALL_MODE", "link");
     await init({ cwd: root, cliRoot });
     const calls = vi.mocked(execFileSync).mock.calls.filter(([command]) => command === "pnpm");
     expect(calls).toEqual([
@@ -848,11 +852,11 @@ describe("mema init", () => {
     expect(execFileSync).not.toHaveBeenCalledWith("npm", expect.anything(), expect.anything());
     expect(confirm).toHaveBeenCalledTimes(5);
     expect(log.warn).not.toHaveBeenCalled();
-    expect(outro).toHaveBeenCalledWith("mema initialized.");
+    expect(outro).toHaveBeenCalledWith("tiramisu initialized.");
   });
 
   it("shows local build and link output in verbose mode", async () => {
-    vi.stubEnv("MEMA_INSTALL_MODE", "link");
+    vi.stubEnv("TIRAMISU_INSTALL_MODE", "link");
     await init({ cwd: root, cliRoot, verbose: true });
     for (const args of [["build"], ["add", "-g", "."]]) {
       expect(execFileSync).toHaveBeenCalledWith(
@@ -864,9 +868,9 @@ describe("mema init", () => {
   });
 
   it.each(["build", "add"])("stops setup when the local %s fails", async (command) => {
-    vi.stubEnv("MEMA_INSTALL_MODE", "link");
+    vi.stubEnv("TIRAMISU_INSTALL_MODE", "link");
     failure = command;
-    await expect(init({ cwd: root, cliRoot })).rejects.toThrow("mema init --verbose");
+    await expect(init({ cwd: root, cliRoot })).rejects.toThrow("tiramisu init --verbose");
     expect(existsSync(join(root, NAMES.MEMORIES))).toBe(false);
     expect(execFileSync).not.toHaveBeenCalledWith("npx", expect.anything(), expect.anything());
     if (command === "build") {
@@ -875,9 +879,9 @@ describe("mema init", () => {
   });
 
   it("rejects unknown install modes before installing or saving setup", async () => {
-    vi.stubEnv("MEMA_INSTALL_MODE", "invalid");
+    vi.stubEnv("TIRAMISU_INSTALL_MODE", "invalid");
     await expect(init({ cwd: root, cliRoot })).rejects.toThrow(
-      'Set MEMA_INSTALL_MODE to "registry" or "link"',
+      'Set TIRAMISU_INSTALL_MODE to "registry" or "link"',
     );
     expect(log.step).not.toHaveBeenCalled();
     expect(existsSync(join(root, NAMES.MEMORIES))).toBe(false);
@@ -890,7 +894,7 @@ describe("mema init", () => {
     expect(vi.mocked(confirm).mock.calls[5]?.[0].message).toContain("0.1.0 to 0.2.0");
     expect(execFileSync).toHaveBeenCalledWith(
       "npm",
-      ["install", "--global", "mema@0.2.0"],
+      ["install", "--global", "tiramisu@0.2.0"],
       expect.anything(),
     );
   });
@@ -922,7 +926,7 @@ describe("mema init", () => {
     await init({ cwd: root, cliRoot });
     expect(execFileSync).toHaveBeenCalledWith(
       "npm",
-      ["install", "--global", "mema@0.1.0"],
+      ["install", "--global", "tiramisu@0.1.0"],
       expect.anything(),
     );
   });
@@ -949,7 +953,7 @@ describe("mema init", () => {
     expect(log.warn).toHaveBeenCalledWith(expect.stringContaining("Could not check"));
     expect(execFileSync).toHaveBeenCalledWith(
       "npm",
-      ["install", "--global", "mema@0.1.0"],
+      ["install", "--global", "tiramisu@0.1.0"],
       expect.anything(),
     );
   });
@@ -958,15 +962,15 @@ describe("mema init", () => {
     published();
     installed("0.3.0");
     await init({ cwd: root, cliRoot });
-    expect(log.step).toHaveBeenCalledExactlyOnceWith("Installing mema-memory-writing globally.");
+    expect(log.step).toHaveBeenCalledExactlyOnceWith("Installing tiramisu-memory-writing globally.");
     expect(confirm).toHaveBeenCalledTimes(5);
   });
 
   it("refuses to overwrite a different global package using the same name", async () => {
-    mkdirSync(join(globalRoot, "mema"), { recursive: true });
+    mkdirSync(join(globalRoot, "tiramisu"), { recursive: true });
     writeFileSync(
-      join(globalRoot, "mema", NAMES.PACKAGE_JSON),
-      '{"name":"mema","version":"10.0.0"}',
+      join(globalRoot, "tiramisu", NAMES.PACKAGE_JSON),
+      '{"name":"tiramisu","version":"10.0.0"}',
     );
     await expect(init({ cwd: root, cliRoot })).rejects.toThrow("not this CLI");
     expect(log.step).not.toHaveBeenCalled();
@@ -996,7 +1000,7 @@ describe("mema init", () => {
       await init({ cwd: join(web, "src"), cliRoot });
       expect(execFileSync).toHaveBeenCalledWith(
         manager,
-        [...args, "mema@0.2.0"],
+        [...args, "tiramisu@0.2.0"],
         expect.objectContaining({ cwd: web }),
       );
       expect(vi.mocked(confirm).mock.calls[1]?.[0].message).toContain("0.1.0 to 0.2.0");

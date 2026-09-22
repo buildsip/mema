@@ -2,6 +2,7 @@ import { isInside } from "@buildsip/file-utils";
 import type { Command } from "commander";
 import { dirname } from "node:path";
 import type { z } from "zod";
+import { CLI_NAME } from "../cli-name";
 import { findRepo } from "../find-repo";
 import { findStores } from "../find-stores";
 import { loadMemories } from "../load-memories";
@@ -105,7 +106,7 @@ export async function update({
     } catch (error) {
       // A title/scope change may have moved the file. Give the caller its new retry path.
       throw new Error(
-        `The memory was saved at ${saved[0]}, but its agent upvote failed. ${error instanceof Error ? error.message : "Check the database and retry."} Retry only the upvote with upvote-memories using the same roots and repo, path ${JSON.stringify(saved)}, and actor "agent" (CLI: mema upvote with the same --roots and --repo, this --path, and --actor agent). The content is already saved, even if this update set doNotEdit.`,
+        `The memory was saved at ${saved[0]}, but its agent upvote failed. ${error instanceof Error ? error.message : "Check the database and retry."} Retry only the upvote with upvote-memories using the same roots and repo, path ${JSON.stringify(saved)}, and actor "agent" (CLI: ${CLI_NAME} upvote with the same --roots and --repo, this --path, and --actor agent). The content is already saved, even if this update set doNotEdit.`,
       );
     }
   }

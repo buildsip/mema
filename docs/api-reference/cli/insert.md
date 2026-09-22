@@ -1,13 +1,13 @@
-# mema insert
+# tiramisu insert
 
-`mema insert` creates one memory from a JSON object. Search for a related memory before inserting.
+`tiramisu insert` creates one memory from a JSON object. Search for a related memory before inserting.
 
 ```bash filename="Terminal"
-mema insert --roots /repo --repo /repo --input memory.json
+tiramisu insert --roots /repo --repo /repo --input memory.json
 ```
 
 ```bash filename="Terminal"
-mema insert --roots /repo --repo /repo <<'EOF'
+tiramisu insert --roots /repo --repo /repo <<'EOF'
 {
   "body": "Retry the client once after a reconnect; do not stack interceptors.",
   "frontmatter": {

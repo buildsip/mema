@@ -13,16 +13,17 @@ import { registerInitCommand } from "./commands/init";
 import { registerSearchCommand } from "./commands/search";
 import { registerInsertCommand } from "./commands/insert";
 import { registerUpdateCommand } from "./commands/update";
+import { CLI_NAME } from "./cli-name";
 import { NAMES } from "./names";
 import { installMcp } from "./install-mcp";
 import { createMcpServer } from "./create-mcp-server";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 
-// The built entry point lives in dist; its parent is the installed mema package.
+// The built entry point lives in dist; its parent is the installed tiramisu package.
 const cliRoot = fileURLToPath(new URL("..", import.meta.url));
 const pkg = JSON.parse(readFileSync(join(cliRoot, NAMES.PACKAGE_JSON), "utf8"));
 // Route Commander errors through our catch block so agent commands return JSON errors.
-const program = new Command().name("mema").version(pkg.version).exitOverride();
+const program = new Command().name(CLI_NAME).version(pkg.version).exitOverride();
 program.configureOutput({ writeErr: () => {} });
 
 registerInitCommand({ program, cliRoot });
@@ -60,7 +61,7 @@ try {
 } catch (error) {
   const code = (error as { code?: string }).code;
   if (code !== "commander.helpDisplayed" && code !== "commander.version") {
-    const message = error instanceof Error ? error.message : "mema failed.";
+    const message = error instanceof Error ? error.message : `${CLI_NAME} failed.`;
     if (process.argv[2] === "init") cancel(message);
     else process.stderr.write(`${JSON.stringify({ error: message })}\n`);
     process.exitCode = 1;

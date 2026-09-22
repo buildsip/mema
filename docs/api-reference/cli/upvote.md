@@ -1,9 +1,9 @@
-# mema upvote
+# tiramisu upvote
 
-`mema upvote` records a batch of human or agent upvotes.
+`tiramisu upvote` records a batch of human or agent upvotes.
 
 ```bash filename="Terminal"
-mema upvote --roots /app /team --repo /app \
+tiramisu upvote --roots /app /team --repo /app \
   --path /app/.memories/data/cache /team/.memories/data/releases \
   --actor human
 ```

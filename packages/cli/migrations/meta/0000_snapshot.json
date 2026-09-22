@@ -4,9 +4,9 @@
   "version": "7",
   "dialect": "postgresql",
   "tables": {
-    "mema.upvotes": {
+    "tiramisu.upvotes": {
       "name": "upvotes",
-      "schema": "mema",
+      "schema": "tiramisu",
       "columns": {
         "id": {
           "name": "id",
@@ -58,11 +58,11 @@
       "checkConstraints": {
         "upvotes_actor_check": {
           "name": "upvotes_actor_check",
-          "value": "\"mema\".\"upvotes\".\"actor\" in ('human', 'agent')"
+          "value": "\"tiramisu\".\"upvotes\".\"actor\" in ('human', 'agent')"
         },
         "upvotes_memory_id_check": {
           "name": "upvotes_memory_id_check",
-          "value": "\"mema\".\"upvotes\".\"memory_id\" ~ '[^[:space:]]'"
+          "value": "\"tiramisu\".\"upvotes\".\"memory_id\" ~ '[^[:space:]]'"
         }
       },
       "isRLSEnabled": false

@@ -8,7 +8,7 @@ export async function prepareInstructions({ root, cliRoot }: { root: string; cli
   const path = join(root, NAMES.AGENTS_MD);
   await assertNoSymlinks({ path, base: root });
   const previous = readTextIfExistsSync(path);
-  const marker = "<!-- mema:instructions -->";
+  const marker = "<!-- tiramisu:instructions -->";
   // Keep the marker when editing the starter rules so future init runs leave them alone.
   if (previous?.includes(marker)) return undefined;
 
@@ -25,6 +25,6 @@ export async function prepareInstructions({ root, cliRoot }: { root: string; cli
   return {
     path,
     previous,
-    text: `${previous ?? ""}${gap}${marker}${newline}${starter}${newline}<!-- /mema:instructions -->${newline}`,
+    text: `${previous ?? ""}${gap}${marker}${newline}${starter}${newline}<!-- /tiramisu:instructions -->${newline}`,
   };
 }
