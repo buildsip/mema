@@ -10,7 +10,7 @@ export async function describeSearch(result: { path: string }[]) {
     if (repos.has(repo)) continue;
     repos.add(repo);
     // Read each root config once; search must not run database credential commands.
-    const { config } = await readConfig({ project: repo, repo });
+    const { config } = await readConfig(repo);
     if (config.prune) enabled.push(repo);
   }
   if (!enabled.length) return undefined;

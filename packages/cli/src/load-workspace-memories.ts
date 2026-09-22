@@ -37,7 +37,7 @@ export async function loadWorkspaceMemories({
   for (const root of workspace.roots) {
     const other = await findRepo(root).catch(() => undefined);
     if (!other || other === workspace.repo) continue;
-    const { availableToWorkspace } = await readConfig({ repo: other, project: other });
+    const { availableToWorkspace } = await readConfig(other);
     // Each workspace folder can expose a different subtree in the same shared repo.
     const { stores } = await findStores({ repo: other, project: root });
     memories.push(...(await loadMemories({ stores, repo: other, availableToWorkspaceOnly: true })));

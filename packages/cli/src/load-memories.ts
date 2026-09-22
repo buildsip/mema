@@ -24,9 +24,10 @@ export async function loadMemories({
   availableToWorkspaceOnly?: boolean;
 }) {
   const memories: Memory[] = [];
+  // Sharing is repository-wide, so read it once for all package stores.
+  const { availableToWorkspace } = await readConfig(repo);
+  if (availableToWorkspaceOnly && !availableToWorkspace) return memories;
   for (const project of stores) {
-    const { availableToWorkspace } = await readConfig({ project, repo });
-    if (availableToWorkspaceOnly && !availableToWorkspace) continue;
     const data = join(project, NAMES.MEMORIES, NAMES.DATA);
     await assertNoSymlinks({ path: data, base: repo });
     const dirs = [data];

@@ -1,15 +1,12 @@
-# `config.json`
+# `tiramisu.json`
 
-Location: `.memories/config.json`
+Location: `tiramisu.json`, directly at the repository root.
 
-Packages inherit configuration from the repository root.
+One configuration applies to every memory in the repository, including package memories. Ask your agent to update it when you want to change these settings.
 
 ## availableToWorkspace
 
 Optional. Defaults to false. If true, all memories in that repository are available to all other projects in the active workspace.
-
-> [!WARNING]
-> `availableToWorkspace` can only be enabled in the `config.json` at the root of a repository.
 
 ## frontmatter
 
@@ -17,10 +14,7 @@ Optional. Defaults to false. If true, all memories in that repository are availa
 
 To use custom frontmatter fields for memories, define a JSON Schema.
 
-> [!WARNING]
-> `frontmatter.custom` can only be enabled in the `config.json` at the root of a repository. The schema applies to every memory in the repo.
-
-Root `.memories/config.json`:
+Root `tiramisu.json`:
 
 ```json
 {
@@ -69,9 +63,6 @@ Providing an object enables pruning:
   }
 }
 ```
-
-> [!WARNING]
-> This field can only be configured at the root of the repo.
 
 ### Lifetimes
 

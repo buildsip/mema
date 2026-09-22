@@ -16,4 +16,4 @@ of this value and of whether the database contains votes.
 
 ## Related
 
-- [`config.json`](../file-conventions/config-json.md)
+- [`tiramisu.json`](../file-conventions/tiramisu-json.md)

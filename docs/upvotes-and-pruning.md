@@ -12,7 +12,7 @@
 
 ## Disable upvotes and pruning
 
-`config.json`:
+`tiramisu.json`:
 
 ```json
 {

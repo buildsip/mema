@@ -16,7 +16,7 @@ Declares extra memory fields. The only allowed key is `custom`, a JSON Schema ob
 }
 ```
 
-Define `custom` only in the Git root [`.memories/config.json`](../file-conventions/config-json.md). One schema applies to every memory in the repo. Package configs cannot set, replace, or extend it.
+Define `custom` in [`tiramisu.json`](../file-conventions/tiramisu-json.md). One schema applies to every memory in the repo.
 
 Custom fields go next to [`title`](../memory/title.md) in YAML and in insert/update JSON, not inside a nested `custom` object.
 

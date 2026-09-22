@@ -1,7 +1,7 @@
 # `prune.databaseUrlCommand`
 
 A complete shell command that prints the PostgreSQL URL. Configure it inside `prune` in
-the Git-root `.memories/config.json`. Packages inherit the root setting and cannot override it.
+[`tiramisu.json`](../file-conventions/tiramisu-json.md).
 
 ```json
 {
@@ -13,7 +13,7 @@ the Git-root `.memories/config.json`. Packages inherit the root setting and cann
 
 ## Execution
 
-The command runs from the owning Git repository root during root init, upvote, prune, and pruning-enabled updates.
+The command runs from the owning Git repository root during init, upvote, prune, and pruning-enabled updates.
 Its working directory does not guarantee which secrets project it selects: configure explicit
 provider project/environment arguments when needed. The provider CLI must be installed and
 authenticated in the environment running Tiramisu.
@@ -45,13 +45,13 @@ home-directory credentials map. That name in the example is simply the secret's 
 
 ## Database setup
 
-Every accepted root `tiramisu init` setup with pruning enabled requires a fresh command in one prompt,
+Every accepted `tiramisu init` setup with pruning enabled requires a fresh command in one prompt,
 even when a command is already saved. Blank input is rejected; saved commands are
 not offered as defaults or executed automatically. A command failure or invalid PostgreSQL URL
 prompts for another command in the same run.
 
 After validation, Tiramisu applies pending bundled migrations and saves the new command under
-`prune.databaseUrlCommand` in the root config. Package setup neither prompts for credentials nor connects to the database.
+`prune.databaseUrlCommand` in the root config.
 Canceling or a migration failure leaves existing config unchanged. Disabled pruning and declined
 reconfiguration do not execute a command or touch the database.
 

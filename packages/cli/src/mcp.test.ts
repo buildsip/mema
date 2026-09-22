@@ -282,7 +282,7 @@ describe("MCP stdio server", () => {
   it("validates custom frontmatter against the destination store", async () => {
     await mkdir(join(repo, ".memories"));
     await writeFile(
-      join(repo, ".memories/config.json"),
+      join(repo, "tiramisu.json"),
       JSON.stringify({
         frontmatter: {
           custom: { properties: { ticket: { type: "string" } }, required: ["ticket"] },

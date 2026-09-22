@@ -30,7 +30,7 @@ to a second database copy of those memories. `actor` records a category, not an 
 
 `tiramisu init` with pruning enabled checks migration history every time setup is accepted,
 including when another repository has already initialized the same database. It never decides
-whether to migrate based on existing votes or `config.json.version`.
+whether to migrate based on existing votes or `tiramisu.json.version`.
 
 1. Collect and validate a fresh [`prune.databaseUrlCommand` credential command](./config/databaseUrlCommand.md) and execute it from the owning repository root.
 2. Open a dedicated PostgreSQL connection and acquire Tiramisu's database-local advisory lock.

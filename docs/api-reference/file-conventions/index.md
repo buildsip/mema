@@ -6,8 +6,8 @@ Stores are allowed at the Git root and at directories that contain `package.json
 
 ```txt
 repo/
+├── tiramisu.json
 ├── .memories/
-│   ├── config.json
 │   └── data/
 │       └── staging-db-weekly-reset/
 │           └── memory.md
@@ -15,7 +15,6 @@ repo/
     └── web/
         ├── package.json
         └── .memories/
-            ├── config.json
             └── data/
                 └── errors/
                     └── axios-reconnect-retry/
@@ -24,6 +23,6 @@ repo/
 ```
 
 - [`.memories`](./memories.md)
-- [`config.json`](./config-json.md)
+- [`tiramisu.json`](./tiramisu-json.md)
 - [`data/`](./data.md)
 - [`memory.md`](./memory-md.md)

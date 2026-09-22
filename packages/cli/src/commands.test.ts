@@ -60,8 +60,7 @@ afterEach(async () => {
 });
 
 async function config({ project, value }: { project: string; value: Record<string, unknown> }) {
-  await mkdir(join(project, NAMES.MEMORIES), { recursive: true });
-  await writeFile(join(project, NAMES.MEMORIES, NAMES.CONFIG_JSON), JSON.stringify(value));
+  await writeFile(join(project, NAMES.TIRAMISU_JSON), JSON.stringify(value));
 }
 
 async function memory({
@@ -1026,15 +1025,16 @@ describe("search", () => {
     expect(await search({ roots, repo: team, query: "cache" })).toHaveLength(2);
   });
 
-  it.each([false, true])("rejects sharing %s declared in another repo's package", async (value) => {
+  it.each([false, true])("ignores sharing %s declared in another repo's package", async (value) => {
     const child = join(team, "team-rules");
     await mkdir(child);
     await writeFile(join(child, NAMES.PACKAGE_JSON), "{}");
     await config({ project: team, value: { availableToWorkspace: false } });
     await config({ project: child, value: { availableToWorkspace: value } });
-    await expect(search({ roots, repo: root, query: "cache" })).rejects.toThrow(
-      `Remove availableToWorkspace from ${join(child, NAMES.MEMORIES, NAMES.CONFIG_JSON)}`,
-    );
+    await memory({ project: child, title: "Cache rules" });
+    expect(await search({ roots, repo: root, query: "cache" })).toEqual([]);
+    await config({ project: team, value: { availableToWorkspace: true } });
+    expect(await search({ roots, repo: root, query: "cache" })).toHaveLength(1);
   });
 
   it("limits and offsets results, with no matches returning an empty array", async () => {
