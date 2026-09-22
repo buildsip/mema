@@ -93,7 +93,3 @@ npx tiramisu init
 ```
 
 This installs the CLI, the MCP tools, and configures your repo.
-
-# Note for npm package maintainers
-
-Make sure you exclude `.memories` and `tiramisu.json` from what gets shipped to npm.
