@@ -46,46 +46,19 @@
 
 Tiramisu helps your agent access **project, personal, team, and organization** memories at the same time.
 
-```bash
-repo/
-├── .memories/                            # whole repo
-├── apps/
-│   └── web
-│       └── .memories/                    # scoped to web
-│           └── data/
-│               ├── errors/               # custom dir names, organize as you want
-│               │   └── webpack-error/    # the memory directory, named after the memory's title
-│               │       ├── memory.md     # the memory file
-│               │       └── error.png     # attachment
-│               ├── gotchas/
-│               ├── ADRs/
-│               └── glossary/
-└── packages/
-    └── auth
-        └── .memories/                    # scoped to auth
-
-adam-personal/                            # separate Git repo, personal user memories
-└── .memories/
-
-acme-team-1-memories/                     # separate Git repo, team memories
-└── .memories/
-
-acme-memories/                            # separate Git repo, organization memories
-└── .memories/
-```
+<p align="center">
+  <img src="docs/assets/file-tree.svg" alt="File tree. repo/.memories applies to the whole repo. apps/web/.memories is scoped to web. Under data, folder names such as errors, gotchas, and ADRs are searchable tags. webpack-error is the memory folder, named from the title. It holds memory.md plus attachments, error.png and response.json. packages/auth/.memories is scoped to auth. adam-personal, acme-team-1-memories, and acme-memories are separate Git repos for personal, team, and organization memories." width="1147">
+</p>
 
 # Quickstart
 
 ## Step 1: Configure pruning (Optional)
 
-Upvotes and pruning prevent your memories from getting stale:
+Upvotes and pruning reduce stale memories.
 
-- **Upvotes**: When a memory helps solve a task, it gets upvoted (by you or the agent). Each upvote extends its lifespan.
-- **Pruning**: When you ask to prune, the agent reviews expired memories and suggests updates or deletions.
+When a memory helps solve a task, it gets upvoted, which extends its lifespan. These events are stored in the database. On request, the agent can prune memories, meaning it reviews expired memories and suggests updates or deletions.
 
-The database stores the upvote events.
-
-If you skip this, upvotes are disabled. The agent can still prune memories manually by searching your codebase to verify if they're still relevant.
+If you skip this step, upvotes are disabled, but the agent can still prune manually by searching your codebase to verify relevance.
 
 ### Option A: Self-Hosted
 
@@ -95,25 +68,21 @@ Spin up a PostgreSQL database. Could use **[Neon](https://neon.tech)** or **[Sup
 
 ### Option B: tiramisu app (Coming Soon)
 
-Don't want to manage a database?
-
-- ⚡ Zero-config setup: No databases to create or manage.
-- 📊 Team Dashboard: See your team's top useful gotchas, search trends, and memories approaching expiration.
-- 🤖 Automated Pruning PRs: Automated monthly GitHub PRs that remove stale memories.
+⚡ Cloud Database, 📊 Dashboard, 🤖 Automated Pruning PRs
 
 ## Step 2: Separate project memories from personal, team, and/or organization memories (Optional)
 
-This step is useful for teams. If you're a solo dev, you could skip to [Step 3](./README.md#step-3-installation).
+This step is useful for teams. Solo devs can skip to [Step 3](./README.md#step-3-installation).
 
-1. Create one repo for each set of memories you want to keep separate. For example, you might create one per team, one shared across the company, and a personal repo for memories that only apply to you.
-2. To "import" the memories, add the repos to your IDE **workspace** and to your agent harness **workspace**.
+1. Create one repo per set of memories you want to keep separate (e.g. per team, one company-wide, one personal).
+2. Add each repo to your IDE **and** agent harness **workspaces** to "import" the memories.
 3. Install `tiramisu` in each repo:
 
 ```bash
 npx tiramisu init
 ```
 
-When asked if you want to make these memories available to other projects in this workspace, answer **yes**.
+When asked whether to make these memories available to other projects in this workspace, answer **yes**.
 
 ## Step 3: Install to project
 
@@ -123,8 +92,8 @@ Inside your **project**, run:
 npx tiramisu init
 ```
 
-Under the hood, this installs the CLI, the MCP tools, and configures your repo.
+This installs the CLI, the MCP tools, and configures your repo.
 
 # Note for npm package maintainers
 
-Make sure you exclude `.memories` from what gets shipped to npm.
+Make sure you exclude `.memories` and `tiramisu.json` from what gets shipped to npm.
