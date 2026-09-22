@@ -1,7 +1,6 @@
-import { assertNoSymlinks, getAncestors, readTextIfExists } from "@buildsip/file-utils";
+import { assertNoSymlinks, readTextIfExists } from "@buildsip/file-utils";
 import { join } from "node:path";
 import { z } from "zod";
-import { mergeConfig } from "./merge-config";
 import { NAMES } from "./names";
 import { parseValue } from "./parse-value";
 import { databaseUrlCommandSchema } from "./database-url-command-schema";
@@ -85,59 +84,27 @@ const schema = z.strictObject(
 export type Config = z.infer<typeof schema>;
 
 /**
- * Merges config from the Git root down to the owning repo or package directory.
- * Only the Git root defines pruning, sharing, and custom fields.
+ * Reads tiramisu.json directly from the Git root. All memory stores use this config.
  *
- * @returns Effective config, the Git root's availableToWorkspace flag, and the local
- * config plus its original text. Init uses the local values to avoid copying inherited
- * settings into the file.
+ * The original text lets init detect concurrent edits before saving.
+ * Missing config uses defaults.
  */
-export async function readConfig({ project, repo }: { project: string; repo: string }) {
+export async function readConfig(repo: string) {
+  const path = join(repo, NAMES.TIRAMISU_JSON);
+  await assertNoSymlinks({ path, base: repo });
+  const source = await readTextIfExists(path);
   let config: Config = {};
-  let local: Config = {};
-  let source: string | undefined;
-  let availableToWorkspace = false;
-  // Apply root defaults first, then let each closer config override them.
-  for (const parent of getAncestors({ path: project, root: repo }).reverse()) {
-    const path = join(parent, NAMES.MEMORIES, NAMES.CONFIG_JSON);
-    await assertNoSymlinks({ path, base: repo });
-    const text = await readTextIfExists(path);
-    if (text === undefined) continue;
+  if (source !== undefined) {
     let value: unknown;
     try {
-      value = JSON.parse(text);
+      value = JSON.parse(source);
     } catch (cause) {
       throw new Error(
         `Invalid config ${path}: expected one valid JSON object with double-quoted keys and no comments or trailing commas. ${cause instanceof Error ? cause.message : String(cause)}`,
         { cause },
       );
     }
-    const parsed = parseValue({ schema, value, label: `config ${path}` });
-    // Even false is root-only: packages cannot change their repository's pruning policy.
-    if (parent !== repo && Object.hasOwn(parsed, "prune")) {
-      throw new Error(
-        `Remove prune from ${path}. Set it only in the repository root config: ${join(repo, NAMES.MEMORIES, NAMES.CONFIG_JSON)}. Packages inherit the root's pruning settings and cannot override or disable them.`,
-      );
-    }
-    // Reject even false in child configs: availableToWorkspace has exactly one owner, the repo.
-    if (parent !== repo && Object.hasOwn(parsed, "availableToWorkspace")) {
-      throw new Error(
-        `Remove availableToWorkspace from ${path}. Set it only in the repository root config: ${join(repo, NAMES.MEMORIES, NAMES.CONFIG_JSON)}. Use true to share all memories in this repo, or false (or omit it) to share none with other repos.`,
-      );
-    }
-    // Reject even an empty schema so packages cannot replace or extend repo-wide rules.
-    if (parent !== repo && parsed.frontmatter && Object.hasOwn(parsed.frontmatter, "custom")) {
-      throw new Error(
-        `Remove frontmatter.custom from ${path}. Define it only in the repository root config: ${join(repo, NAMES.MEMORIES, NAMES.CONFIG_JSON)}. One custom frontmatter schema applies to every memory in this repo; packages cannot override or extend it.`,
-      );
-    }
-    if (parent === project) {
-      local = parsed;
-      source = text;
-    }
-    // Package settings cannot override the repo-wide availableToWorkspace flag.
-    if (parent === repo) availableToWorkspace = parsed.availableToWorkspace === true;
-    config = mergeConfig({ base: config, local: parsed }) as Config;
+    config = parseValue({ schema, value, label: `config ${path}` });
   }
-  return { config, availableToWorkspace, local, source };
+  return { config, availableToWorkspace: config.availableToWorkspace === true, source };
 }

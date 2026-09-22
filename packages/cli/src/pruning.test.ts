@@ -70,7 +70,7 @@ async function configure({
 }) {
   await mkdir(join(repo, ".memories"), { recursive: true });
   await writeFile(
-    join(repo, ".memories/config.json"),
+    join(repo, "tiramisu.json"),
     JSON.stringify({
       availableToWorkspace: shared,
       prune: enabled ? { databaseUrlCommand: `printf '%s\\n' '${url}'`, ...settings } : false,
@@ -178,8 +178,9 @@ it("records mixed-repo batches once per path and allows deletion across the same
   expect(
     await upvote({ roots, repo, paths: [one.path, two.path, one.path], actor: "human" }),
   ).toEqual({ upvoted: [one.path, two.path], skipped: [] });
-  const rows = (await client.query("SELECT memory_id, actor FROM tiramisu.upvotes ORDER BY memory_id"))
-    .rows;
+  const rows = (
+    await client.query("SELECT memory_id, actor FROM tiramisu.upvotes ORDER BY memory_id")
+  ).rows;
   expect(rows).toEqual([one.id, two.id].sort().map((id) => ({ memory_id: id, actor: "human" })));
   await configure({ repo, enabled: false });
   await configure({ repo: team, shared: true, enabled: false });
@@ -229,7 +230,7 @@ it.each([false, undefined])(
     const team = await makeRepo("team");
     for (const owner of [repo, team]) {
       await writeFile(
-        join(owner, ".memories/config.json"),
+        join(owner, "tiramisu.json"),
         JSON.stringify({ availableToWorkspace: true, prune }),
       );
     }

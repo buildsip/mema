@@ -1,6 +1,6 @@
-import { assertNoSymlinks, findUp, readTextIfExistsSync } from "@buildsip/file-utils";
+import { assertNoSymlinks, readTextIfExistsSync } from "@buildsip/file-utils";
 import type { Command } from "commander";
-import { existsSync, lstatSync, mkdirSync, readFileSync, realpathSync, rmdirSync } from "node:fs";
+import { mkdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { confirm, group, intro, isCancel, log, outro } from "@clack/prompts";
 import { applyEdits, findNodeAtLocation, modify, parseTree, type ParseError } from "jsonc-parser";
@@ -18,7 +18,7 @@ import { migrateDatabase } from "../migrate-database";
 import { promptDatabaseCommand } from "../prompt-database-command";
 
 /**
- * Configures the Git root first, then the nearest package on later runs.
+ * Configures the Git root, even when started inside a nested package.
  * Prompts before reconfiguring, preserves existing memories and unrelated settings,
  * and installs the global CLI before saving the chosen configuration.
  *
@@ -34,31 +34,12 @@ export async function init({
   verbose?: boolean;
 }) {
   const root = await findRepo(cwd);
-  // Starting in apps/web/src should configure apps/web, not create a store inside src.
-  const nearest =
-    (await findUp({
-      path: realpathSync(cwd),
-      root,
-      test: (path) => existsSync(join(path, NAMES.PACKAGE_JSON)),
-    })) ?? root;
-  // Memories can exist before init runs. Only a root config counts as completed repo setup.
-  const repoConfig = await readConfig({ project: root, repo: root });
-  const project = repoConfig.source === undefined ? root : nearest;
+  const { config, source } = await readConfig(root);
   // Setup messages use the CLI package's name, regardless of the project being configured.
   const { name } = JSON.parse(readFileSync(join(cliRoot, NAMES.PACKAGE_JSON), "utf8"));
-  const memories = join(project, NAMES.MEMORIES);
-  const configPath = join(memories, NAMES.CONFIG_JSON);
-  await assertNoSymlinks({ path: configPath, base: root });
-  const directory = lstatSync(memories, { throwIfNoEntry: false });
-  if (directory && !directory.isDirectory()) throw new Error(`Expected a directory: ${memories}`);
-  const { local, source } = project === root ? repoConfig : await readConfig({ project, repo: root });
+  const configPath = join(root, NAMES.TIRAMISU_JSON);
 
   intro(`${CLI_NAME} init`);
-  if (project !== nearest) {
-    log.info(
-      `First-time setup: initializing the repository at ${root}. Run ${CLI_NAME} init again from this package to configure it.`,
-    );
-  }
   if (source !== undefined) {
     const update = await confirm({
       message: `${name} is already initialized. Reconfigure its settings?`,
@@ -73,28 +54,21 @@ export async function init({
   let url: string | undefined;
   // Reconfiguration uses the same defaults as first-time setup, not the saved settings.
   const answers = await group<{
-    availableToWorkspace: boolean | symbol | undefined;
-    prune: boolean | symbol | undefined;
+    availableToWorkspace: boolean | symbol;
+    prune: boolean | symbol;
     databaseUrlCommand: string | undefined;
     labels: boolean | symbol;
-    skill: boolean | symbol | undefined;
-    instructions: boolean | symbol | undefined;
+    skill: boolean | symbol;
+    instructions: boolean | symbol;
   }>(
     {
-      // Returning undefined skips this prompt when initializing a package,
-      // because `availableToWorkspace` is only set at the root of a repository.
       availableToWorkspace: () =>
-        project === root
-          ? confirm({
-              message:
-                "Make all memories in this repository available to the other projects in this workspace?",
-              initialValue: false,
-            })
-          : undefined,
-      prune: () =>
-        project === root
-          ? confirm({ message: "Enable pruning?", initialValue: true })
-          : undefined,
+        confirm({
+          message:
+            "Make all memories in this repository available to the other projects in this workspace?",
+          initialValue: false,
+        }),
+      prune: () => confirm({ message: "Enable pruning?", initialValue: true }),
       // Require fresh input on every accepted root setup, even if a command is saved.
       databaseUrlCommand: async ({ results }) => {
         if (!results.prune) return undefined;
@@ -117,19 +91,15 @@ export async function init({
       labels: () =>
         confirm({ message: "Add memory tab labels to VS Code / Cursor?", initialValue: true }),
       skill: () =>
-        project === root
-          ? confirm({
-              message: "Install the global memory-writing skill? Existing copies will be replaced.",
-              initialValue: true,
-            })
-          : undefined,
+        confirm({
+          message: "Install the global memory-writing skill? Existing copies will be replaced.",
+          initialValue: true,
+        }),
       instructions: () =>
-        project === root
-          ? confirm({
-              message: `Add starter instructions for when to store or update memories to ${join(root, NAMES.AGENTS_MD)}?`,
-              initialValue: true,
-            })
-          : undefined,
+        confirm({
+          message: `Add starter instructions for when to store or update memories to ${join(root, NAMES.AGENTS_MD)}?`,
+          initialValue: true,
+        }),
     },
     {
       onCancel: () => {
@@ -137,25 +107,19 @@ export async function init({
       },
     },
   );
+  // Preserve the custom schema while replacing the settings chosen during setup.
   const next: Config = {
-    ...local,
+    ...config,
     version: 1,
-    // Keep the repo-wide setting out of package config files,
-    // because `availableToWorkspace` is only set at the root of a repository.
-    ...(project === root ? { availableToWorkspace: answers.availableToWorkspace } : {}),
-    // Packages inherit the root policy without copying it into their config.
-    ...(project === root
+    availableToWorkspace: answers.availableToWorkspace,
+    prune: answers.prune
       ? {
-          prune: answers.prune
-            ? {
-                unvotedTtl: "90d",
-                humanUpvoteTtl: "180d",
-                agentUpvoteTtl: "90d",
-                databaseUrlCommand: answers.databaseUrlCommand,
-              }
-            : false,
+          unvotedTtl: "90d",
+          humanUpvoteTtl: "180d",
+          agentUpvoteTtl: "90d",
+          databaseUrlCommand: answers.databaseUrlCommand,
         }
-      : {}),
+      : false,
   };
 
   const settingsPath = join(root, NAMES.VSCODE, NAMES.SETTINGS_JSON);
@@ -207,39 +171,27 @@ export async function init({
     );
   }
 
-  await installCli({ log }, { cwd: project, cliRoot, verbose });
+  await installCli({ log }, { cwd: root, cliRoot, verbose });
   if (answers.skill) installWritingSkill({ log }, { cwd: root, cliRoot, verbose });
 
-  // Existing stores may already contain memories created by insert; leave all of those files alone.
-  if (!directory) mkdirSync(memories);
-  try {
-    if (instructions) {
-      await assertNoSymlinks({ path: instructions.path, base: root });
-      writeText(instructions);
-    }
-    if (settings !== undefined) {
-      mkdirSync(join(root, NAMES.VSCODE), { recursive: true });
-      writeText({ path: settingsPath, text: settings, previous });
-    }
-    writeText({ path: configPath, text: `${JSON.stringify(next, null, 2)}\n`, previous: source });
-  } catch (error) {
-    if (!directory) {
-      // Only remove an empty directory we created; concurrent files must survive a failed init.
-      try {
-        rmdirSync(memories);
-      } catch {
-        /* The directory now contains another writer's files. */
-      }
-    }
-    throw error;
+  if (instructions) {
+    await assertNoSymlinks({ path: instructions.path, base: root });
+    writeText(instructions);
   }
+  if (settings !== undefined) {
+    mkdirSync(join(root, NAMES.VSCODE), { recursive: true });
+    writeText({ path: settingsPath, text: settings, previous });
+  }
+  // Recheck after prompts and installation; the config path may have changed in the meantime.
+  await assertNoSymlinks({ path: configPath, base: root });
+  writeText({ path: configPath, text: `${JSON.stringify(next, null, 2)}\n`, previous: source });
   outro(`${name} initialized.`);
 }
 
 export function registerInitCommand({ program, cliRoot }: { program: Command; cliRoot: string }) {
   program
     .command("init")
-    .description("Initialize memories at the Git root first, then configure the nearest package.")
+    .description(`Initialize ${CLI_NAME}.`)
     .option("--verbose", "Print setup command output.")
     .action(async (options: { verbose?: boolean }) => {
       await init({ cwd: process.cwd(), cliRoot, verbose: options.verbose });

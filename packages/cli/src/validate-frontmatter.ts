@@ -6,6 +6,7 @@ import { storedFrontmatterSchema } from "./stored-frontmatter-schema";
 import { formatSchemaErrors } from "./format-schema-errors";
 import { parseValue } from "./parse-value";
 import type { Config } from "./read-config";
+import { NAMES } from "./names";
 
 export type Frontmatter = z.infer<typeof storedFrontmatterSchema>;
 
@@ -45,7 +46,7 @@ export function validateFrontmatter({
         .map((key) => z.core.toDotPath(["frontmatter", key]))
         .join(
           ", ",
-        )}: remove these undeclared fields or define their JSON Schema under frontmatter.custom in the repository root's .memories/config.json, for example {"frontmatter":{"custom":{"properties":{"ticket":{"type":"string"}}}}}. Custom fields go next to title, not inside a custom object.`,
+        )}: remove these undeclared fields or define their JSON Schema under frontmatter.custom in the repository root's ${NAMES.TIRAMISU_JSON}, for example {"frontmatter":{"custom":{"properties":{"ticket":{"type":"string"}}}}}. Custom fields go next to title, not inside a custom object.`,
     );
   if (schema) {
     // Reuse the compiled schema when several writes use the same repo configuration.

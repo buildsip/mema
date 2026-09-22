@@ -1,6 +1,6 @@
 # Configuration
 
-Fields in [`.memories/config.json`](../file-conventions/config-json.md).
+Fields in [`tiramisu.json`](../file-conventions/tiramisu-json.md).
 
 Unknown keys are rejected. Allowed fields: `version`, `availableToWorkspace`, `frontmatter`, `prune`.
 

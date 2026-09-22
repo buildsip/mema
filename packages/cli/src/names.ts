@@ -17,8 +17,8 @@ export enum NAMES {
   GIT = ".git",
   /** Memory store directory. Only allowed at a package root or the repo root. */
   MEMORIES = ".memories",
-  /** Store settings file inside `.memories`. */
-  CONFIG_JSON = "config.json",
+  /** Repository-wide settings file, directly inside the Git root. */
+  TIRAMISU_JSON = "tiramisu.json",
   /** Folder of memory.md files and attachments, created on the first insert. */
   DATA = "data",
   /** The markdown file that holds one memory. */

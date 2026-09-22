@@ -65,7 +65,7 @@ export async function migrateDatabase({
           expected.folderMillis !== Number(entry.created_at)
         ) {
           throw new MigrationError(
-            `The database migration history does not match this tiramisu release; it may be newer or modified. No migrations were applied. Use the tiramisu release that owns this history or a compatible newer release, then retry ${CLI_NAME} init. Do not edit the migration history or config.json version to bypass this check.`,
+            `The database migration history does not match this tiramisu release; it may be newer or modified. No migrations were applied. Use the tiramisu release that owns this history or a compatible newer release, then retry ${CLI_NAME} init. Do not edit the migration history or tiramisu.json version to bypass this check.`,
           );
         }
       }

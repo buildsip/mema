@@ -8,13 +8,11 @@ When `true`, this repository's memories are included when another workspace proj
 }
 ```
 
-Set this only in the Git root [`.memories/config.json`](../file-conventions/config-json.md). A package config that includes the key, even as `false`, is rejected.
+Set this in [`tiramisu.json`](../file-conventions/tiramisu-json.md). It applies to all memory stores in the repository.
 
 Omitted or `false` keeps the memories local to that repo.
 
-Only the root value is used. Package configs cannot override it.
-
-[`tiramisu init`](../cli/init.md) asks this only when configuring the Git root.
+[`tiramisu init`](../cli/init.md) asks whether to share the repository’s memories.
 
 ## Related
 

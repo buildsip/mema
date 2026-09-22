@@ -26,7 +26,7 @@ export async function saveMemory({
   body: string;
   existing?: Memory;
 }) {
-  const { config } = await readConfig({ project, repo });
+  const { config } = await readConfig(repo);
   validateFrontmatter({ value: frontmatter, config, path: project });
   // Split accents from letters, then turn punctuation and spaces into folder-safe hyphens.
   const slug = frontmatter.title

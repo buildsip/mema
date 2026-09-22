@@ -25,7 +25,7 @@ Requires Node.js `>=22.5.0`.
 
 | Command                 | Description                                             |
 | ----------------------- | ------------------------------------------------------- |
-| [`init`](./init.md)     | Initialize a Git root, then the nearest package.        |
+| [`init`](./init.md)     | Configure tiramisu.json at the Git root.                |
 | [`mcp`](./mcp.md)       | Serve memory tools over stdio.                          |
 | [`search`](./search.md) | Search titles, frontmatter, directory tags, and bodies. |
 | [`insert`](./insert.md) | Create one memory from JSON.                            |

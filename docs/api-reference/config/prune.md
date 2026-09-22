@@ -1,8 +1,8 @@
 # `prune`
 
-Root-only settings for upvotes and pruning. Omit the field or use `false` to disable both.
+Repository-wide settings for upvotes and pruning. Omit the field or use `false` to disable both.
 
-```json filename=".memories/config.json"
+```json filename="tiramisu.json"
 {
   "prune": {
     "databaseUrlCommand": "doppler secrets get MEMORIES_DATABASE_URL --plain",
@@ -24,7 +24,7 @@ Root-only settings for upvotes and pruning. Omit the field or use `false` to dis
 
 Durations accept positive whole-day strings such as `"1d"` or `"90d"`. Zero, fractions, hours, weeks, whitespace, leading zeros, and values exceeding the safe integer range in milliseconds are rejected.
 
-Only the Git-root config may contain `prune`. Packages inherit the entire setting and cannot override it, including with `false`. Unknown keys and `true` are rejected.
+Configure `prune` in [`tiramisu.json`](../file-conventions/tiramisu-json.md). Unknown keys and `true` are rejected.
 
 ## Expiry
 
@@ -42,4 +42,4 @@ Expiry only makes a memory a [`prune`](../cli/prune.md) candidate. It does not h
 
 ## Setup
 
-Run [`tiramisu init`](../cli/init.md) from the Git root to enable pruning, configure credentials, and apply pending migrations. Package setup does not prompt for pruning or access the database. Runtime operations never migrate automatically.
+Run [`tiramisu init`](../cli/init.md) from anywhere in the repository to enable pruning, configure credentials, and apply pending migrations. Runtime operations never migrate automatically.

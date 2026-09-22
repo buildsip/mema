@@ -1,6 +1,6 @@
 # tiramisu init
 
-`tiramisu init` writes [`.memories/config.json`](../file-conventions/config-json.md) and installs the `tiramisu` package globally. Run it from anywhere inside a Git working tree.
+`tiramisu init` writes [`tiramisu.json`](../file-conventions/tiramisu-json.md) and installs the `tiramisu` package globally. Run it from anywhere inside a Git working tree.
 
 Like every CLI invocation, it also refreshes [global MCP installation](../mcp/installation.md), even if memory reconfiguration is skipped.
 
@@ -22,31 +22,27 @@ tiramisu init --verbose
 
 ### Target
 
-The Git root is the directory that contains `.git`.
+Setup always targets the Git root, including when started from a nested package or its source directory. The root is the directory containing `.git` (a directory in a normal clone, or a file in a worktree).
 
-If that root has no `.memories/config.json`, init configures the Git root even when launched inside a nested package. An existing `.memories/` folder without that file does not count as repository setup.
-
-Once the root config exists, init configures the nearest directory that contains `package.json`, walking up from the current working directory and stopping at the Git root. Starting in `apps/web/src` therefore configures `apps/web`.
-
-Run init again from the same package after first-time repository setup to create that package's own config.
+An existing `tiramisu.json` triggers the reconfiguration prompt. Package manifests and memory stores do not change the target.
 
 ### Prompts
 
-Setup uses the same defaults on every run, including reconfiguration. Existing memories and unrelated config keys are left alone. The target's config and inherited configs are validated before prompting.
+Setup uses the same defaults on every run, including reconfiguration. Existing memories and unrelated config keys are left alone. The root config is validated before prompting.
 
-| Prompt                                                                                 | When                                                                                                                                                                                        |
-| -------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Reconfigure this target?                                                               | The target already has a config. Default `false`. Answering no leaves memory settings unchanged.                                                                                            |
-| Share this repository's memories with other projects in the workspace?                 | Configuring the Git root. Default `false`. See [`availableToWorkspace`](../config/availableToWorkspace.md).                                                                                 |
-| Enable pruning?                                                                        | Configuring the Git root. Default `true`. See [`prune`](../config/prune.md).                                                                                                                 |
-| Full database URL command                                                              | Immediately after enabling pruning, on every accepted root setup. Requires fresh input; blank input is rejected and saved commands are not defaults. No database URL is requested or saved. |
-| Add memory tab labels to VS Code / Cursor?                                             | Always. Default `true`.                                                                                                                                                                     |
-| Install the global memory-writing skill?                                               | Configuring the Git root. Default `true`. Reinstalls the bundled skill even if an older copy is already installed.                                                                          |
-| Add starter instructions for when to store or update memories to the root `AGENTS.md`? | Configuring the Git root. Default `true`. Independent of skill installation.                                                                                                                |
+| Prompt                                                                                 | When                                                                                                                                                                                   |
+| -------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Reconfigure the repository?                                                            | `tiramisu.json` already exists. Default `false`. Answering no leaves memory settings unchanged.                                                                                        |
+| Share this repository's memories with other projects in the workspace?                 | Default `false`. See [`availableToWorkspace`](../config/availableToWorkspace.md).                                                                                                      |
+| Enable pruning?                                                                        | Default `true`. See [`prune`](../config/prune.md).                                                                                                                                     |
+| Full database URL command                                                              | Immediately after enabling pruning, on every accepted setup. Requires fresh input; blank input is rejected and saved commands are not defaults. No database URL is requested or saved. |
+| Add memory tab labels to VS Code / Cursor?                                             | Always. Default `true`.                                                                                                                                                                |
+| Install the global memory-writing skill?                                               | Default `true`. Reinstalls the bundled skill even if an older copy is already installed.                                                                                               |
+| Add starter instructions for when to store or update memories to the root `AGENTS.md`? | Default `true`. Independent of skill installation.                                                                                                                                     |
 
 Canceling any prompt exits with `tiramisu init cancelled.`
 
-When configuring the Git root with pruning enabled, init executes the newly entered [database command](../config/databaseUrlCommand.md) and
+When pruning is enabled, init executes the newly entered [database command](../config/databaseUrlCommand.md) and
 applies pending [database migrations](../database.md) before saving configuration. Repeated
 initialization of a shared database skips migrations already recorded in its history, even
 when that database contains data. Failures stop setup before writing its configuration.
@@ -57,9 +53,9 @@ in the same init run. Cancel to stop without saving config. See the [output cont
 
 ### Written files
 
-Root config always includes `version: 1` and `availableToWorkspace`. Package config omits `availableToWorkspace` and `prune`.
+`tiramisu.json` always includes `version: 1`, `availableToWorkspace`, and `prune`. The existing custom frontmatter schema is preserved.
 
-The newly entered command replaces `prune.databaseUrlCommand` in the root config. Saved commands are never used as defaults during root init. Package setup leaves the root config unchanged and does not connect to the database.
+The newly entered command replaces `prune.databaseUrlCommand`. Saved commands are never used as defaults during init.
 
 Enabled [`prune`](../config/prune.md) replaces existing durations with `unvotedTtl: "90d"`, `humanUpvoteTtl: "180d"`, and `agentUpvoteTtl: "90d"`. Disabled pruning is `false`.
 
@@ -73,7 +69,7 @@ Tab labels edit `.vscode/settings.json` at the Git root (JSONC comments are pres
 }
 ```
 
-`data/` is not created here. See [`data/`](../file-conventions/data.md).
+Memory stores are created on the first insert. See [`.memories`](../file-conventions/memories.md).
 
 If accepted, starter instructions are appended to the root `AGENTS.md`, creating it if needed. Existing text is preserved. The added section explains when to insert or update a memory and refers to the writing skill if installed. Keep its `<!-- tiramisu:instructions -->` marker when customizing it: later init runs leave that section unchanged. The writing guidelines themselves are not added to `AGENTS.md`.
 
@@ -81,7 +77,7 @@ If accepted, starter instructions are appended to the root `AGENTS.md`, creating
 
 After consent, init runs `npx --yes skills add <bundled-skill-path> --global --yes` to install `tiramisu-memory-writing` through Vercel's Skills CLI. The skill ships with the tiramisu package, so installation uses the guidelines from the running version. Accepted installations replace previous copies, including when setting up another repository.
 
-The skill and starter instructions are offered during repository setup or accepted root reconfiguration, not package-only setup. Installation failures stop setup before its files are written; retry with `tiramisu init --verbose` or decline skill installation to continue without it.
+Installation failures stop setup before its files are written; retry with `tiramisu init --verbose` or decline skill installation to continue without it.
 
 To install the skill separately:
 
@@ -115,32 +111,17 @@ Unset `TIRAMISU_INSTALL_MODE` or set it to `registry` for the normal installatio
 
 ## Examples
 
-### First run inside a package
+### Initialize from a package
 
 ```bash filename="Terminal"
-cd apps/web
+cd /repo/apps/web/src
 tiramisu init
 ```
 
-Writes `/repo/.memories/config.json`. The UI tells you to run init again from this package to configure it.
-
-```bash filename="Terminal"
-tiramisu init
-```
-
-Writes `/repo/apps/web/.memories/config.json` without `availableToWorkspace`.
-
-### Reconfigure the Git root
-
-```bash filename="Terminal"
-cd /repo
-tiramisu init
-```
-
-Confirms before overwriting that root config. Existing `memory.md` files stay.
+Creates `/repo/tiramisu.json`. Running the same command again offers to reconfigure that file. Existing `memory.md` files stay in their stores.
 
 ## Related
 
-- [`.memories/config.json`](../file-conventions/config-json.md)
+- [`tiramisu.json`](../file-conventions/tiramisu-json.md)
 - [`availableToWorkspace`](../config/availableToWorkspace.md)
 - [`prune`](../config/prune.md)
