@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "availableToWorkspace": false,
+  "prune": {
+    "unvotedTtl": "90d",
+    "humanUpvoteTtl": "180d",
+    "agentUpvoteTtl": "90d",
+    "databaseUrlCommand": "doppler secrets get TIRAMISU_DATABASE_URL --plain"
+  }
+}

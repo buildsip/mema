@@ -27,10 +27,12 @@ import { promptDatabaseCommand } from "../prompt-database-command";
 export async function init({
   cwd,
   cliRoot,
+  availableToWorkspace = false,
   verbose = false,
 }: {
   cwd: string;
   cliRoot: string;
+  availableToWorkspace?: boolean;
   verbose?: boolean;
 }) {
   const root = await findRepo(cwd);
@@ -62,7 +64,9 @@ export async function init({
     instructions: boolean | symbol;
   }>(
     {
-      availableToWorkspace: () =>
+      // The flag answers only the sharing question; all other prompts still run.
+      availableToWorkspace: async () =>
+        availableToWorkspace ||
         confirm({
           message:
             "Make all memories in this repository available to the other projects in this workspace?",
@@ -192,8 +196,17 @@ export function registerInitCommand({ program, cliRoot }: { program: Command; cl
   program
     .command("init")
     .description(`Initialize ${CLI_NAME}.`)
+    .option(
+      "--availableToWorkspace",
+      "Share this repository's memories with the workspace.",
+    )
     .option("--verbose", "Print setup command output.")
-    .action(async (options: { verbose?: boolean }) => {
-      await init({ cwd: process.cwd(), cliRoot, verbose: options.verbose });
+    .action(async (options: { availableToWorkspace?: boolean; verbose?: boolean }) => {
+      await init({
+        cwd: process.cwd(),
+        cliRoot,
+        availableToWorkspace: options.availableToWorkspace,
+        verbose: options.verbose,
+      });
     });
 }
