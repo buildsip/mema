@@ -38,6 +38,9 @@
 </div>
 
 <div align="center">
+  <a href="https://discord.gg/X4M5qynD88">
+    <img src="https://img.shields.io/badge/Discord-%235865F2.svg?&logo=discord&logoColor=white" alt="discord">
+  </a>
   <a href="https://www.npmjs.com/package/tiramisu">
     <img src="https://img.shields.io/npm/v/tiramisu?logo=npm" alt="npm">
   </a>
