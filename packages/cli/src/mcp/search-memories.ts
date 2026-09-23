@@ -18,7 +18,7 @@ export const searchMemories = tool({
         .string({ error: "Provide a nonempty search query." })
         .regex(/\S/, "Provide a nonempty search query.")
         .describe(
-          `Text to search in memory titles, frontmatter, ${NAMES.MEMORY_MD} parent directory names inside \`${NAMES.DATA}\`, and Markdown bodies.`,
+          `Text to search in memory titles, frontmatter, ${NAMES.MEMORY_MD} parent directory names inside \`${NAMES.MEMORIES}\`, and Markdown bodies.`,
         ),
       // A filter for the paths being worked on, not the scope stored on a memory.
       scope: scopeSchema

@@ -4,7 +4,7 @@ Deletes selected memories and their attachments using [`tiramisu delete`](../cli
 
 ```json
 {
-  "paths": ["/workspace/app/.memories/data/cache"]
+  "paths": ["/workspace/app/.memories/cache"]
 }
 ```
 
@@ -16,7 +16,7 @@ Deletes selected memories and their attachments using [`tiramisu delete`](../cli
 
 The whole selection is validated before deletion. [`doNotDelete`](../memory/doNotDelete.md) blocks the batch. Nested memories must be selected explicitly when deleting their parent folder.
 
-Paths may span multiple Git repositories, including private repositories. The tool determines ownership from each absolute path; do not pass `roots` or `repo`. Only repo and package `.memories/data` stores are supported. Unrelated memories are not loaded.
+Paths may span multiple Git repositories, including private repositories. The tool determines ownership from each absolute path; do not pass `roots` or `repo`. Only repo and package `.memories` stores are supported. Unrelated memories are not loaded.
 
 ## Returns
 

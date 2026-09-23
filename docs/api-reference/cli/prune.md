@@ -7,7 +7,7 @@ tiramisu prune --repo /app
 ```
 
 ```json
-["/app/.memories/data/old-cache-rule", "/app/packages/web/.memories/data/previous-release-process"]
+["/app/.memories/old-cache-rule", "/app/packages/web/.memories/previous-release-process"]
 ```
 
 ## Reference

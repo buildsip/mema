@@ -1,24 +1,23 @@
 # Memory
 
-## `data`
+## `.memories`
 
 Memory files must be named `memory.md`.
 
 ```bash
 .memories/
-└── data/                               # searchable memories
-    ├── webassembly-compile-error/      # memory directory matches the memory's title
-    │   └── memory.md                   # memory file
-    └── opennext-cache-components/
-        ├── memory.md
-        ├── response.json               # unindexed attachment that the agent inspects once it retrieves the memory
-        └── error.png                   # unindexed attachment
+├── webassembly-compile-error/      # memory directory matches the memory's title
+│   └── memory.md                   # memory file
+└── opennext-cache-components/
+    ├── memory.md
+    ├── response.json               # unindexed attachment that the agent inspects once it retrieves the memory
+    └── error.png                   # unindexed attachment
 ```
 
 The names of the memory's parent directories act as searchable tags.
 
 ```bash
-data/
+.memories/
 ├── errors/
 │   └── webassembly-compile-error/
 │       └── memory.md

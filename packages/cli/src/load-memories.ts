@@ -6,8 +6,8 @@ import { readConfig } from "./read-config";
 import { readMemory } from "./read-memory";
 
 /**
- * Loads memory.md files beneath each store's .memories/data directory.
- * Missing data directories are empty stores; temporary memory directories are skipped.
+ * Loads memory.md files beneath each store's .memories directory.
+ * Missing store directories are empty stores; temporary memory directories are skipped.
  *
  * `availableToWorkspaceOnly` includes stores only when their repo root sets
  * `availableToWorkspace` to true.
@@ -27,12 +27,12 @@ export async function loadMemories({
   const { availableToWorkspace } = await readConfig(repo);
   if (availableToWorkspaceOnly && !availableToWorkspace) return memories;
   for (const project of stores) {
-    const data = join(project, NAMES.MEMORIES, NAMES.DATA);
-    await assertNoSymlinks({ path: data, base: repo });
-    if (!(await lstatIfExists({ path: data }))) continue;
+    const store = join(project, NAMES.MEMORIES);
+    await assertNoSymlinks({ path: store, base: repo });
+    if (!(await lstatIfExists({ path: store }))) continue;
     const files: string[] = [];
     for await (const { path, entry } of walkDirectory({
-      path: data,
+      path: store,
       skip: (entry) => entry.isDirectory() && entry.name.startsWith(NAMES.MEM_PREFIX),
     })) {
       if (entry.isFile() && entry.name === NAMES.MEMORY_MD) files.push(path);

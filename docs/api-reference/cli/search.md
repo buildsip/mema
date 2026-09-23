@@ -13,7 +13,7 @@ Returned paths are absolute memory directories and can be passed to [`update`](.
 ```json
 [
   {
-    "path": "/repo/apps/web/.memories/data/axios-retry-duplication-after-reconnect",
+    "path": "/repo/apps/web/.memories/axios-retry-duplication-after-reconnect",
     "score": 3.2,
     "frontmatter": {
       "id": "11111111-1111-4111-8111-111111111111",
@@ -94,4 +94,4 @@ tiramisu search --roots /repo --roots /team --repo /repo --query cache --scope a
 
 - [`scope`](../memory/scope.md)
 - [`availableToWorkspace`](../config/availableToWorkspace.md)
-- [`data/`](../file-conventions/data.md)
+- [`.memories/`](../file-conventions/memories.md)

@@ -46,18 +46,18 @@ export async function selectMemories({ paths }: { paths: string[] }) {
     if (!stores.has(repo)) {
       stores.set(repo, (await findStores({ repo, project: repo })).stores);
     }
-    const project = stores.get(repo)!.find((store) => {
-      const data = join(store, NAMES.MEMORIES, NAMES.DATA);
+    const project = stores.get(repo)!.find((candidate) => {
+      const store = join(candidate, NAMES.MEMORIES);
       return (
-        isInside({ path, parent: data }) &&
-        !relative(data, target)
+        isInside({ path, parent: store }) &&
+        !relative(store, target)
           .split(sep)
           .some((part) => part.startsWith(NAMES.MEM_PREFIX))
       );
     });
     if (!project)
       throw new Error(
-        `Choose an existing memory directory in a repo or package ${NAMES.MEMORIES}/${NAMES.DATA} store: ${input}. Temporary memory directories are not supported.`,
+        `Choose an existing memory directory in a repo or package ${NAMES.MEMORIES} store: ${input}. Temporary memory directories are not supported.`,
       );
     selected.set(path, await readMemory({ path, project, repo }));
   }

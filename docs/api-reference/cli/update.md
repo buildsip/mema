@@ -3,7 +3,7 @@
 `tiramisu update` patches one existing memory. Only supplied fields change.
 
 ```bash filename="Terminal"
-tiramisu update --roots /repo --repo /repo --path /repo/apps/web/.memories/data/axios-retry-duplication-after-reconnect --input update.json
+tiramisu update --roots /repo --repo /repo --path /repo/apps/web/.memories/axios-retry-duplication-after-reconnect --input update.json
 ```
 
 ```json
@@ -25,7 +25,7 @@ A missing path is an error. Update never creates a memory.
 | `--path <path>`                           | Existing memory directory containing `memory.md`. Required. |
 | [`--input <file>`](./index.md#--input)    | JSON file, or `-` for stdin.                                |
 
-`--path` must be an absolute memory directory path. Reuse a path returned by a memory tool; relative paths are rejected. The memory directory must live in a `.memories/data` store of `--repo`.
+`--path` must be an absolute memory directory path. Reuse a path returned by a memory tool; relative paths are rejected. The memory directory must live in a `.memories` store of `--repo`.
 
 ### Input
 
@@ -48,7 +48,7 @@ Omitted `body` and omitted `frontmatter` keys keep their stored values, includin
 | [`created`](../memory/created.md)         | Omit.                                                         |
 | Custom fields                             | Merged by field name. An object or array replaces that field. |
 
-[`doNotEdit`](../memory/doNotEdit.md) blocks the whole command, including a call that tries to set it to `false`. Nested memories inside the folder must be moved out first. [`memory.md` directly inside `data/`](../file-conventions/data.md) is rejected. Destination collisions are rejected. Failed publication rolls back any folder move.
+[`doNotEdit`](../memory/doNotEdit.md) blocks the whole command, including a call that tries to set it to `false`. Nested memories inside the folder must be moved out first. [`memory.md` directly inside `.memories/`](../file-conventions/memories.md) is rejected. Destination collisions are rejected. Failed publication rolls back any folder move.
 
 Writes validate custom fields against the repository root schema before publication, including when scope moves a memory between packages.
 
@@ -67,7 +67,7 @@ Writes validate custom fields against the repository root schema before publicat
 ### Repair the title folder
 
 ```bash filename="Terminal"
-tiramisu update --roots /repo --repo /repo --path /repo/.memories/data/wrong-folder <<'EOF'
+tiramisu update --roots /repo --repo /repo --path /repo/.memories/wrong-folder <<'EOF'
 {}
 EOF
 ```
