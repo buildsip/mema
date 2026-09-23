@@ -1,6 +1,6 @@
 {
   "name": "tiramisu",
-  "version": "0.2.4",
+  "version": "0.2.5",
   "description": "Git-native memory for AI coding agents",
   "keywords": [
     "mcp",
