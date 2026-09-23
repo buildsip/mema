@@ -1,6 +1,5 @@
-import { loadWorkspaceMemories } from "../load-workspace-memories";
+import { findNestedMemories } from "../find-nested-memories";
 import { selectMemories } from "../select-memories";
-import { isInside } from "@buildsip/file-utils";
 import type { Command } from "commander";
 import { rm } from "node:fs/promises";
 import { dirname, join } from "node:path";
@@ -13,18 +12,9 @@ import { NAMES } from "../names";
  *
  * @returns Deleted memory directory paths, ordered with descendants before parents.
  */
-export async function deleteMemories({
-  roots,
-  repo,
-  paths,
-}: {
-  roots: string[];
-  repo: string;
-  paths: string[];
-}) {
+export async function deleteMemories({ paths }: { paths: string[] }) {
   if (!paths.length) throw new Error("Provide at least one memory directory path to delete.");
-  const { memories, repos } = await loadWorkspaceMemories({ roots, repo });
-  const batch = await selectMemories({ paths, memories, repos });
+  const batch = await selectMemories({ paths });
   const selected = new Set<string>();
   // Validate all protection flags and descendants before deleting anything.
   for (const memory of batch) {
@@ -41,11 +31,9 @@ export async function deleteMemories({
   }
   for (const path of selected) {
     const folder = dirname(path);
-    for (const memory of memories) {
-      if (isInside({ path: memory.path, parent: folder }) && !selected.has(memory.path)) {
-        throw new Error(
-          `Select nested memory explicitly before deleting its parent: ${dirname(memory.path)}`,
-        );
+    for (const nested of await findNestedMemories(folder)) {
+      if (!selected.has(join(nested, NAMES.MEMORY_MD))) {
+        throw new Error(`Select nested memory explicitly before deleting its parent: ${nested}`);
       }
     }
   }
@@ -58,18 +46,13 @@ export async function deleteMemories({
 export function registerDeleteCommand({ program }: { program: Command }) {
   program
     .command("delete")
-    .requiredOption(
-      "--roots <path...>",
-      "Workspace directories; repeat the flag or provide multiple paths.",
-    )
-    .requiredOption("--repo <path>", "Git root of the workspace project the agent is working on.")
     .description("Delete memories and their attachments by path, respecting doNotDelete.")
     .requiredOption(
-      "--path <path...>",
-      "Memory directories returned by memory commands; repeatable.",
+      "--paths <path...>",
+      "Absolute memory directory paths returned by memory commands; repeatable.",
     )
-    .action(async (options: { roots: string[]; repo: string; path: string[] }) => {
-      const result = await deleteMemories({ ...options, paths: options.path });
+    .action(async (options: { paths: string[] }) => {
+      const result = await deleteMemories(options);
       process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
     });
 }

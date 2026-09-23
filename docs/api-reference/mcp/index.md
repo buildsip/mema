@@ -15,12 +15,14 @@ The `tiramisu` MCP server exposes memory commands over stdio. See [installation]
 
 ## Shared parameters
 
-Every tool requires these fields:
+Search, insert, and update require `roots`: the complete list of project roots in the workspace, including projects that are not targeted by the call. Keep this list complete across calls. These tools also require `repo` to select the active project.
 
-| Parameter | Type       | Description                                                                                                          |
-| --------- | ---------- | -------------------------------------------------------------------------------------------------------------------- |
-| `roots`   | `string[]` | Absolute paths of every workspace folder, including shared memory repositories. Must contain at least one directory. |
-| `repo`    | `string`   | Absolute Git root of the active project, inside one of `roots`. Package directories are rejected.                    |
+Prune takes only `repo` and reviews that repository. Delete takes only `paths`; upvote takes `paths` and `actor`. Both determine each memory's repository from its absolute path and do not accept `roots` or `repo`.
+
+| Parameter | Type       | Description                                                                                                                                            |
+| --------- | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `roots`   | `string[]` | Absolute paths of every workspace project root, including private and shared repositories. Pass the complete list; at least one directory is required. |
+| `repo`    | `string`   | Absolute Git root of the selected project. For search, insert, and update, it must be inside one of `roots`. Package directories are rejected.         |
 
 ```json
 {
@@ -31,11 +33,13 @@ Every tool requires these fields:
 
 Arguments are structured objects. Do not encode them as a JSON string or pass CLI flags. Field descriptions and required fields are included in each tool's JSON Schema. Custom frontmatter is validated against the destination store's [configuration](../config/frontmatter.md).
 
+Memory `path` and `paths` values must be absolute directories. Reuse paths returned by memory tools. Relative memory paths are rejected. Scope entries remain repository-relative.
+
 The server does not infer workspace folders from its working directory or request MCP roots from the client.
 
 ## Results
 
-Success returns the same JSON as the corresponding CLI command in the first text content block. [`insert-memory`](./insert-memory.md) and [`update-memory`](./update-memory.md) add a second text block with [categorization guidance](#categorization-guidance). Failures return `isError: true` with an instruction string in one text block, without an additional `{ "error": ... }` wrapper.
+Success returns the same JSON as the corresponding CLI command in the first text content block. [`insert-memory`](./insert-memory.md) and [`update-memory`](./update-memory.md) add a second text block with [categorization guidance](#categorization-guidance). [`prune-memories`](./prune-memories.md) adds candidate review instructions when its result is nonempty. Failures return `isError: true` with an instruction string in one text block, without an additional `{ "error": ... }` wrapper.
 
 ```json
 {

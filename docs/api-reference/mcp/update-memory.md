@@ -16,7 +16,7 @@ Patches one memory using [`tiramisu update`](../cli/update.md)'s validation and 
 | Parameter                                       | Type     | Required | Description                                                                                                                                    |
 | ----------------------------------------------- | -------- | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
 | [`roots`, `repo`](./index.md#shared-parameters) | —        | Yes      | Workspace and active repository.                                                                                                               |
-| `path`                                          | `string` | Yes      | Existing memory directory containing `memory.md`. Relative paths resolve from the server's working directory; prefer a returned absolute path. |
+| `path`                                          | `string` | Yes      | Absolute path to an existing memory directory containing `memory.md`. Reuse a returned path; relative paths are rejected. |
 | `body`                                          | `string` | No       | Replacement Markdown body.                                                                                                                     |
 | `frontmatter`                                   | `object` | No       | Memory metadata and configured custom fields. See [update input](../cli/update.md#input).                                                      |
 

@@ -3,7 +3,7 @@ import { randomUUID } from "node:crypto";
 import { existsSync } from "node:fs";
 import { mkdir, mkdtemp, readFile, realpath, rename, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 import { type Client } from "pg";
 import { afterAll, afterEach, beforeAll, beforeEach, expect, it, vi } from "vitest";
@@ -12,7 +12,7 @@ import { insert } from "./commands/insert";
 import { prune } from "./commands/prune";
 import { update } from "./commands/update";
 import { upvote } from "./commands/upvote";
-import { mcpTools } from "./mcp-tools";
+import { mcpTools } from "./mcp/mcp-tools";
 import { migrateDatabase } from "./migrate-database";
 import { readMemory } from "./read-memory";
 import { cliEnv } from "./test/cli-env";
@@ -125,31 +125,31 @@ it("uses the maximum lifetime and the latest vote for each actor, including exac
   await vote({ id: repeated.id, actor: "human", at: now - 181 * day });
   const young = await memory({ title: "Young", at: now - 89 * day });
   await vote({ id: young.id, actor: "agent", at: now - 100 * day });
-  expect(await prune({ roots: [repo], repo })).toEqual([expired.path, repeated.path].sort());
+  expect(await prune({ repo })).toEqual([expired.path, repeated.path].sort());
   expect(existsSync(expired.path)).toBe(true);
   // Config durations are applied at read time, without rewriting stored votes.
   await configure({ repo, settings: { unvotedTtl: "400d" } });
-  expect(await prune({ roots: [repo], repo })).toEqual([]);
+  expect(await prune({ repo })).toEqual([]);
 });
 
 it("expires from the stored created date, not Git history", async () => {
   const fresh = await memory({ at: now });
-  expect(await prune({ roots: [repo], repo })).toEqual([]);
+  expect(await prune({ repo })).toEqual([]);
   const expired = await memory({ title: "Expired uncommitted" });
-  expect(await prune({ roots: [repo], repo })).toEqual([expired.path]);
+  expect(await prune({ repo })).toEqual([expired.path]);
   await writeFile(
     join(expired.path, "memory.md"),
     (await readFile(join(expired.path, "memory.md"), "utf8")) + "\nEdited today\n",
   );
-  expect(await prune({ roots: [repo], repo })).toEqual([expired.path]);
-  expect(await prune({ roots: [repo], repo })).not.toContain(fresh.path);
+  expect(await prune({ repo })).toEqual([expired.path]);
+  expect(await prune({ repo })).not.toContain(fresh.path);
 });
 
 it("keeps created across folder moves", async () => {
   const entry = await memory({ title: "Original" });
   const path = join(repo, ".memories/data/renamed");
   await rename(entry.path, path);
-  expect(await prune({ roots: [repo], repo })).toEqual([path]);
+  expect(await prune({ repo })).toEqual([path]);
   const stored = await readMemory({
     path: join(path, "memory.md"),
     project: repo,
@@ -158,36 +158,60 @@ it("keeps created across folder moves", async () => {
   expect(stored.frontmatter.created).toBe("2025-01-01");
 });
 
-it("prunes shared repos when the active repo is disabled, excludes private repos, and deduplicates roots", async () => {
-  await configure({ repo, enabled: false });
+it("prunes only the selected repo, including its package stores", async () => {
+  const local = await memory();
+  await mkdir(join(repo, "packages/web"), { recursive: true });
+  await writeFile(join(repo, "packages/web/package.json"), "{}");
+  const packaged = await memory({ title: "Package", scope: ["packages/web"] });
   const team = await makeRepo("team");
   await configure({ repo: team, shared: true });
   const shared = await memory({ owner: team });
   const hidden = await makeRepo("private");
   await memory({ owner: hidden });
-  expect(await prune({ roots: [repo, team, team, hidden], repo })).toEqual([shared.path]);
-  await expect(prune({ roots: [repo], repo })).rejects.toThrow("Pruning is disabled");
+  expect(await prune({ repo })).toEqual([local.path, packaged.path].sort());
+  expect(await prune({ repo: team })).toEqual([shared.path]);
+  await configure({ repo, enabled: false });
+  await expect(prune({ repo })).rejects.toThrow("Pruning is disabled");
 });
 
-it("records mixed-repo batches once per path and allows deletion across the same visibility boundary", async () => {
-  const team = await makeRepo("team");
-  await configure({ repo: team, shared: true });
-  const one = await memory();
-  const two = await memory({ owner: team });
-  const roots = [repo, team];
-  expect(
-    await upvote({ roots, repo, paths: [one.path, two.path, one.path], actor: "human" }),
-  ).toEqual({ upvoted: [one.path, two.path], skipped: [] });
-  const rows = (
-    await client.query("SELECT memory_id, actor FROM tiramisu.upvotes ORDER BY memory_id")
-  ).rows;
-  expect(rows).toEqual([one.id, two.id].sort().map((id) => ({ memory_id: id, actor: "human" })));
-  await configure({ repo, enabled: false });
-  await configure({ repo: team, shared: true, enabled: false });
-  expect(await deleteMemories({ roots, repo, paths: [one.path, two.path] })).toHaveLength(2);
-  expect(existsSync(one.path)).toBe(false);
-  expect(existsSync(two.path)).toBe(false);
+it("requires an absolute Git root for prune", async () => {
+  await expect(prune({ repo: "." })).rejects.toThrow("absolute path");
+  const child = join(repo, "packages/web");
+  await mkdir(child, { recursive: true });
+  await expect(prune({ repo: child })).rejects.toThrow("Git root");
 });
+
+it.each([false, true])(
+  "upvotes and deletes mixed-repo batches when sharing is %s",
+  async (shared) => {
+    const team = await makeRepo("team");
+    await configure({ repo: team, shared });
+    const other = await makeRepo("other");
+    const keep = await memory({ owner: other });
+    const one = await memory();
+    const two = await memory({ owner: team });
+    // Unrelated malformed memories do not block an explicit selection, even in a selected repo.
+    const invalid = await memory({ title: "Unselected" });
+    await writeFile(join(invalid.path, "memory.md"), "invalid frontmatter");
+    // Reuse absolute result paths, including a duplicate, without choosing an active repo.
+    const paths = [one.path, two.path, one.path];
+    expect(await upvote({ paths, actor: "human" })).toEqual({
+      upvoted: [one.path, two.path],
+      skipped: [],
+    });
+    const rows = (
+      await client.query("SELECT memory_id, actor FROM tiramisu.upvotes ORDER BY memory_id")
+    ).rows;
+    expect(rows).toEqual([one.id, two.id].sort().map((id) => ({ memory_id: id, actor: "human" })));
+    await configure({ repo, enabled: false });
+    await configure({ repo: team, shared, enabled: false });
+    expect(await deleteMemories({ paths })).toHaveLength(2);
+    expect(existsSync(one.path)).toBe(false);
+    expect(existsSync(two.path)).toBe(false);
+    expect(existsSync(keep.path)).toBe(true);
+    expect(existsSync(invalid.path)).toBe(true);
+  },
+);
 
 it.each(["active", "shared"])(
   "upvotes eligible memories when the %s repo has pruning disabled",
@@ -203,8 +227,6 @@ it.each(["active", "shared"])(
     const voted = disabled === "active" ? two : one;
 
     const result = await upvote({
-      roots: [repo, team],
-      repo,
       paths: [one.path, two.path, extra.path, one.path, extra.path],
       actor: "agent",
     });
@@ -238,9 +260,7 @@ it.each([false, undefined])(
     const two = await memory({ owner: team });
     // Missing tables would fail any accidental vote write in this disabled batch.
     await client.query("DROP SCHEMA tiramisu CASCADE");
-    expect(
-      await upvote({ roots: [repo, team], repo, paths: [one.path, two.path], actor: "human" }),
-    ).toEqual({
+    expect(await upvote({ paths: [one.path, two.path], actor: "human" })).toEqual({
       upvoted: [],
       skipped: [
         { repo, paths: [one.path], message: expect.stringContaining("pruning is disabled") },
@@ -256,25 +276,33 @@ it.each([false, undefined])(
 
 it("validates the entire upvote/delete selection before any mutation", async () => {
   const one = await memory();
-  const hidden = await makeRepo("private");
-  const two = await memory({ owner: hidden });
-  const roots = [repo, hidden];
-  await expect(
-    upvote({ roots, repo, paths: [one.path, two.path], actor: "agent" }),
-  ).rejects.toThrow("outside");
-  await expect(deleteMemories({ roots, repo, paths: [one.path, two.path] })).rejects.toThrow(
-    "outside",
+  const outside = await makeRepo("outside");
+  const two = await memory({ owner: outside });
+  await writeFile(join(two.path, "memory.md"), "invalid frontmatter");
+  await expect(upvote({ paths: [one.path, two.path], actor: "agent" })).rejects.toThrow(
+    "frontmatter",
   );
+  await expect(deleteMemories({ paths: [one.path, two.path] })).rejects.toThrow("frontmatter");
   expect((await client.query("SELECT * FROM tiramisu.upvotes")).rowCount).toBe(0);
   expect(existsSync(one.path)).toBe(true);
+  const broken = await makeRepo("broken");
+  const three = await memory({ owner: broken });
   await configure({
-    repo: hidden,
-    shared: true,
+    repo: broken,
     settings: { databaseUrlCommand: undefined },
   });
+  await expect(upvote({ paths: [one.path, three.path], actor: "agent" })).rejects.toThrow(
+    "Set prune.databaseUrlCommand",
+  );
+  expect((await client.query("SELECT * FROM tiramisu.upvotes")).rowCount).toBe(0);
+});
+
+it("rejects a relative path before recording any upvotes", async () => {
+  const one = await memory();
+  const two = await memory({ title: "Second" });
   await expect(
-    upvote({ roots, repo, paths: [one.path, two.path], actor: "agent" }),
-  ).rejects.toThrow("Set prune.databaseUrlCommand");
+    upvote({ paths: [one.path, relative(repo, two.path)], actor: "human" }),
+  ).rejects.toThrow("absolute memory directory paths");
   expect((await client.query("SELECT * FROM tiramisu.upvotes")).rowCount).toBe(0);
 });
 
@@ -283,9 +311,9 @@ it("keeps cross-repo protected and nested deletion checks", async () => {
   const team = await makeRepo("team");
   await configure({ repo: team, shared: true });
   const protectedMemory = await memory({ owner: team, protected: true });
-  await expect(
-    deleteMemories({ roots: [repo, team], repo, paths: [one.path, protectedMemory.path] }),
-  ).rejects.toThrow("doNotDelete");
+  await expect(deleteMemories({ paths: [one.path, protectedMemory.path] })).rejects.toThrow(
+    "doNotDelete",
+  );
   expect(existsSync(one.path)).toBe(true);
 });
 
@@ -331,7 +359,7 @@ it("reports a saved update path when the database fails and never migrates impli
   // The recovery instruction must still work after the saved update protects the file.
   await migrateDatabase({ url, migrationsFolder });
   await expect(update({ roots: [repo], repo, path: moved })).rejects.toThrow("doNotEdit");
-  expect(await upvote({ roots: [repo], repo, paths: [moved], actor: "agent" })).toEqual({
+  expect(await upvote({ paths: [moved], actor: "agent" })).toEqual({
     upvoted: [moved],
     skipped: [],
   });
@@ -340,15 +368,17 @@ it("reports a saved update path when the database fails and never migrates impli
   ]);
 });
 
-it("fails prune rather than returning partial results when any enabled database is broken", async () => {
-  await memory();
+it("uses only the selected repo's database and reports its failures", async () => {
+  const local = await memory();
   const team = await makeRepo("team");
+  await memory({ owner: team });
   await configure({
     repo: team,
     shared: true,
     settings: { databaseUrlCommand: "printf 'SECRET'; exit 1" },
   });
-  const result = prune({ roots: [repo, team], repo });
+  expect(await prune({ repo })).toEqual([local.path]);
+  const result = prune({ repo: team });
   await expect(result).rejects.toThrow("The command you entered failed");
   await expect(result).rejects.not.toThrow("SECRET");
 });
@@ -361,17 +391,25 @@ it("runs upvote and prune through CLI JSON and MCP contracts", async () => {
   const home = join(folder, "home");
   await mkdir(join(home, ".cursor"), { recursive: true });
   const cli = fileURLToPath(new URL("../dist/index.js", import.meta.url));
-  const args = ["--roots", repo, team, "--repo", repo];
   const run = (command: string[]) =>
     spawnSync(process.execPath, [cli, ...command], {
       cwd: repo,
       env: cliEnv({ home }),
       encoding: "utf8",
     });
-  const listed = run(["prune", ...args]);
+  const listed = run(["prune", "--repo", repo]);
   expect(listed.status, listed.stderr).toBe(0);
   expect(JSON.parse(listed.stdout)).toEqual([entry.path]);
-  const voted = run(["upvote", ...args, "--path", entry.path, skipped.path, "--actor", "human"]);
+  const tool = mcpTools.find((tool) => tool.name === "prune-memories")!;
+  const candidates = await tool.call({ repo });
+  expect(candidates.content).toEqual([
+    { type: "text", text: JSON.stringify([entry.path], null, 2) },
+    {
+      type: "text",
+      text: "Read the candidates, check their relevance against the code, and suggest which to delete or keep.",
+    },
+  ]);
+  const voted = run(["upvote", "--paths", entry.path, skipped.path, "--actor", "human"]);
   expect(voted.status, voted.stderr).toBe(0);
   const result = JSON.parse(voted.stdout);
   expect(result).toEqual({
@@ -384,20 +422,15 @@ it("runs upvote and prune through CLI JSON and MCP contracts", async () => {
       },
     ],
   });
-  const disabled = run(["upvote", ...args, "--path", skipped.path, "--actor", "human"]);
+  const disabled = run(["upvote", "--paths", skipped.path, "--actor", "human"]);
   expect(disabled.status, disabled.stderr).toBe(0);
   expect(JSON.parse(disabled.stdout)).toEqual({ upvoted: [], skipped: result.skipped });
-  const tool = mcpTools.find((tool) => tool.name === "prune-memories")!;
-  const response = await tool.call({ roots: [repo], repo });
+  const response = await tool.call({ repo });
   expect(response.content).toEqual([{ type: "text", text: "[]" }]);
   const upvoteTool = mcpTools.find((tool) => tool.name === "upvote-memories")!;
-  await expect(upvoteTool.call({ roots: [repo], repo, path: [entry.path] })).rejects.toThrow(
-    "actor",
-  );
+  await expect(upvoteTool.call({ paths: [entry.path] })).rejects.toThrow("actor");
   const upvoted = await upvoteTool.call({
-    roots: [repo, team],
-    repo,
-    path: [entry.path, skipped.path],
+    paths: [entry.path, skipped.path],
     actor: "agent",
   });
   expect(upvoted.content).toEqual([{ type: "text", text: JSON.stringify(result, null, 2) }]);
@@ -405,5 +438,6 @@ it("runs upvote and prune through CLI JSON and MCP contracts", async () => {
     { actor: "agent" },
     { actor: "human" },
   ]);
-  await expect(tool.call({ roots: [repo], repo, scope: ["*"] })).rejects.toThrow("Remove unknown");
+  await expect(tool.call({ repo, scope: ["*"] })).rejects.toThrow("Remove unknown");
+  await expect(tool.call({ repo, roots: [repo] })).rejects.toThrow("Remove unknown");
 });

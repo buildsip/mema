@@ -22,7 +22,7 @@ Creates one memory using [`tiramisu insert`](../cli/insert.md)'s validation and 
 | `body` | `string` | Yes | Markdown content. |
 | `frontmatter` | `object` | Yes | Memory metadata and configured custom fields. See [insert input](../cli/insert.md#input). |
 
-Choose the narrowest [scope](../memory/scope.md) where the memory provides useful context. For example, a login-session cookie rule used throughout authentication belongs to `["apps/web/auth"]`. Use `["*"]` only for context useful across the whole repository.
+Choose the narrowest [scope](../memory/scope.md) where the memory provides useful context. For example, a login-session cookie rule used throughout authentication applies to `["apps/web/auth"]`. Use `["*"]` only for context useful across the whole repository.
 
 ## Returns
 

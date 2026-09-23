@@ -8,6 +8,7 @@ import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
 import { type CallToolResult, type Tool } from "@modelcontextprotocol/sdk/types.js";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { memoryScopeDescription } from "./scope-schema";
 import { cliEnv } from "./test/cli-env";
 
 const cli = fileURLToPath(new URL("../dist/index.js", import.meta.url));
@@ -36,11 +37,11 @@ afterEach(async () => {
 });
 
 /** Starts the built executable, exercising the actual stdio protocol and startup installer. */
-async function connect() {
+async function connect({ cwd = repo }: { cwd?: string } = {}) {
   const transport = new StdioClientTransport({
     command: process.execPath,
     args: [cli, "mcp"],
-    cwd: repo,
+    cwd,
     env: cliEnv({ home }),
     stderr: "pipe",
   });
@@ -70,7 +71,14 @@ function instructions(result: CallToolResult) {
 async function call({ name, args = {} }: { name: string; args?: Record<string, unknown> }) {
   return (await client!.callTool({
     name,
-    arguments: { roots: [repo], repo, ...args },
+    arguments: {
+      ...(["delete-memories", "upvote-memories"].includes(name)
+        ? {}
+        : name === "prune-memories"
+          ? { repo }
+          : { roots: [repo], repo }),
+      ...args,
+    },
   })) as CallToolResult;
 }
 
@@ -90,7 +98,14 @@ describe("MCP stdio server", () => {
       "prune-memories",
     ]);
     for (const tool of tools) {
-      expect(tool.inputSchema.required).toEqual(expect.arrayContaining(["roots", "repo"]));
+      if (["insert-memory", "update-memory", "search-memories"].includes(tool.name)) {
+        expect(tool.inputSchema.required).toContain("roots");
+      } else {
+        expect(tool.inputSchema.properties).not.toHaveProperty("roots");
+      }
+      if (!["delete-memories", "upvote-memories"].includes(tool.name)) {
+        expect(tool.inputSchema.required).toContain("repo");
+      }
       expect(tool.inputSchema.additionalProperties).toBe(false);
       for (const [name, field] of Object.entries(tool.inputSchema.properties ?? {})) {
         // Frontmatter's individual fields describe its contents below.
@@ -105,7 +120,11 @@ describe("MCP stdio server", () => {
     expect(fields.additionalProperties).toEqual({});
     expect(fields.properties).not.toHaveProperty("id");
     expect(fields.properties!.title).toMatchObject({ type: "string", minLength: 1 });
-    expect(fields.properties!.scope).toMatchObject({ type: "array", minItems: 1 });
+    expect(fields.properties!.scope).toMatchObject({
+      type: "array",
+      minItems: 1,
+      description: memoryScopeDescription,
+    });
     for (const field of Object.values(fields.properties ?? {})) {
       expect(field).toHaveProperty("description", expect.any(String));
     }
@@ -114,12 +133,33 @@ describe("MCP stdio server", () => {
     const patch = update.inputSchema.properties!.frontmatter as Tool["inputSchema"];
     expect(patch.required ?? []).toEqual([]);
     expect(patch.properties).not.toHaveProperty("id");
-    expect(patch.properties!.scope).toMatchObject({ type: "array", minItems: 1 });
+    expect(patch.properties!.scope).toMatchObject({
+      type: "array",
+      minItems: 1,
+      description: memoryScopeDescription,
+    });
+    const search = tools.find((tool) => tool.name === "search-memories")!;
+    const searchScope = search.inputSchema.properties!.scope as { description?: string };
+    expect(searchScope).toMatchObject({ type: "array", minItems: 1 });
+    expect(searchScope.description).not.toBe(memoryScopeDescription);
+    expect(searchScope.description).toContain("Omit");
+    const prune = tools.find((tool) => tool.name === "prune-memories")!;
+    expect(prune.inputSchema.required).toEqual(["repo"]);
+    for (const name of ["delete-memories", "upvote-memories"]) {
+      const tool = tools.find((tool) => tool.name === name)!;
+      expect(tool.inputSchema.required).toContain("paths");
+      expect(tool.inputSchema.properties!.paths).toMatchObject({ type: "array", minItems: 1 });
+      expect(tool.inputSchema.properties).not.toHaveProperty("path");
+      expect(tool.inputSchema.properties).not.toHaveProperty("repo");
+      expect(tool.inputSchema.required).toEqual(
+        name === "delete-memories" ? ["paths"] : ["paths", "actor"],
+      );
+    }
     expect(stderr).toBe("");
   });
 
-  it("inserts, searches, moves, and deletes through the same command behavior", async () => {
-    await connect();
+  it("reuses absolute memory paths when the server starts elsewhere", async () => {
+    await connect({ cwd: home });
     const created = await call({
       name: "insert-memory",
       args: {
@@ -136,8 +176,38 @@ describe("MCP stdio server", () => {
     expect(instructions(created).split("looks like this:\n")[1]).toBe("data/");
     const file = join(path, "memory.md");
     const before = await readFile(file, "utf8");
+    // Even a valid relative path must fail rather than depend on a process or repo base.
+    for (const name of ["update-memory", "delete-memories", "upvote-memories"]) {
+      const args =
+        name === "update-memory"
+          ? { path: relative(repo, path) }
+          : {
+              paths: [relative(repo, path)],
+              ...(name === "upvote-memories" ? { actor: "human" } : {}),
+            };
+      const result = await call({ name, args });
+      expect(result.isError).toBe(true);
+      expect(text(result)).toContain("absolute memory directory path");
+      expect(await readFile(file, "utf8")).toBe(before);
+    }
+    for (const name of ["delete-memories", "upvote-memories"]) {
+      for (const context of [{ repo }, { roots: [repo] }]) {
+        const result = await call({
+          name,
+          args: {
+            ...context,
+            paths: [path],
+            ...(name === "upvote-memories" ? { actor: "human" } : {}),
+          },
+        });
+        expect(result.isError).toBe(true);
+        expect(text(result)).toContain("Remove unknown top-level fields");
+        expect(await readFile(file, "utf8")).toBe(before);
+      }
+    }
     for (const name of ["update-memory", "delete-memories"]) {
-      const result = await call({ name, args: { path: name === "update-memory" ? file : [file] } });
+      const args = name === "update-memory" ? { path: file } : { paths: [file] };
+      const result = await call({ name, args });
       expect(result.isError).toBe(true);
       expect(result.content).toHaveLength(1);
       expect(text(result)).toContain("existing memory directory");
@@ -150,7 +220,7 @@ describe("MCP stdio server", () => {
     const updated = await call({
       name: "update-memory",
       args: {
-        path: relative(repo, path),
+        path,
         frontmatter: { title: "Package cache", scope: ["apps/web"] },
       },
     });
@@ -177,8 +247,17 @@ describe("MCP stdio server", () => {
         text(await call({ name: "search-memories", args: { query: "cache", offset: 1 } })),
       ),
     ).toEqual([]);
+    const voted = await call({
+      name: "upvote-memories",
+      args: { paths: [next], actor: "human" },
+    });
+    expect(voted.isError).toBeUndefined();
+    expect(JSON.parse(text(voted))).toMatchObject({
+      upvoted: [],
+      skipped: [{ repo, paths: [next] }],
+    });
     expect(
-      JSON.parse(text(await call({ name: "delete-memories", args: { path: [next] } }))),
+      JSON.parse(text(await call({ name: "delete-memories", args: { paths: [next] } }))),
     ).toEqual([next]);
     expect(existsSync(next)).toBe(false);
     expect(stderr).toBe("");
@@ -240,7 +319,7 @@ describe("MCP stdio server", () => {
     expect(text(unknown)).toContain("old-tool-name not found");
     const missing = await call({
       name: "delete-memories",
-      args: { path: [join(repo, "missing")] },
+      args: { paths: [join(repo, "missing")] },
     });
     expect(missing.isError).toBe(true);
     expect(text(missing)).toContain("Search again");
@@ -273,7 +352,7 @@ describe("MCP stdio server", () => {
     const edit = await call({ name: "update-memory", args: { path: paths[0], body: "Changed" } });
     expect(edit.isError).toBe(true);
     expect(text(edit)).toContain("doNotEdit");
-    const deleted = await call({ name: "delete-memories", args: { path: [...paths].reverse() } });
+    const deleted = await call({ name: "delete-memories", args: { paths: [...paths].reverse() } });
     expect(deleted.isError).toBe(true);
     expect(text(deleted)).toContain("doNotDelete");
     expect(paths.every((path) => existsSync(path))).toBe(true);

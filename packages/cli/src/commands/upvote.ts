@@ -1,28 +1,16 @@
 import type { Command } from "commander";
 import { dirname } from "node:path";
-import { loadWorkspaceMemories } from "../load-workspace-memories";
 import { readPruneConfig } from "../read-prune-config";
 import { recordUpvotes } from "../record-upvotes";
 import { selectMemories } from "../select-memories";
 
 /** Records eligible upvotes and reports memories whose repo has pruning disabled. */
-export async function upvote({
-  roots,
-  repo,
-  paths,
-  actor,
-}: {
-  roots: string[];
-  repo: string;
-  paths: string[];
-  actor: "human" | "agent";
-}) {
+export async function upvote({ paths, actor }: { paths: string[]; actor: "human" | "agent" }) {
   if (actor !== "human" && actor !== "agent")
     throw new Error(
       'Provide actor as "human" when the user asked for an upvote, or "agent" when a memory helped produce the reply.',
     );
-  const workspace = await loadWorkspaceMemories({ roots, repo });
-  const memories = await selectMemories({ paths, ...workspace });
+  const memories = await selectMemories({ paths });
   const batches = [];
   const skipped = [];
   // Check every selected root before writing; disabled pruning skips only that repo.
@@ -66,26 +54,14 @@ export async function upvote({
 export function registerUpvoteCommand({ program }: { program: Command }) {
   program
     .command("upvote")
-    .description("Record human or agent upvotes for a batch of workspace memories.")
-    .requiredOption(
-      "--roots <path...>",
-      "Every workspace directory, including shared memory repos.",
-    )
-    .requiredOption("--repo <path>", "Git root of the active workspace project.")
-    .requiredOption("--path <path...>", "Memory directories returned by memory commands.")
+    .description("Record human or agent upvotes for selected memories across repositories.")
+    .requiredOption("--paths <path...>", "Absolute memory directories returned by memory commands.")
     .requiredOption(
       "--actor <actor>",
       "human for user-requested upvotes; agent for useful context.",
     )
-    .action(
-      async (options: {
-        roots: string[];
-        repo: string;
-        path: string[];
-        actor: "human" | "agent";
-      }) => {
-        const result = await upvote({ ...options, paths: options.path });
-        process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
-      },
-    );
+    .action(async (options: { paths: string[]; actor: "human" | "agent" }) => {
+      const result = await upvote(options);
+      process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
+    });
 }

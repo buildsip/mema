@@ -16,7 +16,7 @@ import { registerUpdateCommand } from "./commands/update";
 import { CLI_NAME } from "./cli-name";
 import { NAMES } from "./names";
 import { installMcp } from "./install-mcp";
-import { createMcpServer } from "./create-mcp-server";
+import { createMcpServer } from "./mcp/create-mcp-server";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 
 // The built entry point lives in dist; its parent is the installed tiramisu package.

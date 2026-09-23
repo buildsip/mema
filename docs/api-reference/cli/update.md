@@ -25,7 +25,7 @@ A missing path is an error. Update never creates a memory.
 | `--path <path>`                           | Existing memory directory containing `memory.md`. Required. |
 | [`--input <file>`](./index.md#--input)    | JSON file, or `-` for stdin.                                |
 
-`--path` resolves relative paths from the CLI working directory. The memory directory must live in a `.memories/data` store of `--repo`.
+`--path` must be an absolute memory directory path. Reuse a path returned by a memory tool; relative paths are rejected. The memory directory must live in a `.memories/data` store of `--repo`.
 
 ### Input
 

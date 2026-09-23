@@ -7,3 +7,4 @@ export { readTextIfExists } from "./read-text-if-exists";
 export { readTextIfExistsSync } from "./read-text-if-exists-sync";
 export { relativePosix } from "./relative-posix";
 export { statIfExists } from "./stat-if-exists";
+export { walkDirectory } from "./walk-directory";

@@ -36,7 +36,7 @@ Requires Node.js `>=22.5.0`.
 
 ### `--roots`
 
-Required on memory commands. [`init`](./init.md) and [`mcp`](./mcp.md) do not take this flag. Workspace directories. Repeat the flag or pass multiple paths.
+Required on search, insert, and update. Other commands do not take this flag. Pass every project root in the workspace, including private and shared projects. Always supply the complete list, not only the projects targeted by this command. Repeat the flag or pass multiple paths.
 
 ```bash filename="Terminal"
 tiramisu search --roots /workspace/app --roots /workspace/team --repo /workspace/app --query cache
@@ -46,9 +46,9 @@ Each path must be a directory. The CLI canonicalizes it with `realpath`. Duplica
 
 ### `--repo`
 
-Required on memory commands. Git root of the workspace project the agent is working on.
+Required on search, insert, update, and prune. Git root of the workspace project the agent is working on. Delete and upvote determine each selected memory's repository from its absolute path and do not accept this flag.
 
-`--repo` must be a directory, that Git root, and inside one of `--roots`. A package directory is rejected.
+`--repo` must be the Git root, not a package directory. For search, insert, and update, it must be inside one of `--roots`. Prune takes only an absolute `--repo` and reviews that repository, including its package stores.
 
 ### `--input`
 
@@ -66,4 +66,4 @@ Command failures print `{ "error": "<message>" }` on stderr, set exit code `1`, 
 
 Help and version do not use this error format.
 
-Symbolic links under a command's repo are rejected.
+Memory `--path` and `--paths` values must be absolute directory paths returned by memory commands. Relative memory paths are rejected. Symbolic links inside a selected memory's repository are rejected.

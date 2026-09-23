@@ -7,7 +7,7 @@ export const frontmatterSchema = z.looseObject(
       .string({ error: "Expected a nonempty string for the memory title." })
       .min(1, "Expected a nonempty string for the memory title.")
       .regex(/\S/, "Expected a nonempty string for the memory title.")
-      .describe("Memory title. The memory directory is named from this title."),
+      .describe("Memory title. The memory directory is named after this title."),
     doNotEdit: z
       .boolean({ error: "Expected a boolean: true or false." })
       .optional()

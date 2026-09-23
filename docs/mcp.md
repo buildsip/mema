@@ -53,7 +53,7 @@ More advanced search becomes useful when a system stores much larger amounts of 
 
 ### `delete-memories`
 
-Deletes memories and attachments across the active repo and available workspace repos. Respects `doNotDelete`.
+Deletes selected memories across projects. Respects `doNotDelete`.
 
 ### `upvote-memories`
 
@@ -61,4 +61,4 @@ Upvotes useful memories. User-requested upvotes are recorded as `human`; memorie
 
 ### `prune-memories`
 
-Called when you ask to prune. Lists expired memories across the active repo and available workspace repos, excluding protected memories and repos with pruning disabled. The agent reviews the candidates against the code before suggesting changes. The tool itself never deletes anything.
+Called when you ask to prune. Lists expired memories in the repository you choose, including its packages and excluding protected memories. The agent reviews the candidates against the code before suggesting changes. The tool itself never deletes anything.

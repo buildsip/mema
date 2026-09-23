@@ -3,8 +3,8 @@
 `tiramisu upvote` records a batch of human or agent upvotes.
 
 ```bash filename="Terminal"
-tiramisu upvote --roots /app /team --repo /app \
-  --path /app/.memories/data/cache /team/.memories/data/releases \
+tiramisu upvote \
+  --paths /app/.memories/data/cache /team/.memories/data/releases \
   --actor human
 ```
 
@@ -27,16 +27,14 @@ The command succeeds even when every selected memory is skipped, returning an em
 
 ## Reference
 
-| Option                                    | Description                             |
-| ----------------------------------------- | --------------------------------------- |
-| [`--roots <path...>`](./index.md#--roots) | Every workspace directory. Required.    |
-| [`--repo <path>`](./index.md#--repo)      | Active Git root. Required.              |
-| `--path <path...>`                        | Memory directories to upvote. Required. |
-| `--actor <human\|agent>`                  | One actor for the batch. Required.      |
+| Option                   | Description                                      |
+| ------------------------ | ------------------------------------------------ |
+| `--paths <path...>`      | Absolute memory directories to upvote. Required. |
+| `--actor <human\|agent>` | One actor for the batch. Required.               |
 
 Use `human` when the user requested the upvote and `agent` when the memory helped produce a reply. Reading alone does not warrant an upvote. Both protection flags permit upvotes.
 
-Paths follow [`search`](./search.md)'s visibility: the active repo plus available workspace repositories. Relative paths resolve from the working directory. The CLI checks each selected repo's root [`prune`](../config/prune.md) setting. Omitted or `false` pruning skips that repo's memories while eligible repos still receive upvotes. Callers do not need to filter disabled repos before submitting a batch.
+Paths must be absolute and may span multiple Git repositories, including private repositories. Reuse directory paths returned by memory tools. Each path identifies its owning Git repository; no `--roots` or `--repo` is needed. Only repo and package `.memories/data` stores are supported. Upvote reads only the selected memories and groups votes by repository. `availableToWorkspace` does not block explicit upvotes. The CLI checks each selected repo's root [`prune`](../config/prune.md) setting. Omitted or `false` pruning skips that repo's memories while eligible repos still receive upvotes. Callers do not need to filter disabled repos before submitting a batch.
 
 All paths and configurations are validated first; invalid paths or malformed enabled pruning settings still fail before any writes. Each eligible repository's votes are written in one database transaction. Separate repositories are not one transaction: a later failure returns an error, but earlier repositories may already have votes. Retry after fixing the failure; votes do not stack, though a retry records a new event at the retry time.
 

@@ -9,6 +9,7 @@ import {
   readTextIfExists,
   readTextIfExistsSync,
   statIfExists,
+  walkDirectory,
 } from "./index";
 
 let root: string;
@@ -20,6 +21,28 @@ beforeEach(async () => {
 
 afterEach(async () => {
   await rm(root, { recursive: true, force: true });
+});
+
+it("walks nested files without following directory links or visiting skipped directories", async () => {
+  const nested = join(root, "nested");
+  const skipped = join(root, "skip");
+  await mkdir(nested);
+  await mkdir(skipped);
+  await writeFile(join(nested, "keep.txt"), "keep");
+  await writeFile(join(skipped, "hidden.txt"), "hidden");
+  // A cycle would never finish if the walker followed directory links.
+  await symlink(root, join(nested, "link"), "dir");
+  const paths: string[] = [];
+  for await (const { path } of walkDirectory({
+    path: root,
+    skip: (entry) => entry.name === "skip",
+  })) {
+    paths.push(path);
+  }
+  expect(paths.sort()).toEqual([nested, join(nested, "keep.txt"), join(nested, "link")].sort());
+  await expect(walkDirectory({ path: join(root, "missing") }).next()).rejects.toMatchObject({
+    code: "ENOENT",
+  });
 });
 
 describe.each([
@@ -43,9 +66,7 @@ describe.each([
   });
 
   it("does not hide invalid-path errors", async () => {
-    await expect(
-      inspect({ path: "bad\0path", ignoreNotDirectory: true }),
-    ).rejects.toMatchObject({
+    await expect(inspect({ path: "bad\0path", ignoreNotDirectory: true })).rejects.toMatchObject({
       code: "ERR_INVALID_ARG_VALUE",
     });
   });

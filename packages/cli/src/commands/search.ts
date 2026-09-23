@@ -1,4 +1,4 @@
-import { loadWorkspaceMemories } from "../load-workspace-memories";
+import { loadScopedWorkspaceMemories } from "../load-scoped-workspace-memories";
 import type { Command } from "commander";
 import { dirname, relative } from "node:path";
 import MiniSearch from "minisearch";
@@ -30,7 +30,7 @@ export async function search({
   if (!query.trim()) throw new Error("query must not be empty.");
   if (!Number.isSafeInteger(limit) || limit < 1 || !Number.isSafeInteger(offset) || offset < 0)
     throw new Error("limit must be a positive integer and offset a nonnegative integer.");
-  const { memories: unique } = await loadWorkspaceMemories({ roots, repo, scope });
+  const { memories: unique } = await loadScopedWorkspaceMemories({ roots, repo, scope });
   // Rebuild the index when the selected files or their filesystem metadata change.
   const stamp = JSON.stringify(unique.map((memory) => [memory.path, memory.stamp]));
   if (cached?.stamp !== stamp) {
