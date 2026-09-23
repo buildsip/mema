@@ -6,7 +6,7 @@ Patches one memory using [`tiramisu update`](../cli/update.md)'s validation and 
 {
   "roots": ["/workspace/app"],
   "repo": "/workspace/app",
-  "path": "/workspace/app/.memories/data/cache",
+  "path": "/workspace/app/.memories/cache",
   "body": "Invalidate cached responses when permissions change."
 }
 ```

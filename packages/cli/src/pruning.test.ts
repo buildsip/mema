@@ -147,7 +147,7 @@ it("expires from the stored created date, not Git history", async () => {
 
 it("keeps created across folder moves", async () => {
   const entry = await memory({ title: "Original" });
-  const path = join(repo, ".memories/data/renamed");
+  const path = join(repo, ".memories/renamed");
   await rename(entry.path, path);
   expect(await prune({ repo })).toEqual([path]);
   const stored = await readMemory({
@@ -342,7 +342,7 @@ it("records agent votes for renamed, package-moved, and empty updates, and skips
 it("reports a saved update path when the database fails and never migrates implicitly", async () => {
   const entry = await memory();
   await client.query("DROP SCHEMA tiramisu CASCADE");
-  const moved = join(repo, ".memories/data/renamed");
+  const moved = join(repo, ".memories/renamed");
   const result = update({
     roots: [repo],
     repo,

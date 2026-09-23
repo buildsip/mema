@@ -19,8 +19,6 @@ export enum NAMES {
   MEMORIES = ".memories",
   /** Repository-wide settings file, directly inside the Git root. */
   TIRAMISU_JSON = "tiramisu.json",
-  /** Folder of memory.md files and attachments, created on the first insert. */
-  DATA = "data",
   /** The markdown file that holds one memory. */
   MEMORY_MD = "memory.md",
   /** Dependency installs and Git internals; never treated as a package store. */

@@ -291,10 +291,10 @@ describe("tiramisu init", () => {
   });
 
   it("preserves existing package memories during setup", async () => {
-    mkdirSync(join(web, NAMES.MEMORIES, NAMES.DATA), { recursive: true });
-    writeFileSync(join(web, NAMES.MEMORIES, NAMES.DATA, "keep.txt"), "keep");
+    mkdirSync(join(web, NAMES.MEMORIES), { recursive: true });
+    writeFileSync(join(web, NAMES.MEMORIES, "keep.txt"), "keep");
     await init({ cwd: web, cliRoot });
-    expect(readFileSync(join(web, NAMES.MEMORIES, NAMES.DATA, "keep.txt"), "utf8")).toBe("keep");
+    expect(readFileSync(join(web, NAMES.MEMORIES, "keep.txt"), "utf8")).toBe("keep");
     expect(JSON.parse(readFileSync(join(root, NAMES.TIRAMISU_JSON), "utf8"))).toEqual({
       version: 1,
       availableToWorkspace: false,
@@ -383,8 +383,8 @@ describe("tiramisu init", () => {
       prune,
     };
     existing(value);
-    mkdirSync(join(root, NAMES.MEMORIES, NAMES.DATA), { recursive: true });
-    writeFileSync(join(root, NAMES.MEMORIES, NAMES.DATA, "keep.txt"), "keep");
+    mkdirSync(join(root, NAMES.MEMORIES), { recursive: true });
+    writeFileSync(join(root, NAMES.MEMORIES, "keep.txt"), "keep");
     vi.mocked(confirm).mockResolvedValueOnce(true);
     await init({ cwd: root, cliRoot });
     expect(JSON.parse(readFileSync(join(root, NAMES.TIRAMISU_JSON), "utf8"))).toEqual({
@@ -398,16 +398,16 @@ describe("tiramisu init", () => {
         databaseUrlCommand: dbCommand,
       },
     });
-    expect(readFileSync(join(root, NAMES.MEMORIES, NAMES.DATA, "keep.txt"), "utf8")).toBe("keep");
+    expect(readFileSync(join(root, NAMES.MEMORIES, "keep.txt"), "utf8")).toBe("keep");
     expect(vi.mocked(confirm).mock.calls[1]?.[0].initialValue).toBe(false);
     expect(vi.mocked(confirm).mock.calls[2]?.[0].initialValue).toBe(true);
   });
 
   it("initializes a store already populated by insert without disturbing its data", async () => {
-    mkdirSync(join(root, NAMES.MEMORIES, NAMES.DATA), { recursive: true });
-    writeFileSync(join(root, NAMES.MEMORIES, NAMES.DATA, "keep.txt"), "keep");
+    mkdirSync(join(root, NAMES.MEMORIES), { recursive: true });
+    writeFileSync(join(root, NAMES.MEMORIES, "keep.txt"), "keep");
     await init({ cwd: web, cliRoot });
-    expect(readFileSync(join(root, NAMES.MEMORIES, NAMES.DATA, "keep.txt"), "utf8")).toBe("keep");
+    expect(readFileSync(join(root, NAMES.MEMORIES, "keep.txt"), "utf8")).toBe("keep");
     expect(existsSync(join(root, NAMES.TIRAMISU_JSON))).toBe(true);
     expect(existsSync(join(web, NAMES.MEMORIES))).toBe(false);
     expect(confirm).toHaveBeenCalledTimes(5);

@@ -46,7 +46,7 @@ Success returns the same JSON as the corresponding CLI command in the first text
   "content": [
     {
       "type": "text",
-      "text": "[\"/workspace/app/.memories/data/cache\"]"
+      "text": "[\"/workspace/app/.memories/cache\"]"
     }
   ]
 }
@@ -58,21 +58,21 @@ After insert or update returns, the agent may add attachments beside `memory.md`
 
 ### Categorization guidance
 
-After an insert or update, the second text block identifies the saved memory directory and its owning `.memories/data` directory. The agent may move the whole memory directory within that exact data directory and create parent category folders. It must keep the memory folder's name and contents together, avoid other memory directories and symbolic links, and use the new path for later calls.
+After an insert or update, the second text block identifies the saved memory directory and its owning `.memories` directory. The agent may move the whole memory directory within that exact `.memories` directory and create parent category folders. It must keep the memory folder's name and contents together, avoid other memory directories and symbolic links, and use the new path for later calls.
 
-Category names should help users browse their memories. These parent directories also act as [search tags](../file-conventions/data.md#tags).
+Category names should help users browse their memories. These parent directories also act as [search tags](../file-conventions/memories.md#tags).
 
-The block ends with a sorted directory listing relative to the owning `.memories` folder:
+The block ends with a sorted directory listing prefixed with the owning `.memories` folder:
 
 ```text
-data/
-data/network/
-data/network/http/
-data/rendering/
-data/rendering/hydration/
-data/state/
-data/state/zustand/
-data/state/zustand/selectors/
+.memories/
+.memories/network/
+.memories/network/http/
+.memories/rendering/
+.memories/rendering/hydration/
+.memories/state/
+.memories/state/zustand/
+.memories/state/zustand/selectors/
 ```
 
-The listing includes empty category folders and excludes memory folders and their contents, files, symbolic links, and temporary `.mem-` folders. A store without categories shows only `data/`. If the listing cannot be read, the block tells the agent to inspect the data directory; the save remains successful.
+The listing includes empty category folders and excludes memory folders and their contents, files, symbolic links, and temporary `.mem-` folders. A store without categories shows only `.memories/`. If the listing cannot be read, the block tells the agent to inspect the `.memories` directory; the save remains successful.

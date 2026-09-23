@@ -40,17 +40,17 @@ export async function saveMemory({
     throw new Error(
       "Choose a title that produces a folder name of 1–200 bytes, containing letters or numbers.",
     );
-  const data = join(project, NAMES.MEMORIES, NAMES.DATA);
-  const oldData = existing && join(existing.project, NAMES.MEMORIES, NAMES.DATA);
-  if (existing && dirname(existing.path) === oldData) {
-    // .memories/data/memory.md
+  const store = join(project, NAMES.MEMORIES);
+  const oldStore = existing && join(existing.project, NAMES.MEMORIES);
+  if (existing && dirname(existing.path) === oldStore) {
+    // .memories/memory.md
     throw new Error(
-      `${NAMES.MEMORY_MD} can't be a direct child of ${NAMES.DATA}. Move it into its own directory inside ${NAMES.DATA} before updating it.`,
+      `${NAMES.MEMORY_MD} can't be a direct child of ${NAMES.MEMORIES}. Move it into its own directory inside ${NAMES.MEMORIES} before updating it.`,
     );
   }
   // Keep tags such as errors/cache when moving between stores or renaming the title folder.
-  const tags = existing ? relative(oldData!, dirname(dirname(existing.path))) : "";
-  const parent = join(data, tags);
+  const tags = existing ? relative(oldStore!, dirname(dirname(existing.path))) : "";
+  const parent = join(store, tags);
   const folder = join(parent, slug);
   const path = join(folder, NAMES.MEMORY_MD);
   await assertNoSymlinks({ path, base: repo });

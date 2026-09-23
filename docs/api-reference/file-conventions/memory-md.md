@@ -28,5 +28,5 @@ Fields are documented under [Memory](../memory/index.md).
 
 ## Related
 
-- [`data/`](./data.md)
+- [`.memories/`](./memories.md)
 - [`search`](../cli/search.md)

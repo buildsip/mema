@@ -4,7 +4,7 @@ Records upvotes using [`tiramisu upvote`](../cli/upvote.md)'s batch and database
 
 ```json
 {
-  "paths": ["/app/.memories/data/cache", "/team/.memories/data/releases"],
+  "paths": ["/app/.memories/cache", "/team/.memories/releases"],
   "actor": "human"
 }
 ```
@@ -18,7 +18,7 @@ Records upvotes using [`tiramisu upvote`](../cli/upvote.md)'s batch and database
 
 Updates already record an agent upvote when pruning is enabled. Do not add another upvote for the update alone.
 
-Paths may span multiple Git repositories, including private repositories. The tool determines ownership from each absolute path; do not pass `roots` or `repo`. Only repo and package `.memories/data` stores are supported. Unrelated memories are not loaded.
+Paths may span multiple Git repositories, including private repositories. The tool determines ownership from each absolute path; do not pass `roots` or `repo`. Only repo and package `.memories` stores are supported. Unrelated memories are not loaded.
 
 ## Returns
 

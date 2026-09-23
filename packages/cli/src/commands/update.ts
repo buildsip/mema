@@ -15,6 +15,7 @@ import { resolveMemoryFile } from "../resolve-memory-file";
 import { saveMemory } from "../save-memory";
 import { readPruneConfig } from "../read-prune-config";
 import { recordUpvotes } from "../record-upvotes";
+import { NAMES } from "../names";
 
 /**
  * Updates only supplied fields on an existing memory; id and created never change.
@@ -43,7 +44,7 @@ export async function update({
   const existing = memories.find((memory) => memory.path === canonical);
   if (!existing) {
     throw new Error(
-      `Choose a memory path inside a repo or package .memories/data store in ${workspace.repo}: ${target}`,
+      `Choose a memory path inside a repo or package ${NAMES.MEMORIES} store in ${workspace.repo}: ${target}`,
     );
   }
   if (existing.frontmatter.doNotEdit) {

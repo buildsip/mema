@@ -169,11 +169,11 @@ describe("MCP stdio server", () => {
     });
     expect(created.isError).toBeUndefined();
     const [path] = JSON.parse(text(created));
-    expect(path).toBe(join(repo, ".memories/data/cache-responses"));
+    expect(path).toBe(join(repo, ".memories/cache-responses"));
     expect(instructions(created)).toContain(
-      `anywhere within ${JSON.stringify(join(repo, ".memories/data"))}`,
+      `anywhere within ${JSON.stringify(join(repo, ".memories"))}`,
     );
-    expect(instructions(created).split("looks like this:\n")[1]).toBe("data/");
+    expect(instructions(created).split("looks like this:\n")[1]).toBe(".memories/");
     const file = join(path, "memory.md");
     const before = await readFile(file, "utf8");
     // Even a valid relative path must fail rather than depend on a process or repo base.
@@ -225,11 +225,11 @@ describe("MCP stdio server", () => {
       },
     });
     const [next] = JSON.parse(text(updated));
-    expect(next).toBe(join(repo, "apps/web/.memories/data/package-cache"));
+    expect(next).toBe(join(repo, "apps/web/.memories/package-cache"));
     expect(instructions(updated)).toContain(
-      `anywhere within ${JSON.stringify(join(repo, "apps/web/.memories/data"))}`,
+      `anywhere within ${JSON.stringify(join(repo, "apps/web/.memories"))}`,
     );
-    expect(instructions(updated)).not.toContain(JSON.stringify(join(repo, ".memories/data")));
+    expect(instructions(updated)).not.toContain(JSON.stringify(join(repo, ".memories")));
     expect(existsSync(path)).toBe(false);
     const page = JSON.parse(
       text(
@@ -264,18 +264,18 @@ describe("MCP stdio server", () => {
   });
 
   it("shows only the saved store's categories and searches tags after a manual move", async () => {
-    const data = join(repo, "apps/web/.memories/data");
+    const data = join(repo, "apps/web/.memories");
     for (const folder of ["network/http", "rendering/hydration", "state/zustand/selectors"]) {
       await mkdir(join(data, folder), { recursive: true });
     }
-    await mkdir(join(repo, ".memories/data/other-store"), { recursive: true });
+    await mkdir(join(repo, ".memories/other-store"), { recursive: true });
     await connect();
     const created = await call({
       name: "insert-memory",
       args: { body: "Details", frontmatter: { title: "New note", scope: ["apps/web"] } },
     });
     const listing =
-      "data/\ndata/network/\ndata/network/http/\ndata/rendering/\ndata/rendering/hydration/\ndata/state/\ndata/state/zustand/\ndata/state/zustand/selectors/";
+      ".memories/\n.memories/network/\n.memories/network/http/\n.memories/rendering/\n.memories/rendering/hydration/\n.memories/state/\n.memories/state/zustand/\n.memories/state/zustand/selectors/";
     expect(instructions(created).split("looks like this:\n")[1]).toBe(listing);
     const [path] = JSON.parse(text(created));
     await mkdir(join(path, "attachments"));

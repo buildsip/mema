@@ -8,21 +8,18 @@ Stores are allowed at the Git root and at directories that contain `package.json
 repo/
 ├── tiramisu.json
 ├── .memories/
-│   └── data/
-│       └── staging-db-weekly-reset/
-│           └── memory.md
+│   └── staging-db-weekly-reset/
+│       └── memory.md
 └── apps/
     └── web/
         ├── package.json
         └── .memories/
-            └── data/
-                └── errors/
-                    └── axios-reconnect-retry/
-                        ├── memory.md
-                        └── evidence.json
+            └── errors/
+                └── axios-reconnect-retry/
+                    ├── memory.md
+                    └── evidence.json
 ```
 
 - [`.memories`](./memories.md)
 - [`tiramisu.json`](./tiramisu-json.md)
-- [`data/`](./data.md)
 - [`memory.md`](./memory-md.md)

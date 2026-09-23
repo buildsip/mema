@@ -24,8 +24,10 @@ export async function deleteMemories({ paths }: { paths: string[] }) {
         `You cannot delete this memory because doNotDelete is true: ${dirname(canonical)}. Ask the user to delete it.`,
       );
     }
-    if (dirname(canonical) === join(memory.project, NAMES.MEMORIES, NAMES.DATA)) {
-      throw new Error(`You cannot delete the ${NAMES.DATA} directory itself.`);
+    if (dirname(canonical) === join(memory.project, NAMES.MEMORIES)) {
+      throw new Error(
+        `You cannot delete the ${NAMES.MEMORIES} directory itself. Select individual memory directories inside it.`,
+      );
     }
     selected.add(canonical);
   }
