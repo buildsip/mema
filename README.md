@@ -79,10 +79,8 @@ This step is useful for teams. Solo devs can skip to [Step 3](./README.md#step-3
 3. Install `tiramisu` in each repo:
 
 ```bash
-npx tiramisu init
+npx tiramisu init --availableToWorkspace
 ```
-
-When asked whether to make these memories available to other projects in this workspace, answer **yes**.
 
 ## Step 3: Install to project
 

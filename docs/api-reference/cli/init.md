@@ -12,11 +12,18 @@ tiramisu init
 tiramisu init --verbose
 ```
 
+```bash filename="Terminal"
+tiramisu init --availableToWorkspace
+```
+
 ## Reference
 
-| Options     | Description                                            |
-| ----------- | ------------------------------------------------------ |
-| `--verbose` | Print package-manager output while installing the CLI. |
+| Options                 | Description                                                  |
+| ----------------------- | ------------------------------------------------------------ |
+| `--availableToWorkspace` | Answer yes to sharing memories with other workspace projects. |
+| `--verbose`             | Print package-manager output while installing the CLI.       |
+
+`--availableToWorkspace` skips the sharing question and saves `availableToWorkspace: true`. Other prompts still run, including the reconfiguration prompt for an existing setup.
 
 `init` does not take [`--roots`](./index.md#--roots) or [`--repo`](./index.md#--repo).
 
@@ -33,7 +40,7 @@ Setup uses the same defaults on every run, including reconfiguration. Existing m
 | Prompt                                                                                 | When                                                                                                                                                                                   |
 | -------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Reconfigure the repository?                                                            | `tiramisu.json` already exists. Default `false`. Answering no leaves memory settings unchanged.                                                                                        |
-| Share this repository's memories with other projects in the workspace?                 | Default `false`. See [`availableToWorkspace`](../config/availableToWorkspace.md).                                                                                                      |
+| Share this repository's memories with other projects in the workspace?                 | Skipped and answered yes with `--availableToWorkspace`; otherwise defaults to `false`. See [`availableToWorkspace`](../config/availableToWorkspace.md).                                |
 | Enable pruning?                                                                        | Default `true`. See [`prune`](../config/prune.md).                                                                                                                                     |
 | Full database URL command                                                              | Immediately after enabling pruning, on every accepted setup. Requires fresh input; blank input is rejected and saved commands are not defaults. No database URL is requested or saved. |
 | Add memory tab labels to VS Code / Cursor?                                             | Always. Default `true`.                                                                                                                                                                |

@@ -14,9 +14,10 @@ import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { PassThrough } from "node:stream";
 import { confirm, log, outro, text } from "@clack/prompts";
+import { Command } from "commander";
 import { parse } from "jsonc-parser";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { init } from "./commands/init";
+import { init, registerInitCommand } from "./commands/init";
 import { NAMES } from "./names";
 import { getDatabaseUrl } from "./get-database-url";
 import { migrateDatabase } from "./migrate-database";
@@ -198,6 +199,37 @@ describe("tiramisu init", () => {
     expect(migrateDatabase).toHaveBeenCalledOnce();
     expect(log.info).toHaveBeenCalledExactlyOnceWith("Applied 1 database migration(s).");
   });
+
+  it.each([false, true])(
+    "--availableToWorkspace shares memories without prompting (reconfigure: %s)",
+    async (reconfigure) => {
+      if (reconfigure) {
+        existing({ availableToWorkspace: false, prune: false });
+        vi.mocked(confirm).mockResolvedValueOnce(true);
+      }
+      const program = new Command().exitOverride();
+      registerInitCommand({ program, cliRoot });
+      // Exercise argument parsing from a nested package while writing at the Git root.
+      const cwd = vi.spyOn(process, "cwd").mockReturnValue(web);
+      try {
+        await program.parseAsync(["init", "--availableToWorkspace"], { from: "user" });
+      } finally {
+        cwd.mockRestore();
+      }
+      const config = JSON.parse(readFileSync(join(root, NAMES.TIRAMISU_JSON), "utf8"));
+      expect(config.availableToWorkspace).toBe(true);
+      expect(confirm).not.toHaveBeenCalledWith(
+        expect.objectContaining({
+          message:
+            "Make all memories in this repository available to the other projects in this workspace?",
+        }),
+      );
+      expect(confirm).toHaveBeenCalledTimes(reconfigure ? 5 : 4);
+      expect(confirm).toHaveBeenCalledWith({ message: "Enable pruning?", initialValue: true });
+      expect(config.prune.databaseUrlCommand).toBe(dbCommand);
+      expect(existsSync(join(web, NAMES.TIRAMISU_JSON))).toBe(false);
+    },
+  );
 
   it.each(["", "src"])("initializes the repo from a nested package's %j", async (subdir) => {
     await init({ cwd: join(web, subdir), cliRoot });
