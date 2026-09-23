@@ -1,41 +1,65 @@
-import { isInside } from "@buildsip/file-utils";
-import { resolve } from "node:path";
+import { isInside, lstatIfExists } from "@buildsip/file-utils";
+import { isAbsolute, join, relative, resolve, sep } from "node:path";
+import { findRepo } from "./find-repo";
+import { findStores } from "./find-stores";
 import type { Memory } from "./memory";
 import { resolveMemoryFile } from "./resolve-memory-file";
 import { NAMES } from "./names";
+import { readMemory } from "./read-memory";
 
 /** Validates a complete mixed-repo selection before any file or database write. */
-export async function selectMemories({
-  paths,
-  memories,
-  repos,
-}: {
-  paths: string[];
-  memories: Memory[];
-  repos: string[];
-}) {
+export async function selectMemories({ paths }: { paths: string[] }) {
   if (!paths.length) throw new Error("Provide at least one memory directory path.");
-  const byPath = new Map(memories.map((memory) => [memory.path, memory]));
+  const stores = new Map<string, string[]>();
   const selected = new Map<string, Memory>();
   for (const input of paths) {
-    if (typeof input !== "string" || !input.trim() || input.includes("\0")) {
-      throw new Error("Provide a nonempty memory directory path without NUL characters.");
+    if (typeof input !== "string" || !isAbsolute(input) || input.includes("\0")) {
+      throw new Error(
+        "Provide absolute memory directory paths without NUL characters. Reuse paths returned by memory tools.",
+      );
     }
-    // Check the most specific repo first when roots contain nested Git repositories.
-    const repo = [...repos]
-      .sort((a, b) => b.length - a.length)
-      .find((repo) => isInside({ path: resolve(input), parent: repo }));
-    if (!repo)
+    // Check the directory before finding its Git root, which resolves symbolic links.
+    const target = resolve(input);
+    const info = await lstatIfExists({ path: target });
+    if (info?.isSymbolicLink())
       throw new Error(
-        `This path is outside the memories available to this workspace: ${input}. Search again with every workspace folder in roots and use a returned memory directory.`,
+        `Symbolic links are not supported: ${input}. Use the memory's actual directory path.`,
       );
-    const path = await resolveMemoryFile({ path: input, repo });
-    const memory = byPath.get(path);
-    if (!memory)
+    if (info && !info.isDirectory())
       throw new Error(
-        `Choose a memory directory returned by search-memories for these roots and repo: ${input}. Only repo and package ${NAMES.MEMORIES}/${NAMES.DATA} stores are supported.`,
+        `Provide an existing memory directory containing ${NAMES.MEMORY_MD}, not a file: ${input}`,
       );
-    selected.set(path, memory);
+    if (!info)
+      throw new Error(
+        `No memory exists at ${input}. Search again and use its current directory path.`,
+      );
+    const repo = await findRepo(target).catch((cause) => {
+      throw new Error(`Choose a memory directory inside a Git repository: ${input}.`, { cause });
+    });
+    if (!isInside({ path: target, parent: repo }))
+      throw new Error(
+        `Use the memory's actual absolute directory path inside ${repo}; symbolic links and path aliases are not supported: ${input}.`,
+      );
+    const path = await resolveMemoryFile({ path: target, repo });
+    if (selected.has(path)) continue;
+    // Discover valid stores once per repository, but read only the selected memory files.
+    if (!stores.has(repo)) {
+      stores.set(repo, (await findStores({ repo, project: repo })).stores);
+    }
+    const project = stores.get(repo)!.find((store) => {
+      const data = join(store, NAMES.MEMORIES, NAMES.DATA);
+      return (
+        isInside({ path, parent: data }) &&
+        !relative(data, target)
+          .split(sep)
+          .some((part) => part.startsWith(NAMES.MEM_PREFIX))
+      );
+    });
+    if (!project)
+      throw new Error(
+        `Choose an existing memory directory in a repo or package ${NAMES.MEMORIES}/${NAMES.DATA} store: ${input}. Temporary memory directories are not supported.`,
+      );
+    selected.set(path, await readMemory({ path, project, repo }));
   }
   return [...selected.values()];
 }

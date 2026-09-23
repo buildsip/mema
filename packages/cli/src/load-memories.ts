@@ -1,5 +1,4 @@
-import { assertNoSymlinks } from "@buildsip/file-utils";
-import { readdir } from "node:fs/promises";
+import { assertNoSymlinks, lstatIfExists, walkDirectory } from "@buildsip/file-utils";
 import { join } from "node:path";
 import type { Memory } from "./memory";
 import { NAMES } from "./names";
@@ -30,22 +29,13 @@ export async function loadMemories({
   for (const project of stores) {
     const data = join(project, NAMES.MEMORIES, NAMES.DATA);
     await assertNoSymlinks({ path: data, base: repo });
-    const dirs = [data];
+    if (!(await lstatIfExists({ path: data }))) continue;
     const files: string[] = [];
-    // Pushing child directories extends this queue; the loop visits them without recursion.
-    for (const dir of dirs) {
-      // withFileTypes tells us which entries are directories without a separate stat per entry.
-      const entries = await readdir(dir, { withFileTypes: true }).catch(
-        (error: NodeJS.ErrnoException) => {
-          if (error.code === "ENOENT") return [];
-          throw error;
-        },
-      );
-      for (const entry of entries) {
-        const path = join(dir, entry.name);
-        if (entry.isDirectory() && !entry.name.startsWith(NAMES.MEM_PREFIX)) dirs.push(path);
-        else if (entry.isFile() && entry.name === NAMES.MEMORY_MD) files.push(path);
-      }
+    for await (const { path, entry } of walkDirectory({
+      path: data,
+      skip: (entry) => entry.isDirectory() && entry.name.startsWith(NAMES.MEM_PREFIX),
+    })) {
+      if (entry.isFile() && entry.name === NAMES.MEMORY_MD) files.push(path);
     }
     files.sort();
     // Bound open file handles even when a store contains thousands of memories.

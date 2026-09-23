@@ -4,22 +4,21 @@ Records upvotes using [`tiramisu upvote`](../cli/upvote.md)'s batch and database
 
 ```json
 {
-  "roots": ["/app", "/team"],
-  "repo": "/app",
-  "path": ["/app/.memories/data/cache", "/team/.memories/data/releases"],
+  "paths": ["/app/.memories/data/cache", "/team/.memories/data/releases"],
   "actor": "human"
 }
 ```
 
 ## Parameters
 
-| Parameter                                       | Type                 | Required | Description                                                                       |
-| ----------------------------------------------- | -------------------- | -------- | --------------------------------------------------------------------------------- |
-| [`roots`, `repo`](./index.md#shared-parameters) | —                    | Yes      | Workspace and active repository.                                                  |
-| `path`                                          | `string[]`           | Yes      | Nonempty array of available memory directories.                                   |
-| `actor`                                         | `"human" \| "agent"` | Yes      | `human` for user-requested upvotes; `agent` when a memory helped produce a reply. |
+| Parameter | Type                 | Required | Description                                                                                                           |
+| --------- | -------------------- | -------- | --------------------------------------------------------------------------------------------------------------------- |
+| `paths`   | `string[]`           | Yes      | Nonempty array of absolute memory directory paths. Reuse paths returned by memory tools; relative paths are rejected. |
+| `actor`   | `"human" \| "agent"` | Yes      | `human` for user-requested upvotes; `agent` when a memory helped produce a reply.                                     |
 
 Updates already record an agent upvote when pruning is enabled. Do not add another upvote for the update alone.
+
+Paths may span multiple Git repositories, including private repositories. The tool determines ownership from each absolute path; do not pass `roots` or `repo`. Only repo and package `.memories/data` stores are supported. Unrelated memories are not loaded.
 
 ## Returns
 

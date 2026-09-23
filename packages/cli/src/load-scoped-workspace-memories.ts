@@ -8,8 +8,11 @@ import { readConfig } from "./read-config";
 import { resolveRepo } from "./resolve-repo";
 import { validateScopes } from "./validate-scopes";
 
-/** Shares search's discovery and visibility rules with pruning and batch mutations. */
-export async function loadWorkspaceMemories({
+/**
+ * Loads scoped memories from the active repo plus shared workspace memories.
+ * A scope of * includes the entire active repo; other repos still need availableToWorkspace.
+ */
+export async function loadScopedWorkspaceMemories({
   roots,
   repo,
   scope = ["*"],

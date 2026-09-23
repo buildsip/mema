@@ -1,7 +1,7 @@
 import { expect, it } from "vitest";
 import { parseValue } from "./parse-value";
-import { insertSchema } from "./insert-schema";
-import { updateSchema } from "./update-schema";
+import { insertSchema } from "./mcp/insert-memory";
+import { updateSchema } from "./mcp/update-memory";
 import { validateFrontmatter } from "./validate-frontmatter";
 
 it.each([

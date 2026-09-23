@@ -4,20 +4,19 @@ Deletes selected memories and their attachments using [`tiramisu delete`](../cli
 
 ```json
 {
-  "roots": ["/workspace/app"],
-  "repo": "/workspace/app",
-  "path": ["/workspace/app/.memories/data/cache"]
+  "paths": ["/workspace/app/.memories/data/cache"]
 }
 ```
 
 ## Parameters
 
-| Parameter | Type | Required | Description |
-| --- | --- | --- | --- |
-| [`roots`, `repo`](./index.md#shared-parameters) | — | Yes | Workspace and active repository. |
-| `path` | `string[]` | Yes | Nonempty array of memory directory paths. Relative paths resolve from the server's working directory; prefer returned absolute paths. |
+| Parameter | Type       | Required | Description                                                                                                           |
+| --------- | ---------- | -------- | --------------------------------------------------------------------------------------------------------------------- |
+| `paths`   | `string[]` | Yes      | Nonempty array of absolute memory directory paths. Reuse paths returned by memory tools; relative paths are rejected. |
 
 The whole selection is validated before deletion. [`doNotDelete`](../memory/doNotDelete.md) blocks the batch. Nested memories must be selected explicitly when deleting their parent folder.
+
+Paths may span multiple Git repositories, including private repositories. The tool determines ownership from each absolute path; do not pass `roots` or `repo`. Only repo and package `.memories/data` stores are supported. Unrelated memories are not loaded.
 
 ## Returns
 

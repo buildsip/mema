@@ -6,7 +6,7 @@
 
 ## How it works
 
-1. When you ask to prune, the agent calls `prune-memories`. It returns memory directories that meet the [pruning conditions](./config.md#prune) across the active repo and available workspace repos. Repos with pruning disabled and memories marked `doNotDelete` are excluded. The tool never deletes anything.
+1. When you ask to prune, the agent calls `prune-memories`. It returns memory directories that meet the [pruning conditions](./config.md#prune) in the repository you choose, including its packages. Memories marked `doNotDelete` are excluded. The tool never deletes anything.
 2. The AI then analyses the memories by searching the repo and suggests a list of candidates to delete.
 3. It's highly recommended to ask the agent to upvote the pruning candidates you decide to keep, so that they don't show up on your next pruning session.
 

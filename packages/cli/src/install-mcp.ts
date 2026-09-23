@@ -1,6 +1,6 @@
 import { agents, detectGlobalAgents, upsertServer } from "add-mcp";
 import { CLI_NAME } from "./cli-name";
-import { mcpTools } from "./mcp-tools";
+import { mcpTools } from "./mcp/mcp-tools";
 
 const help = `Install the tiramisu MCP server manually with command ${CLI_NAME} and arguments ["mcp"], then restart the agent. See https://github.com/buildsip/tiramisu/blob/main/api-reference/mcp/installation.md`;
 

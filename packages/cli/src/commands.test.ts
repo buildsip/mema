@@ -114,9 +114,9 @@ async function frontmatter(path: string) {
   return parse(source.split("---")[1]!);
 }
 
-function run({ args, input }: { args: string[]; input?: string }) {
+function run({ args, input, cwd = root }: { args: string[]; input?: string; cwd?: string }) {
   return spawnSync(process.execPath, [cli, ...args], {
-    cwd: root,
+    cwd,
     input,
     encoding: "utf8",
     env: cliEnv({ home: join(temp, "home") }),
@@ -588,7 +588,9 @@ describe("partial updates", () => {
   });
 
   it.each(["", " ", "memory\0.md"])("rejects invalid target paths: %j", async (path) => {
-    await expect(update({ roots, repo: root, path })).rejects.toThrow("Provide --path");
+    await expect(update({ roots, repo: root, path })).rejects.toThrow(
+      "Provide an absolute memory directory path",
+    );
   });
   it.each(["path", "body", "same title"])(
     "repairs a mismatched folder on a %s update",
@@ -1077,9 +1079,9 @@ describe("delete", () => {
   it("rejects a memory file path before deleting any directory in the batch", async () => {
     const one = await memory({ title: "One" });
     const two = await memory({ title: "Two" });
-    await expect(
-      deleteMemories({ roots, repo: root, paths: [one, join(two, NAMES.MEMORY_MD)] }),
-    ).rejects.toThrow("existing memory directory");
+    await expect(deleteMemories({ paths: [one, join(two, NAMES.MEMORY_MD)] })).rejects.toThrow(
+      "existing memory directory",
+    );
     expect(existsSync(one)).toBe(true);
     expect(existsSync(two)).toBe(true);
   });
@@ -1089,13 +1091,10 @@ describe("delete", () => {
     const child = await memory({ title: "Child" });
     const nested = join(parent, "child");
     await rename(child, nested);
-    await expect(deleteMemories({ roots, repo: root, paths: [parent] })).rejects.toThrow(
+    await expect(deleteMemories({ paths: [parent] })).rejects.toThrow(
       `Select nested memory explicitly before deleting its parent: ${nested}`,
     );
-    expect(await deleteMemories({ roots, repo: root, paths: [parent, nested] })).toEqual([
-      nested,
-      parent,
-    ]);
+    expect(await deleteMemories({ paths: [parent, nested] })).toEqual([nested, parent]);
     expect(existsSync(parent)).toBe(false);
   });
 
@@ -1104,16 +1103,14 @@ describe("delete", () => {
     const folder = join(root, "alias");
     await mkdir(folder);
     await symlink(join(path, NAMES.MEMORY_MD), join(folder, NAMES.MEMORY_MD));
-    await expect(deleteMemories({ roots, repo: root, paths: [folder] })).rejects.toThrow(
-      "Symbolic links",
-    );
+    await expect(deleteMemories({ paths: [folder] })).rejects.toThrow("Symbolic links");
     expect(existsSync(path)).toBe(true);
   });
 
   it("can delete a memory after the custom schema changes", async () => {
     const path = await memory({ title: "Legacy" });
     await config({ project: root, value: { frontmatter: { custom: { required: ["ticket"] } } } });
-    await deleteMemories({ roots, repo: root, paths: [path] });
+    await deleteMemories({ paths: [path] });
     expect(existsSync(path)).toBe(false);
   });
   it("deletes by directory path with attachments and leaves other memories alone", async () => {
@@ -1121,7 +1118,7 @@ describe("delete", () => {
     const two = await memory({ title: "Two" });
     const keep = await memory({ title: "Keep" });
     await writeFile(join(one, "attachment.txt"), "attachment");
-    expect(await deleteMemories({ roots, repo: root, paths: [one, two, one] })).toHaveLength(2);
+    expect(await deleteMemories({ paths: [one, two, one] })).toHaveLength(2);
     expect(existsSync(one)).toBe(false);
     expect(existsSync(two)).toBe(false);
     expect(existsSync(keep)).toBe(true);
@@ -1130,42 +1127,99 @@ describe("delete", () => {
   it("preflights every path and refuses a batch containing a protected memory", async () => {
     const one = await memory({ title: "One" });
     const protectedPath = await memory({ title: "Protected", doNotDelete: true });
-    await expect(
-      deleteMemories({ roots, repo: root, paths: [one, protectedPath] }),
-    ).rejects.toThrow("doNotDelete");
+    await expect(deleteMemories({ paths: [one, protectedPath] })).rejects.toThrow("doNotDelete");
     expect(existsSync(one)).toBe(true);
     expect(existsSync(protectedPath)).toBe(true);
   });
 
   it("does not treat doNotEdit as doNotDelete", async () => {
     const path = await memory({ title: "Editable only by hand", doNotEdit: true });
-    await deleteMemories({ roots, repo: root, paths: [path] });
+    await deleteMemories({ paths: [path] });
     expect(existsSync(path)).toBe(false);
   });
 
-  it("refuses private sibling paths and arbitrary files", async () => {
-    const teamPath = await memory({ project: team, title: "Shared" });
-    await expect(deleteMemories({ roots, repo: root, paths: [teamPath] })).rejects.toThrow(
-      "outside",
+  it("deletes selected private workspace memories without exposing them in search", async () => {
+    const local = await memory({ title: "Local" });
+    const teamPath = await memory({ project: team, title: "Private" });
+    expect(await search({ roots, repo: root, query: "Private" })).toEqual([]);
+    expect(await deleteMemories({ paths: [teamPath] })).toEqual([teamPath]);
+    expect(existsSync(teamPath)).toBe(false);
+    expect(existsSync(local)).toBe(true);
+  });
+
+  it("deletes selected memories in any Git repo but refuses arbitrary files", async () => {
+    const outside = join(temp, "outside");
+    await mkdir(outside);
+    execFileSync("git", ["init", "--quiet", outside]);
+    const [path] = await insert({
+      roots: [outside],
+      repo: outside,
+      body: "Outside this workspace",
+      frontmatter: { title: "Outside", scope: ["*"] },
+    });
+    expect(await deleteMemories({ paths: [path!] })).toEqual([path]);
+    await expect(deleteMemories({ paths: [join(root, NAMES.PACKAGE_JSON)] })).rejects.toThrow(
+      NAMES.MEMORY_MD,
+    );
+    expect(existsSync(path!)).toBe(false);
+  });
+
+  it("reads only selected memories without loading repo configuration", async () => {
+    const selected = await memory({ title: "Selected" });
+    const invalid = await memory({ title: "Unrelated" });
+    await writeFile(join(invalid, NAMES.MEMORY_MD), "invalid frontmatter");
+    await writeFile(join(root, NAMES.TIRAMISU_JSON), "invalid config");
+    expect(await deleteMemories({ paths: [selected] })).toEqual([selected]);
+    expect(existsSync(invalid)).toBe(true);
+  });
+
+  it.each(["child", ".mem-temporary"])(
+    "protects an unreadable nested memory in %s",
+    async (name) => {
+      const parent = await memory({ title: "Parent" });
+      const child = join(parent, name);
+      await mkdir(child);
+      await writeFile(join(child, NAMES.MEMORY_MD), "invalid frontmatter");
+      await expect(deleteMemories({ paths: [parent] })).rejects.toThrow("Select nested memory");
+      expect(existsSync(parent)).toBe(true);
+    },
+  );
+
+  it("refuses directories outside supported stores and the data directory itself", async () => {
+    const memoryPath = await memory({ title: "Keep" });
+    const contents = await readFile(join(memoryPath, NAMES.MEMORY_MD), "utf8");
+    const outside = join(root, "arbitrary");
+    const data = join(root, NAMES.MEMORIES, NAMES.DATA);
+    await mkdir(outside);
+    await writeFile(join(outside, NAMES.MEMORY_MD), contents);
+    await expect(deleteMemories({ paths: [outside] })).rejects.toThrow("repo or package");
+    await writeFile(join(data, NAMES.MEMORY_MD), contents);
+    await expect(deleteMemories({ paths: [data] })).rejects.toThrow("data directory itself");
+    expect(existsSync(memoryPath)).toBe(true);
+  });
+
+  it("rejects relative memory paths before changing any selected memory", async () => {
+    const one = await memory({ title: "One" });
+    const two = await memory({ title: "Two" });
+    const before = await readFile(join(two, NAMES.MEMORY_MD), "utf8");
+    await expect(deleteMemories({ paths: [one, relative(root, two)] })).rejects.toThrow(
+      "absolute memory directory paths",
     );
     await expect(
-      deleteMemories({ roots, repo: root, paths: [join(root, NAMES.PACKAGE_JSON)] }),
-    ).rejects.toThrow(NAMES.MEMORY_MD);
-    expect(existsSync(teamPath)).toBe(true);
+      update({ roots, repo: root, path: relative(root, two), body: "Changed" }),
+    ).rejects.toThrow("absolute memory directory path");
+    expect(existsSync(one)).toBe(true);
+    expect(await readFile(join(two, NAMES.MEMORY_MD), "utf8")).toBe(before);
   });
 
   it("refuses symlink paths and protects nested memories", async () => {
     const parent = await memory({ title: "Parent" });
     const nested = await memory({ title: "Nested", doNotDelete: true });
     await rename(nested, join(parent, "nested"));
-    await expect(deleteMemories({ roots, repo: root, paths: [parent] })).rejects.toThrow(
-      "nested memory",
-    );
+    await expect(deleteMemories({ paths: [parent] })).rejects.toThrow("nested memory");
     const link = join(root, "link");
     await symlink(parent, link, "dir");
-    await expect(deleteMemories({ roots, repo: root, paths: [link] })).rejects.toThrow(
-      "Symbolic links",
-    );
+    await expect(deleteMemories({ paths: [link] })).rejects.toThrow("Symbolic links");
     expect(existsSync(parent)).toBe(true);
   });
 });
@@ -1212,7 +1266,7 @@ describe("built CLI", () => {
       expect(existsSync(join(root, NAMES.MEMORIES))).toBe(false);
     },
   );
-  it("reads an empty patch from a JSON file with a relative --path", async () => {
+  it("uses an absolute --path when the CLI starts elsewhere", async () => {
     const path = await memory({ title: "Repair" });
     const before = await frontmatter(path);
     const wrong = join(dirname(path), "wrong-folder");
@@ -1220,17 +1274,8 @@ describe("built CLI", () => {
     const input = join(root, "update.json");
     await writeFile(input, "{}");
     const result = run({
-      args: [
-        "update",
-        "--roots",
-        root,
-        "--repo",
-        root,
-        "--path",
-        relative(root, wrong),
-        "--input",
-        input,
-      ],
+      cwd: temp,
+      args: ["update", "--roots", root, "--repo", root, "--path", wrong, "--input", input],
     });
     expect(result.status, result.stderr).toBe(0);
     expect(result.stderr).toBe("");
@@ -1318,7 +1363,7 @@ describe("built CLI", () => {
     expect(found.status, found.stderr).toBe(0);
     expect(found.stderr).toBe("");
     expect(JSON.parse(found.stdout)[0]).toMatchObject({ path, body: "CLI content\n" });
-    const deleted = run({ args: ["delete", ...args, "--path", path] });
+    const deleted = run({ args: ["delete", "--paths", path] });
     expect(deleted.status, deleted.stderr).toBe(0);
     expect(JSON.parse(deleted.stdout)).toEqual([path]);
   });
@@ -1348,31 +1393,24 @@ describe("built CLI", () => {
     expect(next).toContain(join(api, NAMES.MEMORIES));
     expect(await frontmatter(next)).toMatchObject({ id });
     expect(existsSync(path)).toBe(false);
-    const deleted = run({ args: ["delete", ...args, "--path", next] });
+    const deleted = run({ args: ["delete", "--paths", next] });
     expect(deleted.status, deleted.stderr).toBe(0);
     expect(existsSync(next)).toBe(false);
   });
 
-  it.each(["search", "insert", "update", "delete"])(
-    "rejects a package as --repo for %s",
-    (command) => {
-      const flags =
-        command === "search"
-          ? ["--query", "note"]
-          : ["delete", "update"].includes(command)
-            ? ["--path", web]
-            : [];
-      const result = run({
-        args: [command, "--roots", root, "--repo", web, ...flags],
-        input: JSON.stringify({
-          body: "body",
-          frontmatter: { title: "Note", scope: ["*"] },
-        }),
-      });
-      expect(result.status).toBe(1);
-      expect(JSON.parse(result.stderr).error).toContain("Git root");
-    },
-  );
+  it.each(["search", "insert", "update"])("rejects a package as --repo for %s", (command) => {
+    const flags =
+      command === "search" ? ["--query", "note"] : command === "update" ? ["--path", web] : [];
+    const result = run({
+      args: [command, "--roots", root, "--repo", web, ...flags],
+      input: JSON.stringify({
+        body: "body",
+        frontmatter: { title: "Note", scope: ["*"] },
+      }),
+    });
+    expect(result.status).toBe(1);
+    expect(JSON.parse(result.stderr).error).toContain("Git root");
+  });
 
   it("reads a JSON file and preserves omitted metadata on update", async () => {
     await config({
@@ -1621,7 +1659,7 @@ describe("built CLI", () => {
     { args: ["search"] },
     { args: ["search", "--roots", ".", "--repo", ".", "--query", ""] },
     { args: ["prune"] },
-    { args: ["delete", "--roots", ".", "--repo", "."] },
+    { args: ["delete"] },
   ])("fails with stderr JSON for $args", ({ args }) => {
     const result = run({ args });
     expect(result.status).toBe(1);

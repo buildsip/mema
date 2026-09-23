@@ -15,5 +15,8 @@ export async function describeSearch(result: { path: string }[]) {
   }
   if (!enabled.length) return undefined;
 
-  return `Pruning is enabled for these repositories:\n${enabled.map((repo) => JSON.stringify(repo)).join("\n")}\nWhen a memory from one of these repositories helps produce the reply, record an agent upvote with the upvote-memories tool. Don't upvote a memory just because you read it.`;
+  return `If you encounter a memory that contradicts the code or another memory, tell the user and offer to update or delete it.
+  Pruning is enabled for these repositories:
+  ${enabled.map((repo) => JSON.stringify(repo)).join("\n")}
+  If one of these memories helps produce the reply, record an upvote with \`actor\` \`agent\` with the \`upvote-memories\` tool. Don't upvote a memory just because you read it.`;
 }

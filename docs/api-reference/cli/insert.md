@@ -20,7 +20,7 @@ EOF
 
 Stdout is a one-element JSON array of the saved absolute memory directory path. Use that path for later [`update`](./update.md) and [`delete`](./delete.md) calls.
 
-> Good to know: Choose the narrowest [scope](../memory/scope.md) where the memory provides useful context. For example, a login-session cookie rule used throughout authentication belongs to `["apps/web/auth"]`. Use `["*"]` only for context useful across the whole repository.
+> Good to know: Choose the narrowest [scope](../memory/scope.md) where the memory provides useful context. For example, a login-session cookie rule used throughout authentication applies to `["apps/web/auth"]`. Use `["*"]` only for context useful across the whole repository.
 
 ## Reference
 

@@ -6,13 +6,13 @@ import { CLI_NAME } from "../cli-name";
 import { findRepo } from "../find-repo";
 import { findStores } from "../find-stores";
 import { loadMemories } from "../load-memories";
+import { updateSchema } from "../mcp/update-memory";
 import { parseValue } from "../parse-value";
 import { placeMemory } from "../place-memory";
 import { readJsonInput } from "../read-json-input";
 import { resolveRepo } from "../resolve-repo";
 import { resolveMemoryFile } from "../resolve-memory-file";
 import { saveMemory } from "../save-memory";
-import { updateSchema } from "../update-schema";
 import { readPruneConfig } from "../read-prune-config";
 import { recordUpvotes } from "../record-upvotes";
 
@@ -106,7 +106,7 @@ export async function update({
     } catch (error) {
       // A title/scope change may have moved the file. Give the caller its new retry path.
       throw new Error(
-        `The memory was saved at ${saved[0]}, but its agent upvote failed. ${error instanceof Error ? error.message : "Check the database and retry."} Retry only the upvote with upvote-memories using the same roots and repo, path ${JSON.stringify(saved)}, and actor "agent" (CLI: ${CLI_NAME} upvote with the same --roots and --repo, this --path, and --actor agent). The content is already saved, even if this update set doNotEdit.`,
+        `The memory was saved at ${saved[0]}, but its agent upvote failed. ${error instanceof Error ? error.message : "Check the database and retry."} Retry only the upvote with upvote-memories using paths ${JSON.stringify(saved)}, and actor "agent" (CLI: ${CLI_NAME} upvote with the saved directory via --paths and --actor agent). The content is already saved, even if this update set doNotEdit.`,
       );
     }
   }
@@ -122,7 +122,7 @@ export function registerUpdateCommand({ program }: { program: Command }) {
       "Workspace directories; repeat the flag or provide multiple paths.",
     )
     .requiredOption("--repo <path>", "Git root of the workspace project the agent is working on.")
-    .requiredOption("--path <path>", "Existing memory directory returned by a memory command.")
+    .requiredOption("--path <path>", "Absolute memory directory returned by a memory command.")
     .description(
       "Update the memory selected by --path from JSON with optional body and frontmatter. Omitted fields keep their values. Use {} to only repair the title folder. Every update repairs the title folder if needed. Use the returned path for subsequent calls.",
     )
