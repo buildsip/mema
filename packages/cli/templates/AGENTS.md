@@ -1,5 +1,12 @@
 ## When to create a memory using tiramisu
 
-- Store a memory when you learn a project-specific fact that would help with future work, such as a recurring pitfall, a non-obvious fix, or the reason for a decision.
-- Skip temporary progress notes and unverified guesses.
-- Before writing, use the `tiramisu-memory-writing` skill if installed.
+Memory = useful context.
+
+**What shouldn't be a memory**:
+
+- Rules for agents - use skills or `AGENTS.md` instead.
+- Context obvious from the code.
+
+**Examples of memories**: explaining recurring errors, the reason behind non-obvious decisions, why alternatives to an approach were rejected, etc.
+
+Before calling `insert-memory` and `update-memory` tools, use the `tiramisu-memory-writing` skill.
