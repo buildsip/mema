@@ -1,6 +1,6 @@
 <p align="center">
   <picture>
-    <img src="docs/assets/banner.svg" alt="banner" width="600">
+    <img src="apps/docs/public/banner.svg" alt="banner" width="600">
   </picture>
 </p>
 
@@ -65,54 +65,17 @@ Tiramisu helps your agent access **project, personal, team, and organization** m
 > 🚧 **Status:** Alpha. The architecture and CLI are actively evolving. 🚧
 
 <p align="center">
-  <img src="docs/assets/file-tree.svg?v=2" alt="File tree. repo/.memories is the repo memory store. apps/web/.memories is the apps/web memory store. Under .memories, folder names such as errors, gotchas, and ADRs are searchable tags. webpack-error is the memory folder, named from the title. It holds memory.md plus attachments, response.json and error.png. packages/auth/.memories is the packages/auth memory store. A sample memory.md lists scope apps/web and apps/marketing. adam-personal, acme-team-1-memories, and acme-memories are separate Git repos for personal, team, and organization memories." width="1147">
+  <img src="apps/docs/public/file-tree.svg?v=2" alt="File tree. repo/.memories is the repo memory store. apps/web/.memories is the apps/web memory store. Under .memories, folder names such as errors, gotchas, and ADRs are searchable tags. webpack-error is the memory folder, named from the title. It holds memory.md plus attachments, response.json and error.png. packages/auth/.memories is the packages/auth memory store. A sample memory.md lists scope apps/web and apps/marketing. adam-personal, acme-team-1-memories, and acme-memories are separate Git repos for personal, team, and organization memories." width="1147">
 </p>
 
-# Quickstart
+# Documentation
 
-## Step 1: Configure pruning (Optional)
+Visit https://trytiramisu.com/docs to view the documentation.
 
-Upvotes and pruning reduce stale memories.
-
-When a memory helps solve a task, it gets upvoted, which extends its lifespan. These events are stored in the database. On request, the agent can prune memories, meaning it reviews expired memories and suggests updates or deletions.
-
-If you skip this step, upvotes are disabled, but the agent can still prune manually by searching your codebase to verify relevance.
-
-### Option A: Self-Hosted
-
-Spin up a PostgreSQL database.
-
-> [!TIP]
-> You can use the **same database** across all your organization's repositories. Try **[Neon](https://neon.tech)** or **[Supabase](https://supabase.com)** for free.
-
-### Option B: tiramisu app (Coming Soon)
-
-⚡ Cloud Database, 📊 Dashboard, 🤖 Automated Pruning PRs
-
-## Step 2: Separate project memories from personal, team, and/or organization memories (Optional)
-
-This step is useful for teams. Solo devs can skip to [Step 3](./README.md#step-3-installation).
-
-1. Create one repo per set of memories you want to keep separate (e.g. per team, one company-wide, one personal).
-2. Add each repo to your IDE **and** agent harness **workspaces** to "import" the memories.
-3. Install `tiramisu` in each repo:
-
-```bash
-npx tiramisu init --availableToWorkspace
-```
-
-## Step 3: Install to project
-
-Inside your **project**, run:
-
-```bash
-npx tiramisu init
-```
-
-This installs the CLI, the MCP tools, and configures your repo.
-
----
+# Contributing
 
 Report a [bug](https://github.com/buildsip/tiramisu/issues).
+
 Send [feedback](https://github.com/buildsip/tiramisu/discussions).
+
 [Join Discord](https://discord.gg/X4M5qynD88)
