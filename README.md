@@ -48,6 +48,9 @@
   <a href="https://scorecard.dev/viewer/?uri=github.com/buildsip/tiramisu">
     <img src="https://api.scorecard.dev/projects/github.com/buildsip/tiramisu/badge" alt="openssf">
   </a>
+  <a href="https://www.bestpractices.dev/projects/14788">
+    <img src="https://www.bestpractices.dev/projects/14788/badge">
+  </a>
 </div>
 
 Tiramisu helps your agent access **project, personal, team, and organization** memories at the same time.
