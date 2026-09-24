@@ -58,7 +58,7 @@ Malformed memories in selected stores fail the search. Sibling stores outside th
 
 `--roots` other than `--repo` contribute stores only when that other Git root sets [`availableToWorkspace`](../config/availableToWorkspace.md) to `true`. Local `--scope` does not filter those memories.
 
-Overlapping workspace folders are deduplicated by `memory.md` path.
+Each workspace root must be a Git root. Duplicate roots and symlink aliases are searched once.
 
 Search validates each store's config and built-in memory fields. Custom fields remain searchable after [schema changes](../config/frontmatter.md#schema-changes).
 

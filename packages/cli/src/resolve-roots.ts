@@ -1,20 +1,11 @@
-import { realpath, stat } from "node:fs/promises";
-import { resolve } from "node:path";
+import { resolveGitRoot } from "./resolve-git-root";
 
-/** Canonicalizes the complete workspace folder list without selecting an active repo. */
+/** Validates every workspace Git root and deduplicates canonical paths. */
 export async function resolveRoots({ roots }: { roots: string[] }) {
   if (!roots.length) {
-    throw new Error("Include every workspace project root in roots; at least one is required.");
+    throw new Error("Include every workspace Git root in roots; at least one is required.");
   }
-  const folders = await Promise.all(
-    [...new Set(roots)].map(async (root) => {
-      // realpath gives aliases of the same workspace folder one stable path.
-      const path = await realpath(resolve(root));
-      if (!(await stat(path)).isDirectory()) {
-        throw new Error(`Provide a workspace directory in roots, not a file: ${root}`);
-      }
-      return path;
-    }),
-  );
+  // resolveGitRoot uses realpath so symlink aliases share one canonical path.
+  const folders = await Promise.all([...new Set(roots)].map(resolveGitRoot));
   return [...new Set(folders)];
 }

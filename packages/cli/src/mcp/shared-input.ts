@@ -13,19 +13,19 @@ const absolutePath = z
     "Provide an absolute directory path without NUL characters.",
   );
 
-/** Tools that take roots require the complete list of workspace projects. */
+/** Tools that take roots require the complete list of workspace Git roots. */
 export const roots = z
   .array(absolutePath, {
-    error: "Provide roots as an array of absolute workspace directory paths.",
+    error: "Provide roots as an array of absolute workspace Git root paths.",
   })
-  .min(1, "Include every workspace folder in roots; at least one is required.")
+  .min(1, "Include every workspace Git root in roots; at least one is required.")
   .describe(
-    "Absolute paths of every project root in the workspace. Always pass the complete list, not only the projects targeted by this call.",
+    "Absolute paths of every Git root in the workspace. Always pass the complete list, not only the projects targeted by this call.",
   );
 
 /** Tools that operate on one project take its Git root. */
 export const repo = absolutePath.describe(
-  "Absolute path of the Git root of the project to operate on. When this tool also takes roots, select the project from that workspace.",
+  "Absolute path of the Git root of the project to operate on.",
 );
 
 /**

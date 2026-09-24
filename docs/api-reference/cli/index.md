@@ -36,19 +36,19 @@ Requires Node.js `>=22.5.0`.
 
 ### `--roots`
 
-Required on search, insert, and update. Other commands do not take this flag. Pass every project root in the workspace, including private and shared projects. Always supply the complete list, not only the projects targeted by this command. Repeat the flag or pass multiple paths.
+Required on search, insert, and update. Other commands do not take this flag. Pass every Git root in the workspace, including private and shared projects. Always supply the complete list, not only the projects targeted by this command. Repeat the flag or pass multiple paths.
 
 ```bash filename="Terminal"
 tiramisu search --roots /workspace/app --roots /workspace/team --repo /workspace/app --query cache
 ```
 
-Each path must be a directory. The CLI canonicalizes it with `realpath`. Duplicate roots are ignored.
+Each path must be a Git root directory. The CLI canonicalizes it with `realpath`. Duplicate roots and symlink aliases are ignored. For a project outside Git, initialize a Git repository for the user by running `git init` from that project directory, then retry. For a subdirectory of an existing repository, pass that repository's Git root instead.
 
 ### `--repo`
 
 Required on search, insert, update, and prune. Git root of the workspace project the agent is working on. Delete and upvote determine each selected memory's repository from its absolute path and do not accept this flag.
 
-`--repo` must be the Git root, not a package directory. For search, insert, and update, it must be inside one of `--roots`. Prune takes only an absolute `--repo` and reviews that repository, including its package stores.
+`--repo` must be the Git root, not a package directory. For search, insert, and update, it must equal one of `--roots` after resolving path aliases. Prune takes only an absolute `--repo` and reviews that repository, including its package stores.
 
 ### `--input`
 
