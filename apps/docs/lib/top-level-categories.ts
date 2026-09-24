@@ -34,7 +34,7 @@ function pages(folder: Folder) {
   return items;
 }
 
-// "01-getting-started" -> "Getting Started". The number is only for file order.
+// "getting-started" -> "Getting Started". A leading number, if one is still there, is dropped.
 function label(folder: Folder) {
   const path = folder.$ref && typeof folder.$ref === 'object' ? (folder.$ref.folder ?? '') : '';
   const base = path.split('/').pop() ?? '';

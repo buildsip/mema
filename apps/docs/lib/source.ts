@@ -25,6 +25,10 @@ const docs = defineDocs({
 export const source = loader({
   baseUrl: docsRoute,
   source: docs.toFumadocsSource(),
+  // "01-getting-started" stays first. The URL is /getting-started.
+  slugs(_file, next) {
+    return next().map((part) => part.replace(/^\d+-/, ""));
+  },
   plugins: [sidebarIconsPlugin(), sortByFilenamePlugin(), lucideIconsPlugin(), topLevelCategoriesPlugin()],
 });
 

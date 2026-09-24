@@ -66,6 +66,8 @@ jobs:
         env:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          # Next inlines this at build time. Pull-request builds leave it unset.
+          NEXT_PUBLIC_ENV: production
         run: |
           for name in CLOUDFLARE_ACCOUNT_ID CLOUDFLARE_API_TOKEN; do
             if [ -z "${!name}" ]; then

@@ -123,7 +123,7 @@ html > body[data-scroll-locked] {
   --info: oklch(0.74 0.1 255);
   --warning: oklch(0.8 0.08 80);
   --link: oklch(0.78 0.13 255);
-  --border: oklch(1 0 0 / 10%);
+  --border: oklch(64.341% 0.00007 271.152 / 0.1);
   --input: oklch(1 0 0 / 15%);
   --ring: oklch(0.556 0 0);
   --chart-1: oklch(0.87 0 0);
@@ -157,6 +157,19 @@ html > body[data-scroll-locked] {
   samp {
     font-family: var(--font-mono);
   }
+}
+
+/* Home navbar only. It sits on the black animation.
+   Docs pages do not render #nd-home-layout, so their navbar stays on the theme color.
+   Text color is set here so the links stay light when the rest of the site is light. */
+#nd-home-layout > #nd-nav,
+#nd-home-layout > #nd-nav > :first-child {
+  background-color: #000;
+  color: #fff;
+}
+
+#nd-home-layout > #nd-nav :is(a, button, svg) {
+  color: #fff;
 }
 
 /* Fumadocs prose links use the body color. Keep headings as they are. */
