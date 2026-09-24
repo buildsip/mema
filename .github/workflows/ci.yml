@@ -1,10 +1,12 @@
-# Lint, typecheck, and test every pull request.
+# Lint, typecheck, and test every pull request and every push to main.
 # The publish workflow runs these same commands before it publishes to npm.
 
 name: CI
 
 on:
   pull_request:
+  push:
+    branches: [main]
 
 permissions:
   contents: read

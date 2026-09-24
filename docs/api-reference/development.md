@@ -1,6 +1,6 @@
 # Development
 
-This repository uses Bun 1.4.2 (pinned in `.bun-version`) for dependencies, scripts, tests, and builds. Node.js 22.5+ is still required to run the published CLI and its integration tests. Pull requests run lint, typecheck, and test on Node.js 24.
+This repository uses Bun 1.4.2 (pinned in `.bun-version`) for dependencies, scripts, tests, and builds. Node.js 22.5+ is still required to run the published CLI and its integration tests. Pull requests and pushes to main run lint, typecheck, and test on Node.js 24.
 
 - `packages/cli`: the publishable `tiramisu` package.
 - `packages/file-utils`: private filesystem helpers bundled into the CLI.
@@ -22,7 +22,7 @@ Use `bun run test` to build the CLI before running tests. Tests run with `--isol
 
 ## Dependencies
 
-Commit `bun.lock` when dependencies change. Pull request CI uses `bun install --frozen-lockfile`.
+Commit `bun.lock` when dependencies change. CI uses `bun install --frozen-lockfile`.
 
 The seven-day minimum release age is configured in `bunfig.toml`. `trustedDependencies` explicitly permits the PostgreSQL test binary setup scripts and esbuild's install script (still required transitively by drizzle-kit). Other dependency install scripts are not allowed. The previous pnpm `trustPolicy: no-downgrade` setting has no equivalent configured in this Bun setup; review dependency provenance changes when updating the lockfile.
 
