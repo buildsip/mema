@@ -6,14 +6,14 @@ type TreeNode = {
   children?: TreeNode[];
 };
 
-// Fumadocs puts index.md first and folders after files.
-// This sorts each folder by the file or folder name on disk.
+// A leading number, like "01-getting-started", is the sort order.
+// The page URL drops that number.
 export function sortByFilenamePlugin(): LoaderPlugin {
   return {
     name: 'sort-by-filename',
     transformPageTree: {
       root(node) {
-        sortNodes(node.children);
+        sortNodes(node.children ?? []);
         return node;
       },
     },
