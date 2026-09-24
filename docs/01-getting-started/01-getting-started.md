@@ -2,6 +2,8 @@
 title: Getting Started
 ---
 
+![workspace structure](../assets/file-tree.svg)
+
 ## Step 1: Configure pruning (Optional)
 
 Upvotes and pruning reduce stale memories.
