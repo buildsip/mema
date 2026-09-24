@@ -1,4 +1,6 @@
-# Database migrations
+---
+title: "Database migrations"
+---
 
 Tiramisu uses Drizzle ORM with `pg`. PostgreSQL is optional and stores upvote events, not memory
 content. [`upvote`](./cli/upvote.md), pruning-enabled [`update`](./cli/update.md), and [`prune`](./cli/prune.md) use this ledger. Runtime operations do not apply migrations.

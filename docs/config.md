@@ -1,4 +1,6 @@
-# `tiramisu.json`
+---
+title: "tiramisu.json"
+---
 
 Location: `tiramisu.json`, directly at the repository root.
 

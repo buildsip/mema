@@ -1,4 +1,6 @@
-# `frontmatter`
+---
+title: "frontmatter"
+---
 
 Declares extra memory fields. The only allowed key is `custom`, a JSON Schema object merged into `{ "type": "object", ...schema }` and checked with Ajv (formats such as `uri` are enabled).
 

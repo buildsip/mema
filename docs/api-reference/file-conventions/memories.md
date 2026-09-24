@@ -1,4 +1,6 @@
-# `.memories`
+---
+title: ".memories"
+---
 
 The memory store directory. Allowed only at a package root or the Git root.
 

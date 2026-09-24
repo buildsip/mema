@@ -1,4 +1,6 @@
-# `title`
+---
+title: "title"
+---
 
 Nonempty string. Trailing and leading whitespace is trimmed on write.
 

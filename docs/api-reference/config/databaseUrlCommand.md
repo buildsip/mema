@@ -1,4 +1,6 @@
-# `prune.databaseUrlCommand`
+---
+title: "prune.databaseUrlCommand"
+---
 
 A complete shell command that prints the PostgreSQL URL. Configure it inside `prune` in
 [`tiramisu.json`](../file-conventions/tiramisu-json.md).

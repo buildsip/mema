@@ -1,4 +1,6 @@
-# insert-memory
+---
+title: "insert-memory"
+---
 
 Creates one memory using [`tiramisu insert`](../cli/insert.md)'s validation and placement rules. Search for a related memory before inserting; update it if it already covers the subject.
 

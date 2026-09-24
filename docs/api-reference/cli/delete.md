@@ -1,4 +1,6 @@
-# tiramisu delete
+---
+title: "tiramisu delete"
+---
 
 `tiramisu delete` removes memory folders, including attachments.
 

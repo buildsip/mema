@@ -1,4 +1,6 @@
-# tiramisu update
+---
+title: "tiramisu update"
+---
 
 `tiramisu update` patches one existing memory. Only supplied fields change.
 

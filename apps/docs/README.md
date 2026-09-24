@@ -1,19 +1,14 @@
 # docs
 
-This is a Next.js application generated with
-[Create Fumadocs](https://github.com/fuma-nama/fumadocs).
+Docs site for Tiramisu. The pages it renders live in the repository [`docs/`](../../docs) folder.
 
-Run development server:
+From this directory:
 
 ```bash
-npm run dev
-# or
-pnpm dev
-# or
-yarn dev
+bun run dev
 ```
 
-Open http://localhost:3000 with your browser to see the result.
+Open http://localhost:3000/docs.
 
 ## Explore
 

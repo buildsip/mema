@@ -1,4 +1,6 @@
-# `memory.md`
+---
+title: "memory.md"
+---
 
 One memory: YAML frontmatter, then Markdown.
 

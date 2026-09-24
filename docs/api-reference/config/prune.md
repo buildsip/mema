@@ -1,4 +1,6 @@
-# `prune`
+---
+title: "prune"
+---
 
 Repository-wide settings for upvotes and pruning. Omit the field or use `false` to disable both.
 

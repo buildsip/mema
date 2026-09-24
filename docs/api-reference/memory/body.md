@@ -1,4 +1,6 @@
-# `body`
+---
+title: "body"
+---
 
 Markdown after the YAML header. Insert and update require a nonempty string when `body` is supplied. Whitespace-only strings are rejected.
 

@@ -1,4 +1,6 @@
-# tiramisu prune
+---
+title: "tiramisu prune"
+---
 
 `tiramisu prune` lists every expired, unprotected memory directory in the selected repository for review. It never deletes anything.
 

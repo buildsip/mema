@@ -1,4 +1,6 @@
-# `scope`
+---
+title: "scope"
+---
 
 Repository-relative file or directory paths this memory applies to. Directories include descendants. `*` is the whole repo. `.` is treated like `*` when placing a memory.
 

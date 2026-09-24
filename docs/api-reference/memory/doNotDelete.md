@@ -1,4 +1,6 @@
-# `doNotDelete`
+---
+title: "doNotDelete"
+---
 
 When `true`, [`delete`](../cli/delete.md) is rejected for that memory. A batch that includes one protected path deletes nothing.
 

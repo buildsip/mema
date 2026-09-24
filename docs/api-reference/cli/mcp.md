@@ -1,4 +1,6 @@
-# tiramisu mcp
+---
+title: "tiramisu mcp"
+---
 
 Starts the [MCP server](../mcp/index.md) over stdio.
 

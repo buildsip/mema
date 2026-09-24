@@ -1,4 +1,6 @@
-# CLI
+---
+title: "CLI"
+---
 
 `tiramisu` reads and writes Git-native memories. Agents run the same command.
 

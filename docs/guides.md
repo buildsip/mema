@@ -1,3 +1,7 @@
+---
+title: "Guidelines"
+---
+
 # General guidelines
 
 1. **Most of the time, you should commit new project memories to the same PR that generated them.**
@@ -21,7 +25,7 @@
 Use `AGENTS.md` and skills for rules.
 
 3. **Write the memory when you solve it.** Don't scrape old chats later to "distill" memories.
-4. **Use the narrowest accurate scope.** If a memory provides context only useful for `apps/web`, the agent will automatically create the memory in `apps/web/.memories`.
+4. **Keep the narrowest accurate scope.** If a memory provides context only useful for `apps/web`, the agent will automatically create the memory in `apps/web/.memories`.
 5. **Directory names act as search tags, so they matter when searching memories.** Use straightforward names, like `errors/`, `gotchas/`, `decisions/`, `architecture/`.
 6. **Frontmatter fields act as search tags, so you may create your own custom tags,** e.g. `kind`, `anchors`, Linear URLs, etc.
 7. **Prefer a custom `retireWhen` field** when you can name an objective test for making this memory obsolete:

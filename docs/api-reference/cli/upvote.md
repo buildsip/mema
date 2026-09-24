@@ -1,4 +1,6 @@
-# tiramisu upvote
+---
+title: "tiramisu upvote"
+---
 
 `tiramisu upvote` records a batch of human or agent upvotes.
 

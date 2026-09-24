@@ -1,4 +1,6 @@
-# tiramisu insert
+---
+title: "tiramisu insert"
+---
 
 `tiramisu insert` creates one memory from a JSON object. Search for a related memory before inserting.
 

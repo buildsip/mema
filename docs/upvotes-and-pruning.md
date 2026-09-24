@@ -1,4 +1,6 @@
-# Upvotes and pruning
+---
+title: "Upvotes and pruning"
+---
 
 - Upvotes are relevant when pruning memories. Ask the agent to upvote useful memories on your behalf. An upvote from a human counts more than an automatic upvote from an agent.
 - Reading alone does not record an upvote. A memory that helps the agent produce a reply receives an `agent` upvote when pruning is enabled. Every successful memory update also records an agent upvote.

@@ -1,4 +1,6 @@
-# `id`
+---
+title: "id"
+---
 
 Stable identifier. A nonempty string. [`insert`](../cli/insert.md) writes a UUID.
 

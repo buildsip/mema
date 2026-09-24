@@ -1,15 +1,15 @@
-import Link from 'next/link';
+import Link from "next/link";
 
 export default function HomePage() {
   return (
     <div className="flex flex-col justify-center text-center flex-1">
-      <h1 className="text-2xl font-bold mb-4">Hello World</h1>
+      <h1 className="text-2xl font-bold mb-4">Tiramisu</h1>
       <p>
-        You can open{' '}
+        Git-native memory for AI coding agents.{" "}
         <Link href="/docs" className="font-medium underline">
-          /docs
-        </Link>{' '}
-        and see the documentation.
+          Read the docs
+        </Link>
+        .
       </p>
     </div>
   );

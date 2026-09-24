@@ -1,4 +1,6 @@
-# `tiramisu.json`
+---
+title: "tiramisu.json"
+---
 
 Repository-wide settings file, placed directly at the Git root alongside `.git`.
 

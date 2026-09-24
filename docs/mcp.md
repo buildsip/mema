@@ -1,4 +1,6 @@
-# MCP Tools
+---
+title: "MCP Tools"
+---
 
 The MCP gives your agent six ways to work with memories.
 

@@ -1,4 +1,6 @@
-# Configuration
+---
+title: "Configuration"
+---
 
 Fields in [`tiramisu.json`](../file-conventions/tiramisu-json.md).
 

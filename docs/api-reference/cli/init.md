@@ -1,4 +1,6 @@
-# tiramisu init
+---
+title: "tiramisu init"
+---
 
 `tiramisu init` writes [`tiramisu.json`](../file-conventions/tiramisu-json.md) and installs the `tiramisu` package globally. Run it from anywhere inside a Git working tree.
 

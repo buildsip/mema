@@ -1,4 +1,6 @@
-# Memory
+---
+title: "Memory"
+---
 
 Fields stored in [`memory.md`](../file-conventions/memory-md.md).
 

@@ -1,4 +1,6 @@
-# Memory
+---
+title: "Memory"
+---
 
 ## `.memories`
 

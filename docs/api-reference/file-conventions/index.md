@@ -1,4 +1,6 @@
-# File-system conventions
+---
+title: "File-system conventions"
+---
 
 Special files and directories tiramisu looks for on disk.
 

@@ -1,4 +1,6 @@
-# update-memory
+---
+title: "update-memory"
+---
 
 Patches one memory using [`tiramisu update`](../cli/update.md)'s validation and movement rules.
 

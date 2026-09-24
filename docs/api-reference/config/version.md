@@ -1,4 +1,6 @@
-# `version`
+---
+title: "version"
+---
 
 Supported config version. Optional. If present, must be the number `1`.
 

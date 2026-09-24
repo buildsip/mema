@@ -1,4 +1,6 @@
-# Principles
+---
+title: "Principles"
+---
 
 ## Knowledge about code has the same lifecycle as the code it describes
 

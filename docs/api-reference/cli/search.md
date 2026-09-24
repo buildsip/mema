@@ -1,4 +1,6 @@
-# tiramisu search
+---
+title: "tiramisu search"
+---
 
 `tiramisu search` ranks memories by title, frontmatter, directory tags, and Markdown body.
 
