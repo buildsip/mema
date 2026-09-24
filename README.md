@@ -47,7 +47,7 @@
   <a href="https://github.com/buildsip/tiramisu/blob/main/LICENSE">
     <img src="https://img.shields.io/github/license/buildsip/tiramisu" alt="License">
   </a>
-  <img src="https://img.shields.io/badge/Node.js-22.5%2B-brightgreen?style=flat-square" alt="Node.js 22.5+">
+  <img src="https://img.shields.io/badge/Node.js-22.5%2B-brightgreen" alt="Node.js 22.5+">
   <a href="https://www.bestpractices.dev/projects/14788">
     <img src="https://www.bestpractices.dev/projects/14788/badge">
   </a>
