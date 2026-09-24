@@ -1,6 +1,6 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "tiramisu-docs",
+  "name": "tiramisu",
   "main": ".open-next/worker.js",
   "compatibility_date": "2026-08-26",
   "compatibility_flags": [
@@ -15,7 +15,7 @@
   },
   // OpenNext uses this binding to call this Worker from within Cloudflare.
   "services": [
-    { "binding": "WORKER_SELF_REFERENCE", "service": "tiramisu-docs" }
+    { "binding": "WORKER_SELF_REFERENCE", "service": "tiramisu" }
   ],
   "routes": [
     { "pattern": "trytiramisu.com", "custom_domain": true }
