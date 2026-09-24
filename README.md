@@ -45,11 +45,14 @@
     <img src="https://img.shields.io/npm/v/tiramisu?logo=npm" alt="npm">
   </a>
   <img src="https://img.shields.io/badge/Node.js-22.5%2B-brightgreen?style=flat-square" alt="Node.js 22.5+">
+  <a href="https://www.bestpractices.dev/projects/14788">
+    <img src="https://www.bestpractices.dev/projects/14788/badge">
+  </a>
   <a href="https://scorecard.dev/viewer/?uri=github.com/buildsip/tiramisu">
     <img src="https://api.scorecard.dev/projects/github.com/buildsip/tiramisu/badge" alt="openssf">
   </a>
-  <a href="https://www.bestpractices.dev/projects/14788">
-    <img src="https://www.bestpractices.dev/projects/14788/badge">
+  <a href="https://github.com/buildsip/tiramisu/actions/workflows/ci.yml">
+    <img src="https://github.com/buildsip/tiramisu/actions/workflows/ci.yml/badge.svg">
   </a>
 </div>
 
