@@ -4,7 +4,7 @@ title: "prune"
 
 Repository-wide settings for upvotes and pruning. Omit the field or use `false` to disable both.
 
-```json filename="tiramisu.json"
+```json title="tiramisu.json"
 {
   "prune": {
     "databaseUrlCommand": "doppler secrets get MEMORIES_DATABASE_URL --plain",

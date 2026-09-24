@@ -1,26 +1,19 @@
 import { llms, loader } from "fumadocs-core/source";
 import { lucideIconsPlugin } from "fumadocs-core/source/lucide-icons";
+import { sidebarIconsPlugin } from "./sidebar-icons";
+import { sortByFilenamePlugin } from "./sort-by-filename";
+import { topLevelCategoriesPlugin } from "./top-level-categories";
 import { docsRoute } from "./shared";
 import { defineDocs } from "fumadocs-mdx/macro";
 import { pageSchema } from "fumadocs-core/source/schema";
 
 // Pages live in the repository `docs/` folder, two levels above this app.
-// Guides are listed one by one. The API reference is the whole folder.
+// Every markdown file is a page. Folders are the sidebar sections.
 // Each page sets its title in frontmatter.
 const docs = defineDocs({
   dir: "../../docs",
   docs: {
-    files: [
-      "index.md",
-      "principles.md",
-      "guides.md",
-      "memory.md",
-      "mcp.md",
-      "config.md",
-      "upvotes-and-pruning.md",
-      "comparison.md",
-      "api-reference/**/*.md",
-    ],
+    files: ["*.md", "**/*.md"],
     schema: pageSchema,
     postprocess: {
       includeProcessedMarkdown: true,
@@ -32,7 +25,7 @@ const docs = defineDocs({
 export const source = loader({
   baseUrl: docsRoute,
   source: docs.toFumadocsSource(),
-  plugins: [lucideIconsPlugin()],
+  plugins: [sidebarIconsPlugin(), sortByFilenamePlugin(), lucideIconsPlugin(), topLevelCategoriesPlugin()],
 });
 
 export const docsLlms = llms(source, {

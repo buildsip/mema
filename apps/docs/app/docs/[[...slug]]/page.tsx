@@ -7,14 +7,40 @@ import {
   MarkdownCopyButton,
   ViewOptionsPopover,
 } from 'fumadocs-ui/layouts/docs/page';
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import { getMDXComponents } from '@/components/mdx';
 import type { Metadata } from 'next';
 import { createRelativeLink } from 'fumadocs-ui/mdx';
 import { getPageImageUrl, getPageMarkdownUrl, gitConfig } from '@/lib/shared';
 
+// There is no docs/index.md. /docs opens the first page in filename order.
+type TreeNode = {
+  type: string;
+  url?: string;
+  index?: { url: string };
+  children?: TreeNode[];
+};
+
+function firstPageUrl(nodes: TreeNode[]): string | undefined {
+  for (const node of nodes) {
+    if (node.type === 'page' && node.url) return node.url;
+    if (node.type === 'separator') continue;
+    if (node.type !== 'folder') continue;
+    if (node.index?.url) return node.index.url;
+    const nested = node.children && firstPageUrl(node.children);
+    if (nested) return nested;
+  }
+}
+
+function redirectDocsHome(slug: string[] | undefined) {
+  if (slug?.length) return;
+  const url = firstPageUrl(source.getPageTree().children as TreeNode[]);
+  if (url) redirect(url);
+}
+
 export default async function Page(props: PageProps<'/docs/[[...slug]]'>) {
   const params = await props.params;
+  redirectDocsHome(params.slug);
   const page = source.getPage(params.slug);
   if (!page) notFound();
 
@@ -50,6 +76,7 @@ export async function generateStaticParams() {
 
 export async function generateMetadata(props: PageProps<'/docs/[[...slug]]'>): Promise<Metadata> {
   const params = await props.params;
+  redirectDocsHome(params.slug);
   const page = source.getPage(params.slug);
   if (!page) notFound();
 

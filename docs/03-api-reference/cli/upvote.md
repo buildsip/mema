@@ -1,10 +1,10 @@
 ---
-title: "tiramisu upvote"
+title: upvote
 ---
 
 `tiramisu upvote` records a batch of human or agent upvotes.
 
-```bash filename="Terminal"
+```bash title="Terminal"
 tiramisu upvote \
   --paths /app/.memories/cache /team/.memories/releases \
   --actor human

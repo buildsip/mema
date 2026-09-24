@@ -16,7 +16,7 @@ If detection finds no agents or a config cannot be written, the CLI warns on std
 
 For Cursor, merge this entry into the existing `mcpServers` object in `~/.cursor/mcp.json`:
 
-```json filename="~/.cursor/mcp.json"
+```json title="~/.cursor/mcp.json"
 {
   "mcpServers": {
     "tiramisu": {

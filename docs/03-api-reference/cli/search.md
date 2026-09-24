@@ -1,10 +1,10 @@
 ---
-title: "tiramisu search"
+title: search
 ---
 
 `tiramisu search` ranks memories by title, frontmatter, directory tags, and Markdown body.
 
-```bash filename="Terminal"
+```bash title="Terminal"
 tiramisu search --roots /repo --repo /repo --query "axios retry"
 ```
 
@@ -68,19 +68,19 @@ Search validates each store's config and built-in memory fields. Custom fields r
 
 ### Paginate
 
-```bash filename="Terminal"
+```bash title="Terminal"
 tiramisu search --roots /repo --repo /repo --query cache --limit 1 --offset 1
 ```
 
 ### Limit to a tree
 
-```bash filename="Terminal"
+```bash title="Terminal"
 tiramisu search --roots /repo --repo /repo --query cache --scope apps/web
 ```
 
 ### Several areas
 
-```bash filename="Terminal"
+```bash title="Terminal"
 tiramisu search --roots /repo --repo /repo --query cache --scope apps/web --scope apps/api
 ```
 
@@ -88,7 +88,7 @@ Hits are unioned, not duplicated.
 
 ### Shared workspace repo
 
-```bash filename="Terminal"
+```bash title="Terminal"
 tiramisu search --roots /repo --roots /team --repo /repo --query cache --scope apps/web
 ```
 

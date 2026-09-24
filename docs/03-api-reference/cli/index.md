@@ -1,12 +1,12 @@
 ---
-title: "CLI"
+title: CLI
 ---
 
 `tiramisu` reads and writes Git-native memories. Agents run the same command.
 
 Basic usage:
 
-```bash filename="Terminal"
+```bash title="Terminal"
 tiramisu [command] [options]
 ```
 
@@ -40,7 +40,7 @@ Requires Node.js `>=22.5.0`.
 
 Required on search, insert, and update. Other commands do not take this flag. Pass every Git root in the workspace, including private and shared projects. Always supply the complete list, not only the projects targeted by this command. Repeat the flag or pass multiple paths.
 
-```bash filename="Terminal"
+```bash title="Terminal"
 tiramisu search --roots /workspace/app --roots /workspace/team --repo /workspace/app --query cache
 ```
 

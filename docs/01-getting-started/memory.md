@@ -106,10 +106,8 @@ title: Axios retry duplication after reconnect
 anchors:
   - packages/api/src/websocket.ts
 linear: https://linear.app/acme/issue/ACM-86/axios-reconnect-issue
-retireWhen:
-  condition: "Zero occurrences in Sentry for 60 days"
-  links:
-    - https://sentry.io/organizations/acme/issues/12345/
+sentry: https://sentry.io/organizations/acme/issues/12345/
+retireWhen: Zero occurrences in Sentry for 60 days
 ---
 
 Content

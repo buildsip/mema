@@ -1,10 +1,10 @@
 ---
-title: "tiramisu mcp"
+title: mcp
 ---
 
 Starts the [MCP server](../mcp/index.md) over stdio.
 
-```bash filename="Terminal"
+```bash title="Terminal"
 tiramisu mcp
 ```
 

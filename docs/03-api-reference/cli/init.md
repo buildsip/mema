@@ -1,20 +1,20 @@
 ---
-title: "tiramisu init"
+title: init
 ---
 
 `tiramisu init` writes [`tiramisu.json`](../file-conventions/tiramisu-json.md) and installs the `tiramisu` package globally. Run it from anywhere inside a Git working tree.
 
 Like every CLI invocation, it also refreshes [global MCP installation](../mcp/installation.md), even if memory reconfiguration is skipped.
 
-```bash filename="Terminal"
+```bash title="Terminal"
 tiramisu init
 ```
 
-```bash filename="Terminal"
+```bash title="Terminal"
 tiramisu init --verbose
 ```
 
-```bash filename="Terminal"
+```bash title="Terminal"
 tiramisu init --availableToWorkspace
 ```
 
@@ -90,7 +90,7 @@ Installation failures stop setup before its files are written; retry with `tiram
 
 To install the skill separately:
 
-```bash filename="Terminal"
+```bash title="Terminal"
 npx skills add buildsip/tiramisu --global
 ```
 
@@ -102,7 +102,7 @@ A private development package is installed from the running CLI directory. A pub
 
 For local development, create `packages/cli/.env`:
 
-```dotenv filename="packages/cli/.env"
+```dotenv title="packages/cli/.env"
 TIRAMISU_INSTALL_MODE=link
 ```
 
@@ -110,7 +110,7 @@ The CLI loads `.env` from its own package directory, regardless of the current w
 
 Then run from the source repository:
 
-```bash filename="Terminal"
+```bash title="Terminal"
 bun run --cwd packages/cli tiramisu init
 ```
 
@@ -122,7 +122,7 @@ Unset `TIRAMISU_INSTALL_MODE` or set it to `registry` for the normal installatio
 
 ### Initialize from a package
 
-```bash filename="Terminal"
+```bash title="Terminal"
 cd /repo/apps/web/src
 tiramisu init
 ```

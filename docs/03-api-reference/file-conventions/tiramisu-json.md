@@ -4,7 +4,7 @@ title: "tiramisu.json"
 
 Repository-wide settings file, placed directly at the Git root alongside `.git`.
 
-```json filename="tiramisu.json"
+```json title="tiramisu.json"
 {
   "version": 1,
   "availableToWorkspace": false,

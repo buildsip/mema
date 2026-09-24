@@ -1,10 +1,10 @@
 ---
-title: "tiramisu delete"
+title: delete
 ---
 
 `tiramisu delete` removes memory folders, including attachments.
 
-```bash filename="Terminal"
+```bash title="Terminal"
 tiramisu delete --paths /repo/.memories/staging-db-weekly-reset
 ```
 
@@ -34,7 +34,7 @@ Delete can remove a memory whose custom fields no longer match the current schem
 
 ### Multiple memories
 
-```bash filename="Terminal"
+```bash title="Terminal"
 tiramisu delete \
   --paths /repo/.memories/one \
   --paths /repo/.memories/two
@@ -42,7 +42,7 @@ tiramisu delete \
 
 ### Nested memories
 
-```bash filename="Terminal"
+```bash title="Terminal"
 tiramisu delete \
   --paths /repo/.memories/parent/nested \
   --paths /repo/.memories/parent

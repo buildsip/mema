@@ -1,14 +1,14 @@
 ---
-title: "tiramisu insert"
+title: insert
 ---
 
 `tiramisu insert` creates one memory from a JSON object. Search for a related memory before inserting.
 
-```bash filename="Terminal"
+```bash title="Terminal"
 tiramisu insert --roots /repo --repo /repo --input memory.json
 ```
 
-```bash filename="Terminal"
+```bash title="Terminal"
 tiramisu insert --roots /repo --repo /repo <<'EOF'
 {
   "body": "Retry the client once after a reconnect; do not stack interceptors.",

@@ -1,10 +1,10 @@
 ---
-title: "tiramisu update"
+title: update
 ---
 
 `tiramisu update` patches one existing memory. Only supplied fields change.
 
-```bash filename="Terminal"
+```bash title="Terminal"
 tiramisu update --roots /repo --repo /repo --path /repo/apps/web/.memories/axios-retry-duplication-after-reconnect --input update.json
 ```
 
@@ -68,7 +68,7 @@ Writes validate custom fields against the repository root schema before publicat
 
 ### Repair the title folder
 
-```bash filename="Terminal"
+```bash title="Terminal"
 tiramisu update --roots /repo --repo /repo --path /repo/.memories/wrong-folder <<'EOF'
 {}
 EOF
