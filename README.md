@@ -45,6 +45,9 @@
     <img src="https://img.shields.io/npm/v/tiramisu?logo=npm" alt="npm">
   </a>
   <img src="https://img.shields.io/badge/Node.js-22.5%2B-brightgreen?style=flat-square" alt="Node.js 22.5+">
+  <a href="https://scorecard.dev/viewer/?uri=github.com/buildsip/tiramisu">
+    <img src="https://api.scorecard.dev/projects/github.com/buildsip/tiramisu/badge" alt="openssf">
+  </a>
 </div>
 
 Tiramisu helps your agent access **project, personal, team, and organization** memories at the same time.
