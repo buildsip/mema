@@ -101,3 +101,9 @@ npx tiramisu init
 ```
 
 This installs the CLI, the MCP tools, and configures your repo.
+
+---
+
+Report a [bug](https://github.com/buildsip/tiramisu/issues).
+Send [feedback](https://github.com/buildsip/tiramisu/discussions).
+[Join Discord](https://discord.gg/X4M5qynD88)
