@@ -1,14 +1,5 @@
 import type { LoaderPlugin } from 'fumadocs-core/source';
-
-type TreeNode = {
-  type?: string;
-  name?: unknown;
-  icon?: unknown;
-  url?: string;
-  index?: TreeNode;
-  children?: TreeNode[];
-  $ref?: string | { folder?: string };
-};
+import type { Folder, Node, Separator } from 'fumadocs-core/page-tree';
 
 // Fumadocs renders a folder as an accordion.
 // The folders directly under `docs/` are categories: a label, then their pages.
@@ -18,8 +9,7 @@ export function topLevelCategoriesPlugin(): LoaderPlugin {
     enforce: 'post',
     transformPageTree: {
       root(node) {
-        const children = node.children as TreeNode[];
-        node.children = children.flatMap((child) => {
+        node.children = node.children.flatMap((child): Node[] => {
           if (child.type !== 'folder') return [child];
           return [category(child), ...pages(child)];
         });
@@ -29,7 +19,7 @@ export function topLevelCategoriesPlugin(): LoaderPlugin {
   };
 }
 
-function category(folder: TreeNode): TreeNode {
+function category(folder: Folder): Separator {
   return {
     type: 'separator',
     name: label(folder),
@@ -37,7 +27,7 @@ function category(folder: TreeNode): TreeNode {
 }
 
 // The index page is the folder link. Once the folder is a label, that page is a normal item.
-function pages(folder: TreeNode) {
+function pages(folder: Folder) {
   const items = [...(folder.children ?? [])];
   if (folder.index) items.push(folder.index);
   items.sort((a, b) => filenameOf(a).localeCompare(filenameOf(b)));
@@ -45,7 +35,7 @@ function pages(folder: TreeNode) {
 }
 
 // "01-getting-started" -> "Getting Started". The number is only for file order.
-function label(folder: TreeNode) {
+function label(folder: Folder) {
   const path = folder.$ref && typeof folder.$ref === 'object' ? (folder.$ref.folder ?? '') : '';
   const base = path.split('/').pop() ?? '';
   return base
@@ -56,11 +46,11 @@ function label(folder: TreeNode) {
     .join(' ');
 }
 
-function filenameOf(node: TreeNode) {
+function filenameOf(node: Node) {
   if (node.type === 'folder' && node.$ref && typeof node.$ref === 'object') {
     return (node.$ref.folder ?? '').split('/').pop() ?? '';
   }
-  if (typeof node.$ref === 'string') {
+  if (node.type === 'page' && typeof node.$ref === 'string') {
     const base = node.$ref.split('/').pop() ?? '';
     return base.replace(/\.[^.]+$/, '');
   }

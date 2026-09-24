@@ -8,6 +8,7 @@ const geist = Geist({ subsets: ['latin'], variable: '--font-geist' });
 const geistMono = Geist_Mono({ subsets: ['latin'], variable: '--font-geist-mono' });
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://trytiramisu.com'),
   title: {
     default: 'Tiramisu',
     template: '%s | Tiramisu',

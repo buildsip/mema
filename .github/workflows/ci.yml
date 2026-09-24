@@ -1,5 +1,5 @@
-# Lint, typecheck, and test every pull request and every push to main.
-# The publish workflow runs these same commands before it publishes to npm.
+# Check packages on pull requests and pushes to main; publishing repeats those checks.
+# Check docs on pull requests; the deployment workflow checks them on main.
 
 name: CI
 
@@ -16,6 +16,44 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  docs:
+    name: Check docs Worker
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: apps/docs
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
+        with:
+          node-version: 24
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version-file: .bun-version
+
+      # This app has its own lockfile and builds without production credentials.
+      - name: Install dependencies
+        run: bun install
+
+      - name: Check lockfile
+        run: git diff --exit-code -- bun.lock
+
+      - name: Lint
+        run: bun run lint
+
+      # Next.js checks TypeScript during the production build.
+      - name: Validate Cloudflare build
+        run: bun run deploy:dry
+
   check:
     name: Lint, typecheck, and test
     runs-on: ubuntu-latest
@@ -23,6 +61,8 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          persist-credentials: false
 
       - name: Set up Node.js
         uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
@@ -37,8 +77,10 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
+      # Docs have their own lint step in PR checks and main deployments.
+      # Keep this exclusion in CI so local root lint still checks the whole repo.
       - name: Lint
-        run: bun run lint
+        run: bun run lint --ignore-pattern 'apps/docs/**'
 
       - name: Typecheck
         run: bun run typecheck

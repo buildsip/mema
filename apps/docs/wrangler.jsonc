@@ -1,0 +1,42 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "tiramisu-docs",
+  "main": ".open-next/worker.js",
+  "compatibility_date": "2026-08-26",
+  "compatibility_flags": [
+    // Enable Node.js APIs for Next.js.
+    "nodejs_compat",
+    // Limit global fetch calls to public URLs.
+    "global_fetch_strictly_public"
+  ],
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  },
+  // OpenNext uses this binding to call this Worker from within Cloudflare.
+  "services": [
+    { "binding": "WORKER_SELF_REFERENCE", "service": "tiramisu-docs" }
+  ],
+  "routes": [
+    { "pattern": "trytiramisu.com", "custom_domain": true }
+  ],
+  "images": {
+    // Enable Next.js image optimization through Cloudflare Images.
+    "binding": "IMAGES"
+  },
+  "limits": {
+    "cpu_ms": 2000
+  },
+  "upload_source_maps": true,
+  "observability": {
+    "logs": {
+      "enabled": true,
+      "invocation_logs": true,
+      "head_sampling_rate": 1
+    },
+    "traces": {
+      "enabled": true,
+      "head_sampling_rate": 0.05
+    }
+  }
+}
