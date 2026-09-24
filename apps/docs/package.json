@@ -3,7 +3,11 @@
   "version": "0.0.33",
   "private": true,
   "scripts": {
-    "build": "next build",
+    "build": "next build --webpack",
+    "build:cloudflare": "opennextjs-cloudflare build",
+    "deploy": "bun run build:cloudflare && opennextjs-cloudflare deploy",
+    "deploy:dry": "bun run build:cloudflare && wrangler deploy --dry-run",
+    "preview": "bun run build:cloudflare && opennextjs-cloudflare preview",
     "dev": "next dev",
     "start": "next start",
     "types:check": "next typegen && tsc --noEmit",
@@ -11,6 +15,7 @@
   },
   "dependencies": {
     "@base-ui/react": "^1.8.0",
+    "@opennextjs/cloudflare": "^1.20.6",
     "@remixicon/react": "^4.9.0",
     "class-variance-authority": "^0.7.1",
     "cn": "^0.3.0",
@@ -30,9 +35,10 @@
     "@types/node": "^26.6.1",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
+    "oxlint": "^1.83.0",
     "postcss": "^8.5.28",
     "tailwindcss": "^4.3.3",
     "typescript": "^7.0.2",
-    "oxlint": "^1.83.0"
+    "wrangler": "^4.138.0"
   }
 }

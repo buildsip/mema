@@ -1,0 +1,76 @@
+# Create the GitHub prod environment and restrict deployments to main.
+# Add CLOUDFLARE_ACCOUNT_ID and CLOUDFLARE_API_TOKEN to that environment's secrets.
+name: Deploy docs to prod
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "apps/docs/**"
+      - "docs/**"
+      - ".bun-version"
+      - ".github/workflows/deploy-docs-prod.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-docs-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy docs Worker
+    # A hand-started run from another branch must not deploy.
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: prod
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: apps/docs
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
+        with:
+          node-version: 24
+          # Do not restore dependency caches into a job with production credentials.
+          package-manager-cache: false
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version-file: .bun-version
+          # This job has production credentials. Do not restore an Actions cache into it.
+          no-cache: true
+
+      # Install the packages in bun.lock. Fail if package.json and bun.lock disagree.
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Check lockfile
+        run: git diff --exit-code -- bun.lock
+
+      - name: Lint
+        run: bun run lint
+
+      - name: Deploy Worker
+        # The production build checks TypeScript before uploading the Worker.
+        # Credentials are available only in this step.
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          for name in CLOUDFLARE_ACCOUNT_ID CLOUDFLARE_API_TOKEN; do
+            if [ -z "${!name}" ]; then
+              echo "::error::Add $name to the GitHub prod environment secrets, then rerun this workflow."
+              exit 1
+            fi
+          done
+          bun run deploy

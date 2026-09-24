@@ -24,6 +24,9 @@
   },
   "ignorePatterns": [
     "node_modules/",
-    "dist/"
+    "dist/",
+    ".next/",
+    ".open-next/",
+    ".wrangler/"
   ]
 }
