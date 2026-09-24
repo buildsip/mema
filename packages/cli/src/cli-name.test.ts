@@ -1,5 +1,5 @@
 import { readFileSync } from "node:fs";
-import { expect, it } from "vitest";
+import { expect, it } from "bun:test";
 import { CLI_NAME } from "./cli-name";
 
 it("publishes one bin, named tiramisu", () => {

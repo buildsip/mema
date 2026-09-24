@@ -62,7 +62,7 @@ rerunning init safely skips the migrations already committed.
 Edit `packages/cli/src/upvotes.ts`, then run from `packages/cli`:
 
 ```sh
-pnpm db:generate
+bun run db:generate
 ```
 
 Review and commit the generated SQL, journal, and snapshot under `migrations/`. Never edit an
@@ -70,11 +70,11 @@ already released migration. Prefer changes that remain compatible with running o
 destructive changes need a separate explicit upgrade plan and backups. Transactional execution
 protects against failures, not against intentionally destructive SQL.
 
-`pnpm build` copies migrations into `dist/migrations`; the npm package already includes `dist`.
+`bun run build` copies migrations into `dist/migrations`; the npm package already includes `dist`.
 Runtime paths resolve from the installed package, never the consumer repository. Drizzle Kit
 and embedded PostgreSQL are development dependencies only.
 
-`pnpm test` starts a disposable PostgreSQL instance on localhost under a temporary directory.
+`bun run test` starts a disposable PostgreSQL instance on localhost under a temporary directory.
 It does not use developer credentials or an existing database. Tests cover repeated and concurrent
 init, existing votes, additive upgrades, failed SQL rollback, history mismatches, and packaged assets.
 The test runtime requires local process/port permissions and a non-root user; its platform package

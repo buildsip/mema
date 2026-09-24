@@ -1,7 +1,8 @@
+import { stubEnv } from "./test/stub-env";
 import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { afterEach, beforeEach, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, expect, it } from "bun:test";
 import { getDatabaseUrl } from "./get-database-url";
 
 let repo: string;
@@ -9,18 +10,17 @@ beforeEach(async () => {
   repo = await mkdtemp(join(tmpdir(), "tiramisu db command "));
 });
 afterEach(async () => {
-  vi.unstubAllEnvs();
   await rm(repo, { recursive: true, force: true });
 });
 
 /** Put fixture code in a file so shell quoting concerns only the executable and script path. */
 async function script({ name = "print url.cjs", code }: { name?: string; code: string }) {
   await writeFile(join(repo, name), code);
-  return `"${process.execPath}" "${name}"`;
+  return `node "${name}"`;
 }
 
 it("runs quoted commands in the given repo and leaves the environment unchanged", async () => {
-  vi.stubEnv("TIRAMISU_DATABASE_URL", "keep-the-global-value");
+  stubEnv({ name: "TIRAMISU_DATABASE_URL", value: "keep-the-global-value" });
   const url = "postgresql://user:private%20password@localhost/memories";
   await writeFile(join(repo, "url.txt"), url);
   const command = await script({
@@ -115,16 +115,18 @@ it("stops a pipeline and its child processes within the timeout", async () => {
     );
     for (const name of ["first.pid", "second.pid"]) {
       const pid = Number(await readFile(join(repo, name), "utf8"));
-      await expect
-        .poll(() => {
-          try {
-            process.kill(pid, 0);
-            return true;
-          } catch {
-            return false;
-          }
-        })
-        .toBe(false);
+      // Reaping a killed process can lag behind the shell's close event.
+      const deadline = Date.now() + 1000;
+      let alive = true;
+      while (alive && Date.now() < deadline) {
+        try {
+          process.kill(pid, 0);
+          await Bun.sleep(10);
+        } catch {
+          alive = false;
+        }
+      }
+      expect(alive).toBe(false);
     }
   } finally {
     // Keep failing cleanup assertions from leaving the test's interval processes running.

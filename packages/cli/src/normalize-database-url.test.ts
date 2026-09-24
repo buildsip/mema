@@ -1,20 +1,21 @@
 import { Client } from "pg";
-import { afterEach, expect, it, vi } from "vitest";
+import { afterEach, expect, it, jest, spyOn } from "bun:test";
 import { normalizeDatabaseUrl } from "./normalize-database-url";
 
 const url = "postgresql://user:p%40ss%2Bword@localhost:5432/memories";
 
-afterEach(() => vi.restoreAllMocks());
+afterEach(() => jest.restoreAllMocks());
 
 it.each(["prefer", "require", "verify-ca"])(
   "keeps certificate verification without a driver warning for sslmode=%s",
   (mode) => {
-    const warn = vi.spyOn(process, "emitWarning");
+    const warn = spyOn(process, "emitWarning");
     const value = normalizeDatabaseUrl(`${url}?sslmode=${mode}&application_name=tiramisu%20test`);
     expect(new URL(value).searchParams.get("sslmode")).toBe("verify-full");
     // Construct the real driver without connecting, so this checks its TLS parsing too.
     const client = new Client({ connectionString: value });
-    expect(client.ssl).toEqual({});
+    // pg exposes an options object here despite declaring this property as boolean.
+    expect(client.ssl as unknown).toEqual({});
     expect(client.user).toBe("user");
     expect(client.password).toBe("p@ss+word");
     expect(client.database).toBe("memories");

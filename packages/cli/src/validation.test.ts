@@ -1,4 +1,4 @@
-import { expect, it } from "vitest";
+import { expect, it } from "bun:test";
 import { parseValue } from "./parse-value";
 import { insertSchema } from "./mcp/insert-memory";
 import { updateSchema } from "./mcp/update-memory";
@@ -106,15 +106,18 @@ it("reports the invalid entry in a stored scope array", () => {
   );
 });
 
-it.each(["apps/web", "*", []])("rejects stored scope outside the array contract: %j", (scope) => {
-  expect(() =>
-    validateFrontmatter({
-      value: { id: "id", title: "Title", created: "2025-04-01", scope },
-      config: {},
-      path: "/repo/memory.md",
-    }),
-  ).toThrow("frontmatter.scope");
-});
+it.each(["apps/web", "*", []].map((scope) => ({ scope })))(
+  "rejects stored scope outside the array contract: $scope",
+  ({ scope }) => {
+    expect(() =>
+      validateFrontmatter({
+        value: { id: "id", title: "Title", created: "2025-04-01", scope },
+        config: {},
+        path: "/repo/memory.md",
+      }),
+    ).toThrow("frontmatter.scope");
+  },
+);
 
 it("requires stored id and created while allowing scope to be omitted", () => {
   const value = { id: "id", title: "Title", created: "2025-04-01" };

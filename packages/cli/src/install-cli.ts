@@ -11,7 +11,7 @@ import { NAMES } from "./names";
  * Installs the global CLI through the package manager that launched this process.
  * Keeps an existing install unless a newer release is accepted, falling back to npm
  * for modern Yarn.
- * TIRAMISU_INSTALL_MODE=link rebuilds and links the local package through pnpm.
+ * TIRAMISU_INSTALL_MODE=link rebuilds and links the local package through Bun.
  * Private packages also stay local; published packages use the registry by default.
  */
 export async function installCli(
@@ -20,7 +20,9 @@ export async function installCli(
 ) {
   const mode = process.env.TIRAMISU_INSTALL_MODE ?? "registry";
   if (mode !== "registry" && mode !== "link") {
-    throw new Error(`Set TIRAMISU_INSTALL_MODE to "registry" or "link", then retry ${CLI_NAME} init.`);
+    throw new Error(
+      `Set TIRAMISU_INSTALL_MODE to "registry" or "link", then retry ${CLI_NAME} init.`,
+    );
   }
   const cli = JSON.parse(readFileSync(join(cliRoot, NAMES.PACKAGE_JSON), "utf8"));
   const launcher = getPackageManager();
@@ -39,12 +41,12 @@ export async function installCli(
     const local = { ...options, cwd: cliRoot, stdio: verbose ? "inherit" : "pipe" } as const;
     try {
       ctx.log.step(`Building local ${cli.name} CLI.`);
-      execFileSync("pnpm", ["build"], local);
+      execFileSync("bun", ["run", "build"], local);
       ctx.log.step(`Linking local ${cli.name} CLI globally.`);
-      execFileSync("pnpm", ["add", "-g", "."], local);
+      execFileSync("bun", ["add", "-g", "."], local);
     } catch {
       throw new Error(
-        `Could not build or link the local tiramisu CLI. Run pnpm i in the tiramisu source repository and ensure pnpm's global bin directory is on PATH (run pnpm setup and restart your shell if needed), then retry ${CLI_NAME} init --verbose to see the failing command's output. Use TIRAMISU_INSTALL_MODE=registry when running a published package without source files.`,
+        `Could not build or link the local tiramisu CLI. Run bun install in the tiramisu source repository and ensure Bun's global bin directory is on PATH (run bun pm bin -g to locate it), then retry ${CLI_NAME} init --verbose to see the failing command's output. Use TIRAMISU_INSTALL_MODE=registry when running a published package without source files.`,
       );
     }
     return;

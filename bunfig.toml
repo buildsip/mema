@@ -1,0 +1,3 @@
+[install]
+# Match the previous seven-day wait before adopting newly published dependencies.
+minimumReleaseAge = 604800

@@ -25,11 +25,13 @@ jobs:
           registry-url: https://registry.npmjs.org
           package-manager-cache: false
 
-      - name: Enable pnpm
-        run: corepack enable
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version-file: .bun-version
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: bun install --frozen-lockfile
 
       - name: Check tag matches package version
         run: |
@@ -41,16 +43,16 @@ jobs:
           fi
 
       - name: Lint
-        run: pnpm lint
+        run: bun run lint
 
       - name: Typecheck
-        run: pnpm typecheck
+        run: bun run typecheck
 
       - name: Test
-        run: pnpm test
+        run: bun run test
 
       - name: Build CLI
-        run: pnpm --filter ./packages/cli build
+        run: bun run build
 
       - name: Check package contents
         working-directory: packages/cli

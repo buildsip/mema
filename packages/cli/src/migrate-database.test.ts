@@ -7,7 +7,7 @@ import { fileURLToPath } from "node:url";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { readMigrationFiles } from "drizzle-orm/migrator";
 import { Client } from "pg";
-import { afterAll, beforeAll, beforeEach, expect, it } from "vitest";
+import { afterAll, beforeAll, beforeEach, expect, it } from "bun:test";
 import { migrateDatabase } from "./migrate-database";
 import { upvotes } from "./upvotes";
 
@@ -66,12 +66,16 @@ it("migrates once and preserves votes when another repo initializes the same dat
   expect(await migrateDatabase({ url, migrationsFolder })).toEqual({ applied: 0 });
   expect(await db.select().from(upvotes)).toEqual(before);
   await expect(
-    db.insert(upvotes).values({ id, memoryId: "existing-memory", actor: "agent" }),
+    // Bun assertions require a Promise; execute the Drizzle thenable explicitly.
+    db.insert(upvotes)
+      .values({ id, memoryId: "existing-memory", actor: "agent" })
+      .execute(),
   ).rejects.toThrow();
   await expect(
-    client.query("INSERT INTO tiramisu.upvotes (id, memory_id, actor) VALUES ($1, 'memory', 'robot')", [
-      randomUUID(),
-    ]),
+    client.query(
+      "INSERT INTO tiramisu.upvotes (id, memory_id, actor) VALUES ($1, 'memory', 'robot')",
+      [randomUUID()],
+    ),
   ).rejects.toThrow();
   expect((await client.query("SELECT * FROM tiramisu.__drizzle_migrations")).rowCount).toBe(1);
 });

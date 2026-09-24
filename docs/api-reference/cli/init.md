@@ -18,10 +18,10 @@ tiramisu init --availableToWorkspace
 
 ## Reference
 
-| Options                 | Description                                                  |
-| ----------------------- | ------------------------------------------------------------ |
+| Options                  | Description                                                   |
+| ------------------------ | ------------------------------------------------------------- |
 | `--availableToWorkspace` | Answer yes to sharing memories with other workspace projects. |
-| `--verbose`             | Print package-manager output while installing the CLI.       |
+| `--verbose`              | Print package-manager output while installing the CLI.        |
 
 `--availableToWorkspace` skips the sharing question and saves `availableToWorkspace: true`. Other prompts still run, including the reconfiguration prompt for an existing setup.
 
@@ -109,10 +109,10 @@ The CLI loads `.env` from its own package directory, regardless of the current w
 Then run from the source repository:
 
 ```bash filename="Terminal"
-pnpm --dir packages/cli tiramisu init
+bun run --cwd packages/cli tiramisu init
 ```
 
-Link mode runs `pnpm build` followed by `pnpm add -g .` from the running CLI package directory. It skips registry checks and refreshes the global link on every accepted setup, even if the installed version is equal or newer. The bundled writing skill is installed from the same local package when accepted. pnpm must be installed and its global bin directory must be on `PATH`; use `pnpm setup` and restart the shell if needed.
+Link mode runs `bun run build` followed by `bun add -g .` from the running CLI package directory. It skips registry checks and refreshes the global link on every accepted setup, even if the installed version is equal or newer. The bundled writing skill is installed from the same local package when accepted. Bun must be installed and its global bin directory must be on `PATH`; use `bun pm bin -g` to locate it.
 
 Unset `TIRAMISU_INSTALL_MODE` or set it to `registry` for the normal installation behavior. Other values stop setup with an error.
 
