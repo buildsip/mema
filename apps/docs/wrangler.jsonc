@@ -17,9 +17,6 @@
   "services": [
     { "binding": "WORKER_SELF_REFERENCE", "service": "tiramisu" }
   ],
-  "routes": [
-    { "pattern": "trytiramisu.com", "custom_domain": true }
-  ],
   "images": {
     // Enable Next.js image optimization through Cloudflare Images.
     "binding": "IMAGES"
