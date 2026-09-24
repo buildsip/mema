@@ -1,4 +1,4 @@
-import { expect, it } from "vitest";
+import { expect, it } from "bun:test";
 import { coerceCreated, createdMillis, formatCreated, isCreatedDate } from "./created-date";
 
 it("writes the UTC calendar date, not the local day", () => {

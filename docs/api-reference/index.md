@@ -8,3 +8,4 @@ tiramisu API Reference.
 - [Configuration](./config/index.md): Fields in `tiramisu.json`.
 - [Memory](./memory/index.md): Frontmatter fields and Markdown body.
 - [Database](./database.md): Upvote event schema, migration history, and database upgrades.
+- [Development](./development.md): Bun setup, Node compatibility checks, packaging, and releases.

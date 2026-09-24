@@ -1,3 +1,9 @@
+import * as childProcess from "node:child_process";
+import * as fs from "node:fs";
+import * as prompts from "@clack/prompts";
+import * as databaseUrl from "./get-database-url";
+import * as database from "./migrate-database";
+import { stubEnv } from "./test/stub-env";
 import { execFileSync } from "node:child_process";
 import {
   existsSync,
@@ -16,34 +22,28 @@ import { PassThrough } from "node:stream";
 import { confirm, log, outro, text } from "@clack/prompts";
 import { Command } from "commander";
 import { parse } from "jsonc-parser";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, jest, spyOn } from "bun:test";
 import { init, registerInitCommand } from "./commands/init";
 import { NAMES } from "./names";
 import { getDatabaseUrl } from "./get-database-url";
 import { migrateDatabase } from "./migrate-database";
 
-vi.mock("./get-database-url", () => ({ getDatabaseUrl: vi.fn() }));
-vi.mock("./migrate-database", () => ({ migrateDatabase: vi.fn() }));
+// Save real implementations before installing spies, so fallbacks cannot recurse into a mock.
+const original = { execFileSync, writeFileSync, confirm };
+const exec = spyOn(childProcess, "execFileSync");
+const write = spyOn(fs, "writeFileSync");
+const getUrl = spyOn(databaseUrl, "getDatabaseUrl");
+const migrate = spyOn(database, "migrateDatabase");
+const ask = spyOn(prompts, "confirm");
+const input = spyOn(prompts, "text");
+spyOn(prompts, "intro").mockImplementation(() => {});
+spyOn(prompts, "outro").mockImplementation(() => {});
+spyOn(log, "info").mockImplementation(() => {});
+spyOn(log, "step").mockImplementation(() => {});
+spyOn(log, "warn").mockImplementation(() => {});
 
-vi.mock("node:child_process", async (importOriginal) => {
-  const original = await importOriginal<typeof import("node:child_process")>();
-  return { ...original, execFileSync: vi.fn(original.execFileSync) };
-});
-vi.mock("node:fs", async (importOriginal) => {
-  const original = await importOriginal<typeof import("node:fs")>();
-  return { ...original, writeFileSync: vi.fn(original.writeFileSync) };
-});
-vi.mock("@clack/prompts", async (importOriginal) => {
-  const original = await importOriginal<typeof import("@clack/prompts")>();
-  return {
-    ...original,
-    confirm: vi.fn(),
-    text: vi.fn(),
-    intro: vi.fn(),
-    log: { info: vi.fn(), step: vi.fn(), warn: vi.fn() },
-    outro: vi.fn(),
-  };
-});
+// Most cases simulate Node launchers; only Bun-specific cases expose this runtime flag.
+const bunVersion = Object.getOwnPropertyDescriptor(process.versions, "bun")!;
 
 const dbCommand = "doppler secrets get TIRAMISU_DATABASE_URL --plain";
 
@@ -59,19 +59,18 @@ describe("tiramisu init", () => {
   let cancelled: boolean | symbol;
 
   beforeEach(async () => {
-    vi.clearAllMocks();
-    vi.mocked(getDatabaseUrl).mockReset().mockResolvedValue("postgresql://example.test/memories");
-    vi.mocked(migrateDatabase).mockReset().mockResolvedValue({ applied: 1 });
-    vi.mocked(text).mockReset().mockResolvedValue(dbCommand);
-    vi.stubEnv("TIRAMISU_DATABASE_URL", "");
-    vi.stubEnv("TIRAMISU_INSTALL_MODE", undefined);
-    vi.stubEnv("npm_config_user_agent", "pnpm/11.24.0 npm/? node/v22.0.0");
+    jest.clearAllMocks();
+    Object.defineProperty(process.versions, "bun", { ...bunVersion, value: undefined });
+    getUrl.mockReset().mockResolvedValue("postgresql://example.test/memories");
+    migrate.mockReset().mockResolvedValue({ applied: 1 });
+    input.mockReset().mockResolvedValue(dbCommand);
+    stubEnv({ name: "TIRAMISU_DATABASE_URL", value: "" });
+    stubEnv({ name: "TIRAMISU_INSTALL_MODE", value: undefined });
+    stubEnv({ name: "npm_config_user_agent", value: "pnpm/11.24.0 npm/? node/v22.0.0" });
     latest = "0.2.0";
     bunMissing = false;
     failure = undefined;
-    const original =
-      await vi.importActual<typeof import("node:child_process")>("node:child_process");
-    vi.mocked(execFileSync).mockImplementation((...args) => {
+    exec.mockImplementation(((...args: Parameters<typeof execFileSync>) => {
       if (args[0] === "npx") {
         if (failure === "skills") throw new Error("Could not install skill");
         return Buffer.from("");
@@ -93,14 +92,10 @@ describe("tiramisu init", () => {
         return Buffer.from("");
       }
       return Reflect.apply(original.execFileSync, undefined, args);
-    });
-    const fs = await vi.importActual<typeof import("node:fs")>("node:fs");
-    vi.mocked(writeFileSync).mockImplementation(fs.writeFileSync);
-    vi.mocked(confirm)
-      .mockReset()
-      .mockImplementation(async (options) => options.initialValue ?? false);
-    const prompts = await vi.importActual<typeof import("@clack/prompts")>("@clack/prompts");
-    cancelled = await prompts.confirm({
+    }) as typeof execFileSync);
+    write.mockImplementation(original.writeFileSync);
+    ask.mockReset().mockImplementation(async (options) => options.initialValue ?? false);
+    cancelled = await original.confirm({
       message: "Cancel",
       signal: AbortSignal.abort(),
       input: new PassThrough(),
@@ -139,8 +134,7 @@ describe("tiramisu init", () => {
   });
 
   afterEach(() => {
-    vi.unstubAllEnvs();
-    vi.unstubAllGlobals();
+    Object.defineProperty(process.versions, "bun", bunVersion);
     rmSync(temp, { recursive: true, force: true });
   });
 
@@ -161,7 +155,7 @@ describe("tiramisu init", () => {
   }
 
   function published() {
-    vi.stubEnv("npm_config_user_agent", "npm/11.0.0 node/v22.0.0");
+    stubEnv({ name: "npm_config_user_agent", value: "npm/11.0.0 node/v22.0.0" });
     writeFileSync(
       join(cliRoot, NAMES.PACKAGE_JSON),
       JSON.stringify({ name: "tiramisu", version: "0.1.0", bin: { tiramisu: "dist/index.js" } }),
@@ -189,15 +183,17 @@ describe("tiramisu init", () => {
       expect.objectContaining({ cwd: root }),
     );
     expect(
-      vi
-        .mocked(execFileSync)
-        .mock.calls.some(([, args]) => Array.isArray(args) && ["build", "view"].includes(args[0]!)),
+      exec.mock.calls.some(
+        ([, args]) => Array.isArray(args) && ["build", "view"].includes(args[0]!),
+      ),
     ).toBe(false);
     expect(confirm).toHaveBeenCalledTimes(5);
     expect(outro).toHaveBeenCalledWith("tiramisu initialized.");
-    expect(getDatabaseUrl).toHaveBeenCalledExactlyOnceWith({ repo: root, command: dbCommand });
-    expect(migrateDatabase).toHaveBeenCalledOnce();
-    expect(log.info).toHaveBeenCalledExactlyOnceWith("Applied 1 database migration(s).");
+    expect(getDatabaseUrl).toHaveBeenCalledTimes(1);
+    expect(getDatabaseUrl).toHaveBeenCalledWith({ repo: root, command: dbCommand });
+    expect(migrateDatabase).toHaveBeenCalledTimes(1);
+    expect(log.info).toHaveBeenCalledTimes(1);
+    expect(log.info).toHaveBeenCalledWith("Applied 1 database migration(s).");
   });
 
   it.each([false, true])(
@@ -205,12 +201,12 @@ describe("tiramisu init", () => {
     async (reconfigure) => {
       if (reconfigure) {
         existing({ availableToWorkspace: false, prune: false });
-        vi.mocked(confirm).mockResolvedValueOnce(true);
+        ask.mockResolvedValueOnce(true);
       }
       const program = new Command().exitOverride();
       registerInitCommand({ program, cliRoot });
       // Exercise argument parsing from a nested package while writing at the Git root.
-      const cwd = vi.spyOn(process, "cwd").mockReturnValue(web);
+      const cwd = spyOn(process, "cwd").mockReturnValue(web);
       try {
         await program.parseAsync(["init", "--availableToWorkspace"], { from: "user" });
       } finally {
@@ -256,13 +252,14 @@ describe("tiramisu init", () => {
 
   it.each(["", "src"])("reconfigures the root from a nested package's %j", async (subdir) => {
     existing({ prune: false });
-    vi.mocked(confirm).mockResolvedValueOnce(true);
+    ask.mockResolvedValueOnce(true);
     await init({ cwd: join(web, subdir), cliRoot });
     const config = JSON.parse(readFileSync(join(root, NAMES.TIRAMISU_JSON), "utf8"));
     expect(config.prune.databaseUrlCommand).toBe(dbCommand);
     expect(confirm).toHaveBeenCalledTimes(6);
-    expect(getDatabaseUrl).toHaveBeenCalledExactlyOnceWith({ repo: root, command: dbCommand });
-    expect(migrateDatabase).toHaveBeenCalledOnce();
+    expect(getDatabaseUrl).toHaveBeenCalledTimes(1);
+    expect(getDatabaseUrl).toHaveBeenCalledWith({ repo: root, command: dbCommand });
+    expect(migrateDatabase).toHaveBeenCalledTimes(1);
     expect(existsSync(join(web, NAMES.MEMORIES))).toBe(false);
     expect(existsSync(join(web, NAMES.TIRAMISU_JSON))).toBe(false);
     expect(existsSync(join(root, NAMES.MEMORIES))).toBe(false);
@@ -278,12 +275,13 @@ describe("tiramisu init", () => {
     await init({ cwd, cliRoot });
     const path = join(root, NAMES.TIRAMISU_JSON);
     const source = readFileSync(path, "utf8");
-    vi.mocked(confirm).mockClear();
+    ask.mockClear();
     await init({ cwd, cliRoot });
     expect(readFileSync(path, "utf8")).toBe(source);
     expect(existsSync(join(web, NAMES.MEMORIES))).toBe(false);
     expect(existsSync(join(web, NAMES.TIRAMISU_JSON))).toBe(false);
-    expect(confirm).toHaveBeenCalledExactlyOnceWith({
+    expect(confirm).toHaveBeenCalledTimes(1);
+    expect(confirm).toHaveBeenCalledWith({
       message: "tiramisu is already initialized. Reconfigure its settings?",
       initialValue: false,
     });
@@ -362,7 +360,7 @@ describe("tiramisu init", () => {
     existing(value);
     await init({ cwd: root, cliRoot });
     expect(JSON.parse(readFileSync(join(root, NAMES.TIRAMISU_JSON), "utf8"))).toEqual(value);
-    expect(confirm).toHaveBeenCalledOnce();
+    expect(confirm).toHaveBeenCalledTimes(1);
     expect(log.step).not.toHaveBeenCalled();
     expect(outro).toHaveBeenCalledWith("tiramisu unchanged.");
   });
@@ -385,7 +383,7 @@ describe("tiramisu init", () => {
     existing(value);
     mkdirSync(join(root, NAMES.MEMORIES), { recursive: true });
     writeFileSync(join(root, NAMES.MEMORIES, "keep.txt"), "keep");
-    vi.mocked(confirm).mockResolvedValueOnce(true);
+    ask.mockResolvedValueOnce(true);
     await init({ cwd: root, cliRoot });
     expect(JSON.parse(readFileSync(join(root, NAMES.TIRAMISU_JSON), "utf8"))).toEqual({
       version: 1,
@@ -399,8 +397,8 @@ describe("tiramisu init", () => {
       },
     });
     expect(readFileSync(join(root, NAMES.MEMORIES, "keep.txt"), "utf8")).toBe("keep");
-    expect(vi.mocked(confirm).mock.calls[1]?.[0].initialValue).toBe(false);
-    expect(vi.mocked(confirm).mock.calls[2]?.[0].initialValue).toBe(true);
+    expect(ask.mock.calls[1]?.[0].initialValue).toBe(false);
+    expect(ask.mock.calls[2]?.[0].initialValue).toBe(true);
   });
 
   it("initializes a store already populated by insert without disturbing its data", async () => {
@@ -423,8 +421,8 @@ describe("tiramisu init", () => {
   });
 
   it.each([0, 1, 2, 3, 4])("cancels prompt %i without writing or installing", async (position) => {
-    for (let i = 0; i < position; i++) vi.mocked(confirm).mockResolvedValueOnce(false);
-    vi.mocked(confirm).mockResolvedValueOnce(cancelled);
+    for (let i = 0; i < position; i++) ask.mockResolvedValueOnce(false);
+    ask.mockResolvedValueOnce(cancelled);
     await expect(init({ cwd: root, cliRoot })).rejects.toThrow("cancelled");
     expect(existsSync(join(root, NAMES.TIRAMISU_JSON))).toBe(false);
     expect(existsSync(join(root, NAMES.VSCODE))).toBe(false);
@@ -433,7 +431,7 @@ describe("tiramisu init", () => {
 
   it("cancels reconfiguration without touching the existing config", async () => {
     existing({ prune: false });
-    vi.mocked(confirm).mockResolvedValueOnce(cancelled);
+    ask.mockResolvedValueOnce(cancelled);
     await expect(init({ cwd: root, cliRoot })).rejects.toThrow("cancelled");
     expect(readFileSync(join(root, NAMES.TIRAMISU_JSON), "utf8")).toBe('{"prune":false}');
   });
@@ -441,11 +439,8 @@ describe("tiramisu init", () => {
   it.each([0, 1])(
     "collects one full command and applies %i pending migrations",
     async (applied) => {
-      vi.mocked(migrateDatabase).mockResolvedValue({ applied });
-      vi.mocked(confirm)
-        .mockResolvedValueOnce(true)
-        .mockResolvedValueOnce(true)
-        .mockResolvedValueOnce(false);
+      migrate.mockResolvedValue({ applied });
+      ask.mockResolvedValueOnce(true).mockResolvedValueOnce(true).mockResolvedValueOnce(false);
       await init({ cwd: root, cliRoot });
       const value = JSON.parse(readFileSync(join(root, NAMES.TIRAMISU_JSON), "utf8"));
       expect(value.prune).toEqual({
@@ -463,19 +458,15 @@ describe("tiramisu init", () => {
       expect(value.prune).not.toHaveProperty("database");
       expect(JSON.stringify(value)).not.toContain("postgresql://");
       expect(existsSync(join(root, ".env"))).toBe(false);
-      expect(text).toHaveBeenCalledOnce();
+      expect(text).toHaveBeenCalledTimes(1);
       // The command prompt comes immediately after pruning, before unrelated setup prompts.
-      expect(vi.mocked(text).mock.invocationCallOrder[0]).toBeGreaterThan(
-        vi.mocked(confirm).mock.invocationCallOrder[1]!,
-      );
-      expect(vi.mocked(text).mock.invocationCallOrder[0]).toBeLessThan(
-        vi.mocked(confirm).mock.invocationCallOrder[2]!,
-      );
+      expect(input.mock.invocationCallOrder[0]).toBeGreaterThan(ask.mock.invocationCallOrder[1]!);
+      expect(input.mock.invocationCallOrder[0]).toBeLessThan(ask.mock.invocationCallOrder[2]!);
     },
   );
 
   it("does not resolve credentials or migrate when pruning is disabled", async () => {
-    vi.mocked(confirm).mockResolvedValueOnce(false).mockResolvedValueOnce(false);
+    ask.mockResolvedValueOnce(false).mockResolvedValueOnce(false);
     await init({ cwd: root, cliRoot });
     expect(getDatabaseUrl).not.toHaveBeenCalled();
     expect(migrateDatabase).not.toHaveBeenCalled();
@@ -484,11 +475,12 @@ describe("tiramisu init", () => {
 
   it("requires a new command and checks migrations on accepted root reconfiguration", async () => {
     existing({ version: 1, prune: { databaseUrlCommand: "old-command" } });
-    vi.mocked(confirm).mockResolvedValueOnce(true);
+    ask.mockResolvedValueOnce(true);
     await init({ cwd: root, cliRoot });
-    expect(text).toHaveBeenCalledOnce();
-    expect(getDatabaseUrl).toHaveBeenCalledExactlyOnceWith({ repo: root, command: dbCommand });
-    expect(migrateDatabase).toHaveBeenCalledOnce();
+    expect(text).toHaveBeenCalledTimes(1);
+    expect(getDatabaseUrl).toHaveBeenCalledTimes(1);
+    expect(getDatabaseUrl).toHaveBeenCalledWith({ repo: root, command: dbCommand });
+    expect(migrateDatabase).toHaveBeenCalledTimes(1);
     expect(
       JSON.parse(readFileSync(join(root, NAMES.TIRAMISU_JSON), "utf8")).prune.databaseUrlCommand,
     ).toBe(dbCommand);
@@ -496,8 +488,8 @@ describe("tiramisu init", () => {
 
   it("rejects blank input without supplying the old command or a default", async () => {
     existing({ prune: { databaseUrlCommand: "old-command" } });
-    vi.mocked(confirm).mockResolvedValueOnce(true);
-    vi.mocked(text).mockImplementationOnce(async (options) => {
+    ask.mockResolvedValueOnce(true);
+    input.mockImplementationOnce(async (options) => {
       expect(options.initialValue).toBeUndefined();
       expect(options.defaultValue).toBeUndefined();
       if (typeof options.validate !== "function") throw new Error("Expected a command validator.");
@@ -508,7 +500,8 @@ describe("tiramisu init", () => {
       return dbCommand;
     });
     await init({ cwd: root, cliRoot });
-    expect(getDatabaseUrl).toHaveBeenCalledExactlyOnceWith({ repo: root, command: dbCommand });
+    expect(getDatabaseUrl).toHaveBeenCalledTimes(1);
+    expect(getDatabaseUrl).toHaveBeenCalledWith({ repo: root, command: dbCommand });
   });
 
   it("leaves settings and the database untouched when reconfiguration from a package is declined", async () => {
@@ -520,15 +513,12 @@ describe("tiramisu init", () => {
     expect(migrateDatabase).not.toHaveBeenCalled();
     expect(existsSync(join(web, NAMES.MEMORIES))).toBe(false);
     expect(JSON.parse(readFileSync(join(root, NAMES.TIRAMISU_JSON), "utf8"))).toEqual(settings);
-    expect(confirm).toHaveBeenCalledOnce();
+    expect(confirm).toHaveBeenCalledTimes(1);
   });
 
   it("disables pruning without running the saved database command", async () => {
     existing({ prune: { databaseUrlCommand: "old-command" } });
-    vi.mocked(confirm)
-      .mockResolvedValueOnce(true)
-      .mockResolvedValueOnce(false)
-      .mockResolvedValueOnce(false);
+    ask.mockResolvedValueOnce(true).mockResolvedValueOnce(false).mockResolvedValueOnce(false);
     await init({ cwd: root, cliRoot });
     const value = JSON.parse(readFileSync(join(root, NAMES.TIRAMISU_JSON), "utf8"));
     expect(value.prune).toBe(false);
@@ -538,9 +528,9 @@ describe("tiramisu init", () => {
   });
 
   it("asks again after invalid output and saves only the successful command", async () => {
-    vi.mocked(confirm).mockResolvedValueOnce(false).mockResolvedValueOnce(true);
-    vi.mocked(text).mockResolvedValueOnce("wrong-command").mockResolvedValueOnce(dbCommand);
-    vi.mocked(getDatabaseUrl).mockRejectedValueOnce(
+    ask.mockResolvedValueOnce(false).mockResolvedValueOnce(true);
+    input.mockResolvedValueOnce("wrong-command").mockResolvedValueOnce(dbCommand);
+    getUrl.mockRejectedValueOnce(
       new Error("The database command must print exactly one PostgreSQL URL."),
     );
     await init({ cwd: root, cliRoot });
@@ -548,7 +538,7 @@ describe("tiramisu init", () => {
     expect(log.warn).toHaveBeenCalledWith(
       "The database command must print exactly one PostgreSQL URL.",
     );
-    expect(migrateDatabase).toHaveBeenCalledOnce();
+    expect(migrateDatabase).toHaveBeenCalledTimes(1);
     const value = JSON.parse(readFileSync(join(root, NAMES.TIRAMISU_JSON), "utf8"));
     expect(value.prune.databaseUrlCommand).toBe(dbCommand);
     expect(JSON.stringify(value)).not.toContain("wrong-command");
@@ -558,13 +548,12 @@ describe("tiramisu init", () => {
     existing({ prune: { databaseUrlCommand: "old-command" } });
     const path = join(root, NAMES.TIRAMISU_JSON);
     const before = readFileSync(path, "utf8");
-    vi.mocked(getDatabaseUrl).mockRejectedValueOnce(new Error("Invalid PostgreSQL URL."));
-    vi.mocked(text)
-      .mockResolvedValueOnce("wrong-command")
-      .mockResolvedValueOnce(cancelled as symbol);
-    vi.mocked(confirm).mockResolvedValueOnce(true);
+    getUrl.mockRejectedValueOnce(new Error("Invalid PostgreSQL URL."));
+    input.mockResolvedValueOnce("wrong-command").mockResolvedValueOnce(cancelled as symbol);
+    ask.mockResolvedValueOnce(true);
     await expect(init({ cwd: root, cliRoot })).rejects.toThrow("cancelled");
-    expect(getDatabaseUrl).toHaveBeenCalledExactlyOnceWith({
+    expect(getDatabaseUrl).toHaveBeenCalledTimes(1);
+    expect(getDatabaseUrl).toHaveBeenCalledWith({
       repo: root,
       command: "wrong-command",
     });
@@ -576,16 +565,16 @@ describe("tiramisu init", () => {
   it("leaves the saved command untouched when database setup fails", async () => {
     existing({ prune: { databaseUrlCommand: "old-command" } });
     const before = readFileSync(join(root, NAMES.TIRAMISU_JSON), "utf8");
-    vi.mocked(confirm).mockResolvedValueOnce(true);
-    vi.mocked(migrateDatabase).mockRejectedValue(new Error("Database setup failed."));
+    ask.mockResolvedValueOnce(true);
+    migrate.mockRejectedValue(new Error("Database setup failed."));
     await expect(init({ cwd: root, cliRoot })).rejects.toThrow("Database setup failed");
     expect(readFileSync(join(root, NAMES.TIRAMISU_JSON), "utf8")).toBe(before);
     expect(outro).not.toHaveBeenCalled();
   });
 
   it("cancels database configuration without saving or migrating", async () => {
-    vi.mocked(confirm).mockResolvedValueOnce(false).mockResolvedValueOnce(true);
-    vi.mocked(text).mockResolvedValueOnce(cancelled as symbol);
+    ask.mockResolvedValueOnce(false).mockResolvedValueOnce(true);
+    input.mockResolvedValueOnce(cancelled as symbol);
     await expect(init({ cwd: root, cliRoot })).rejects.toThrow("cancelled");
     expect(migrateDatabase).not.toHaveBeenCalled();
     expect(existsSync(join(root, NAMES.TIRAMISU_JSON))).toBe(false);
@@ -648,7 +637,7 @@ describe("tiramisu init", () => {
       join(root, NAMES.VSCODE, NAMES.SETTINGS_JSON),
     ];
     for (const path of paths) writeFileSync(path, "keep");
-    vi.mocked(confirm).mockResolvedValue(false);
+    ask.mockResolvedValue(false);
     await init({ cwd: root, cliRoot });
     for (const path of paths) expect(readFileSync(path, "utf8")).toBe("keep");
   });
@@ -668,7 +657,7 @@ describe("tiramisu init", () => {
     { skill: false, instructions: true },
     { skill: false, instructions: false },
   ])("independently opts into skill=$skill and instructions=$instructions", async (answers) => {
-    vi.mocked(confirm).mockImplementation(async (options) => {
+    ask.mockImplementation(async (options) => {
       if (options.message.startsWith("Install the global memory-writing skill")) {
         expect(options.initialValue).toBe(true);
         return answers.skill;
@@ -680,7 +669,7 @@ describe("tiramisu init", () => {
       return options.initialValue ?? false;
     });
     await init({ cwd: join(web, "src"), cliRoot });
-    const installs = vi.mocked(execFileSync).mock.calls.filter(([command]) => command === "npx");
+    const installs = exec.mock.calls.filter(([command]) => command === "npx");
     expect(installs).toHaveLength(answers.skill ? 1 : 0);
     if (answers.skill) {
       expect(execFileSync).toHaveBeenCalledWith(
@@ -730,12 +719,10 @@ describe("tiramisu init", () => {
       "## Our team's rules\n\nOnly save memories when requested.",
     );
     writeFileSync(path, customized);
-    vi.mocked(confirm).mockResolvedValueOnce(true);
+    ask.mockResolvedValueOnce(true);
     await init({ cwd: root, cliRoot });
     expect(readFileSync(path, "utf8")).toBe(customized);
-    expect(
-      vi.mocked(execFileSync).mock.calls.filter(([command]) => command === "npx"),
-    ).toHaveLength(2);
+    expect(exec.mock.calls.filter(([command]) => command === "npx")).toHaveLength(2);
   });
 
   it("leaves files unchanged when skill installation fails", async () => {
@@ -761,11 +748,11 @@ describe("tiramisu init", () => {
   it("preserves AGENTS.md edits made while installing the skill", async () => {
     const path = join(root, NAMES.AGENTS_MD);
     writeFileSync(path, "Before install");
-    const run = vi.mocked(execFileSync).getMockImplementation()!;
-    vi.mocked(execFileSync).mockImplementation((...args) => {
+    const run = exec.getMockImplementation()!;
+    exec.mockImplementation(((...args: Parameters<typeof execFileSync>) => {
       if (args[0] === "npx") writeFileSync(path, "Concurrent edit");
       return Reflect.apply(run, undefined, args);
-    });
+    }) as typeof execFileSync);
     await expect(init({ cwd: root, cliRoot })).rejects.toThrow("Settings changed");
     expect(readFileSync(path, "utf8")).toBe("Concurrent edit");
     expect(existsSync(join(root, NAMES.TIRAMISU_JSON))).toBe(false);
@@ -774,21 +761,20 @@ describe("tiramisu init", () => {
   it("skips reinstalling an equal or newer private global CLI", async () => {
     installed("0.2.0");
     await init({ cwd: root, cliRoot });
-    expect(log.step).toHaveBeenCalledExactlyOnceWith(
-      "Installing tiramisu-memory-writing globally.",
-    );
+    expect(log.step).toHaveBeenCalledTimes(1);
+    expect(log.step).toHaveBeenCalledWith("Installing tiramisu-memory-writing globally.");
     expect(confirm).toHaveBeenCalledTimes(5);
   });
 
   it("rebuilds and links a public development package even when a newer CLI is installed", async () => {
     published();
     installed("0.2.0");
-    vi.stubEnv("TIRAMISU_INSTALL_MODE", "link");
+    stubEnv({ name: "TIRAMISU_INSTALL_MODE", value: "link" });
     await init({ cwd: root, cliRoot });
-    const calls = vi.mocked(execFileSync).mock.calls.filter(([command]) => command === "pnpm");
+    const calls = exec.mock.calls.filter(([command]) => command === "bun");
     expect(calls).toEqual([
-      ["pnpm", ["build"], expect.objectContaining({ cwd: cliRoot, stdio: "pipe" })],
-      ["pnpm", ["add", "-g", "."], expect.objectContaining({ cwd: cliRoot, stdio: "pipe" })],
+      ["bun", ["run", "build"], expect.objectContaining({ cwd: cliRoot, stdio: "pipe" })],
+      ["bun", ["add", "-g", "."], expect.objectContaining({ cwd: cliRoot, stdio: "pipe" })],
     ]);
     expect(execFileSync).not.toHaveBeenCalledWith("npm", expect.anything(), expect.anything());
     expect(confirm).toHaveBeenCalledTimes(5);
@@ -797,30 +783,33 @@ describe("tiramisu init", () => {
   });
 
   it("shows local build and link output in verbose mode", async () => {
-    vi.stubEnv("TIRAMISU_INSTALL_MODE", "link");
+    stubEnv({ name: "TIRAMISU_INSTALL_MODE", value: "link" });
     await init({ cwd: root, cliRoot, verbose: true });
-    for (const args of [["build"], ["add", "-g", "."]]) {
+    for (const args of [
+      ["run", "build"],
+      ["add", "-g", "."],
+    ]) {
       expect(execFileSync).toHaveBeenCalledWith(
-        "pnpm",
+        "bun",
         args,
         expect.objectContaining({ cwd: cliRoot, stdio: "inherit" }),
       );
     }
   });
 
-  it.each(["build", "add"])("stops setup when the local %s fails", async (command) => {
-    vi.stubEnv("TIRAMISU_INSTALL_MODE", "link");
+  it.each(["run", "add"])("stops setup when the local %s fails", async (command) => {
+    stubEnv({ name: "TIRAMISU_INSTALL_MODE", value: "link" });
     failure = command;
     await expect(init({ cwd: root, cliRoot })).rejects.toThrow("tiramisu init --verbose");
     expect(existsSync(join(root, NAMES.TIRAMISU_JSON))).toBe(false);
     expect(execFileSync).not.toHaveBeenCalledWith("npx", expect.anything(), expect.anything());
-    if (command === "build") {
-      expect(execFileSync).not.toHaveBeenCalledWith("pnpm", ["add", "-g", "."], expect.anything());
+    if (command === "run") {
+      expect(execFileSync).not.toHaveBeenCalledWith("bun", ["add", "-g", "."], expect.anything());
     }
   });
 
   it("rejects unknown install modes before installing or saving setup", async () => {
-    vi.stubEnv("TIRAMISU_INSTALL_MODE", "invalid");
+    stubEnv({ name: "TIRAMISU_INSTALL_MODE", value: "invalid" });
     await expect(init({ cwd: root, cliRoot })).rejects.toThrow(
       'Set TIRAMISU_INSTALL_MODE to "registry" or "link"',
     );
@@ -832,7 +821,7 @@ describe("tiramisu init", () => {
     published();
     installed("0.1.0");
     await init({ cwd: root, cliRoot });
-    expect(vi.mocked(confirm).mock.calls[5]?.[0].message).toContain("0.1.0 to 0.2.0");
+    expect(ask.mock.calls[5]?.[0].message).toContain("0.1.0 to 0.2.0");
     expect(execFileSync).toHaveBeenCalledWith(
       "npm",
       ["install", "--global", "tiramisu@0.2.0"],
@@ -843,7 +832,7 @@ describe("tiramisu init", () => {
   it("declining an upgrade preserves the global CLI and still initializes the project", async () => {
     published();
     installed("0.1.0");
-    vi.mocked(confirm)
+    ask
       .mockResolvedValueOnce(false)
       .mockResolvedValueOnce(false)
       .mockResolvedValueOnce(false)
@@ -857,7 +846,7 @@ describe("tiramisu init", () => {
 
   it("installs the running published version if a first-install upgrade is declined", async () => {
     published();
-    vi.mocked(confirm)
+    ask
       .mockResolvedValueOnce(false)
       .mockResolvedValueOnce(false)
       .mockResolvedValueOnce(false)
@@ -875,7 +864,7 @@ describe("tiramisu init", () => {
   it("cancels an upgrade without writing or installing", async () => {
     published();
     installed("0.1.0");
-    vi.mocked(confirm)
+    ask
       .mockResolvedValueOnce(false)
       .mockResolvedValueOnce(false)
       .mockResolvedValueOnce(false)
@@ -903,9 +892,8 @@ describe("tiramisu init", () => {
     published();
     installed("0.3.0");
     await init({ cwd: root, cliRoot });
-    expect(log.step).toHaveBeenCalledExactlyOnceWith(
-      "Installing tiramisu-memory-writing globally.",
-    );
+    expect(log.step).toHaveBeenCalledTimes(1);
+    expect(log.step).toHaveBeenCalledWith("Installing tiramisu-memory-writing globally.");
     expect(confirm).toHaveBeenCalledTimes(5);
   });
 
@@ -938,23 +926,23 @@ describe("tiramisu init", () => {
     async ({ agent, manager, args }) => {
       existing({});
       published();
-      vi.stubEnv("npm_config_user_agent", agent);
+      stubEnv({ name: "npm_config_user_agent", value: agent });
       installed("0.1.0");
-      vi.mocked(confirm).mockResolvedValueOnce(true);
+      ask.mockResolvedValueOnce(true);
       await init({ cwd: join(web, "src"), cliRoot });
       expect(execFileSync).toHaveBeenCalledWith(
         manager,
         [...args, "tiramisu@0.2.0"],
         expect.objectContaining({ cwd: root }),
       );
-      expect(vi.mocked(confirm).mock.calls[6]?.[0].message).toContain("0.1.0 to 0.2.0");
+      expect(ask.mock.calls[6]?.[0].message).toContain("0.1.0 to 0.2.0");
     },
   );
 
   it("ignores repository lockfiles and packageManager when launched with npx", async () => {
     existing({});
-    vi.mocked(confirm).mockResolvedValueOnce(true);
-    vi.stubEnv("npm_config_user_agent", "npm/11.0.0 node/v22.0.0");
+    ask.mockResolvedValueOnce(true);
+    stubEnv({ name: "npm_config_user_agent", value: "npm/11.0.0 node/v22.0.0" });
     writeFileSync(join(root, "pnpm-lock.yaml"), "");
     writeFileSync(join(web, "yarn.lock"), "");
     writeFileSync(join(web, "bun.lock"), "");
@@ -970,7 +958,7 @@ describe("tiramisu init", () => {
   it.each([undefined, "unknown/1.0"])(
     "falls back to npm without a recognized launcher (%s)",
     async (agent) => {
-      vi.stubEnv("npm_config_user_agent", agent);
+      stubEnv({ name: "npm_config_user_agent", value: agent });
       await init({ cwd: root, cliRoot });
       expect(execFileSync).toHaveBeenCalledWith(
         "npm",
@@ -983,15 +971,15 @@ describe("tiramisu init", () => {
   it.each([undefined, "pnpm/11.24.0 npm/? node/v22.0.0"])(
     "recognizes bunx --bun even with inherited launcher metadata (%s)",
     async (agent) => {
-      vi.stubEnv("npm_config_user_agent", agent);
-      vi.stubGlobal("process", { ...process, versions: { ...process.versions, bun: "1.3.0" } });
+      stubEnv({ name: "npm_config_user_agent", value: agent });
+      Object.defineProperty(process.versions, "bun", { ...bunVersion, value: "1.3.0" });
       await init({ cwd: root, cliRoot });
       expect(execFileSync).toHaveBeenCalledWith("bun", ["add", "-g", cliRoot], expect.anything());
     },
   );
 
   it("uses npm for global installation when launched by yarn dlx", async () => {
-    vi.stubEnv("npm_config_user_agent", "yarn/4.9.0 npm/? node/v22.0.0");
+    stubEnv({ name: "npm_config_user_agent", value: "yarn/4.9.0 npm/? node/v22.0.0" });
     await init({ cwd: root, cliRoot });
     expect(log.info).toHaveBeenCalledWith(
       expect.stringContaining("does not support global installs"),
@@ -1005,21 +993,21 @@ describe("tiramisu init", () => {
 
   it("installs with Bun when no global package.json exists yet", async () => {
     bunMissing = true;
-    vi.stubEnv("npm_config_user_agent", "bun/1.3.0");
+    stubEnv({ name: "npm_config_user_agent", value: "bun/1.3.0" });
     await init({ cwd: root, cliRoot });
     expect(execFileSync).toHaveBeenCalledWith("bun", ["add", "-g", cliRoot], expect.anything());
   });
 
   it("does not mistake a failed Bun lookup for a missing installation", async () => {
     failure = "pm";
-    vi.stubEnv("npm_config_user_agent", "bun/1.3.0");
+    stubEnv({ name: "npm_config_user_agent", value: "bun/1.3.0" });
     await expect(init({ cwd: root, cliRoot })).rejects.toThrow("Could not pm");
     expect(log.step).not.toHaveBeenCalled();
   });
 
   it("preserves config changed while the prompts were open", async () => {
     existing({ prune: false });
-    vi.mocked(confirm).mockImplementationOnce(async () => {
+    ask.mockImplementationOnce(async () => {
       writeFileSync(join(root, NAMES.TIRAMISU_JSON), '{"prune":{"unvotedTtl":"500d"}}');
       return true;
     });
@@ -1031,7 +1019,7 @@ describe("tiramisu init", () => {
 
   it("preserves a root config created while the prompts were open", async () => {
     const path = join(root, NAMES.TIRAMISU_JSON);
-    vi.mocked(confirm).mockImplementationOnce(async () => {
+    ask.mockImplementationOnce(async () => {
       writeFileSync(path, '{"prune":false}');
       return false;
     });
@@ -1040,7 +1028,7 @@ describe("tiramisu init", () => {
   });
 
   it("preserves a memory store created during the prompts", async () => {
-    vi.mocked(confirm).mockImplementationOnce(async () => {
+    ask.mockImplementationOnce(async () => {
       mkdirSync(join(root, NAMES.MEMORIES));
       writeFileSync(join(root, NAMES.MEMORIES, "keep"), "keep");
       return false;
@@ -1052,12 +1040,12 @@ describe("tiramisu init", () => {
 
   it("does not truncate the existing config on a failed write", async () => {
     existing({ prune: false });
-    vi.mocked(confirm)
+    ask
       .mockResolvedValueOnce(true)
       .mockResolvedValueOnce(false)
       .mockResolvedValueOnce(false)
       .mockResolvedValueOnce(false);
-    vi.mocked(writeFileSync).mockImplementationOnce(() => {
+    write.mockImplementationOnce(() => {
       throw new Error("disk full");
     });
     await expect(init({ cwd: root, cliRoot })).rejects.toThrow("disk full");

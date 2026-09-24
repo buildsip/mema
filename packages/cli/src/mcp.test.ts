@@ -7,7 +7,7 @@ import { fileURLToPath } from "node:url";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
 import { type CallToolResult, type Tool } from "@modelcontextprotocol/sdk/types.js";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "bun:test";
 import { memoryScopeDescription } from "./scope-schema";
 import { cliEnv } from "./test/cli-env";
 
@@ -39,7 +39,7 @@ afterEach(async () => {
 /** Starts the built executable, exercising the actual stdio protocol and startup installer. */
 async function connect({ cwd = repo }: { cwd?: string } = {}) {
   const transport = new StdioClientTransport({
-    command: process.execPath,
+    command: "node",
     args: [cli, "mcp"],
     cwd,
     env: cliEnv({ home }),
@@ -93,7 +93,7 @@ describe("MCP stdio server", () => {
     });
     expect(result.isError).toBe(true);
     expect(text(result)).toContain(
-      `Initialize a Git repository for the user in ${project} by running git init from that directory, then retry.`,
+      `Initialize a Git repository in ${project} by running git init from that directory, then retry.`,
     );
     // The tool supplies instructions; the agent performs initialization for the user.
     expect(existsSync(join(project, ".git"))).toBe(false);
@@ -424,7 +424,7 @@ describe("automatic MCP installation", () => {
         config,
         JSON.stringify({ mcpServers: { other, tiramisu: { command: "old-mem", args: ["old"] } } }),
       );
-      const result = spawnSync(process.execPath, [cli, ...args], {
+      const result = spawnSync("node", [cli, ...args], {
         cwd: repo,
         env: cliEnv({ home }),
         encoding: "utf8",
@@ -458,7 +458,7 @@ describe("automatic MCP installation", () => {
     await mkdir(join(home, ".cursor/mcp.json"));
     await mkdir(join(home, ".claude"));
     const result = spawnSync(
-      process.execPath,
+      "node",
       [cli, "search", "--roots", repo, "--repo", repo, "--query", "cache"],
       {
         cwd: repo,

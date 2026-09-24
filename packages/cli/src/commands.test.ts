@@ -1,3 +1,4 @@
+import * as fs from "node:fs/promises";
 import { execFileSync, spawnSync } from "node:child_process";
 import { existsSync } from "node:fs";
 import {
@@ -14,7 +15,7 @@ import {
 import { tmpdir } from "node:os";
 import { dirname, join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, spyOn } from "bun:test";
 import { parse, stringify } from "yaml";
 import { deleteMemories } from "./commands/delete-memories";
 import { search } from "./commands/search";
@@ -23,10 +24,9 @@ import { update } from "./commands/update";
 import { NAMES } from "./names";
 import { cliEnv } from "./test/cli-env";
 
-vi.mock("node:fs/promises", async (importOriginal) => {
-  const original = await importOriginal<typeof import("node:fs/promises")>();
-  return { ...original, rename: vi.fn(original.rename) };
-});
+// Preserve the real filesystem operation for rollback and error-injection tests.
+const original = { rename };
+const renameMock = spyOn(fs, "rename");
 
 const cli = fileURLToPath(new URL("../dist/index.js", import.meta.url));
 let temp: string;
@@ -37,9 +37,8 @@ let team: string;
 let roots: string[];
 
 beforeEach(async () => {
-  vi.mocked(rename).mockReset();
-  const fs = await vi.importActual<typeof import("node:fs/promises")>("node:fs/promises");
-  vi.mocked(rename).mockImplementation(fs.rename);
+  renameMock.mockReset();
+  renameMock.mockImplementation(original.rename);
   temp = await realpath(await mkdtemp(join(tmpdir(), "mem-commands-")));
   // CLI startup installs MCP entries. Use a detected agent in a disposable home.
   await mkdir(join(temp, "home", ".cursor"), { recursive: true });
@@ -115,8 +114,16 @@ async function frontmatter(path: string) {
   return parse(source.split("---")[1]!);
 }
 
-function run({ args, input, cwd = root }: { args: string[]; input?: string; cwd?: string }) {
-  return spawnSync(process.execPath, [cli, ...args], {
+function run({
+  args,
+  input,
+  cwd = root,
+}: {
+  args: readonly string[];
+  input?: string;
+  cwd?: string;
+}) {
+  return spawnSync("node", [cli, ...args], {
     cwd,
     input,
     encoding: "utf8",
@@ -155,10 +162,9 @@ describe("insert and update", () => {
   it("rolls back a title rename if replacing the body fails", async () => {
     const path = await memory({ title: "Before" });
     const before = await readFile(join(path, NAMES.MEMORY_MD), "utf8");
-    const fs = await vi.importActual<typeof import("node:fs/promises")>("node:fs/promises");
-    vi.mocked(rename).mockImplementation(async (from, to) => {
+    renameMock.mockImplementation(async (from, to) => {
       if (String(from).endsWith(NAMES.MEMORY_MD)) throw new Error("disk full");
-      return fs.rename(from, to);
+      return original.rename(from, to);
     });
     await expect(edit({ path, title: "After", body: "changed" })).rejects.toThrow("disk full");
     expect(await readFile(join(path, NAMES.MEMORY_MD), "utf8")).toBe(before);
@@ -259,10 +265,9 @@ describe("insert and update", () => {
     const old = await memory({ project: web, title: "Before" });
     const before = await readFile(join(old, NAMES.MEMORY_MD), "utf8");
     await writeFile(join(old, "trace.txt"), "keep");
-    const fs = await vi.importActual<typeof import("node:fs/promises")>("node:fs/promises");
-    vi.mocked(rename).mockImplementation(async (from, to) => {
+    renameMock.mockImplementation(async (from, to) => {
       if (String(from).endsWith(NAMES.MEMORY_MD)) throw new Error("disk full");
-      return fs.rename(from, to);
+      return original.rename(from, to);
     });
     await expect(edit({ path: old, title: "After", scope: ["apps/api"] })).rejects.toThrow(
       "disk full",
@@ -317,7 +322,7 @@ describe("insert and update", () => {
   ])(
     "omits scope when the owning $store directory expresses $scopes",
     async ({ scopes, store }) => {
-      const path = await memory({ title: "Implicit scope", scope: scopes });
+      const path = await memory({ title: "Implicit scope", scope: [...scopes] });
       expect(path).toContain(join(store === "web" ? web : root, NAMES.MEMORIES));
       expect(await frontmatter(path)).not.toHaveProperty("scope");
     },
@@ -397,13 +402,15 @@ describe("insert and update", () => {
     ).rejects.toThrow("different Git repository");
   });
 
-  it.each([
-    ["bad/bad/bad"],
-    ["apps/web/missing.ts"],
-    ["apps/web/package.json/child"],
-    ["apps/web", "bad/bad/bad"],
-    ["*", "bad/bad/bad"],
-  ])("rejects missing scopes %j before creating or updating any files", async (...scope) => {
+  it.each(
+    [
+      ["bad/bad/bad"],
+      ["apps/web/missing.ts"],
+      ["apps/web/package.json/child"],
+      ["apps/web", "bad/bad/bad"],
+      ["*", "bad/bad/bad"],
+    ].map((scope) => ({ scope })),
+  )("rejects missing scopes $scope before creating or updating any files", async ({ scope }) => {
     await expect(memory({ title: "Invalid placement", scope })).rejects.toThrow(
       "existing repository-relative file or directory",
     );
@@ -818,7 +825,7 @@ describe("search", () => {
   it("rejects a non-Git workspace folder containing the target repository", async () => {
     await memory({ title: "Cache rule" });
     await expect(search({ roots: [temp], repo: root, query: "cache" })).rejects.toThrow(
-      `Initialize a Git repository for the user in ${temp} by running git init from that directory, then retry.`,
+      `Initialize a Git repository in ${temp} by running git init from that directory, then retry.`,
     );
   });
 
@@ -834,9 +841,9 @@ describe("search", () => {
   it("rejects a shared workspace subdirectory and identifies its Git root", async () => {
     const child = join(team, "child");
     await mkdir(child);
-    await expect(
-      search({ roots: [root, child], repo: root, query: "cache" }),
-    ).rejects.toThrow(`Use the Git root ${team} instead of its subdirectory ${child}`);
+    await expect(search({ roots: [root, child], repo: root, query: "cache" })).rejects.toThrow(
+      `Use the Git root ${team} instead of its subdirectory ${child}`,
+    );
   });
 
   it("deduplicates workspace Git roots and symlink aliases without hiding package stores", async () => {
@@ -961,10 +968,7 @@ describe("search", () => {
     const ignored = join(web, "generated");
     await mkdir(join(ignored, NAMES.MEMORIES, "bad"), { recursive: true });
     await writeFile(join(ignored, NAMES.PACKAGE_JSON), "{}");
-    await writeFile(
-      join(ignored, NAMES.MEMORIES, "bad", NAMES.MEMORY_MD),
-      "invalid YAML memory",
-    );
+    await writeFile(join(ignored, NAMES.MEMORIES, "bad", NAMES.MEMORY_MD), "invalid YAML memory");
     await writeFile(join(root, ".gitignore"), "apps/web/generated/\n");
     const keep = await memory({ project: web, title: "Cache web" });
     expect(
@@ -1182,7 +1186,7 @@ describe("delete", () => {
       body: "Outside this workspace",
       frontmatter: { title: "Outside", scope: ["*"] },
     });
-    expect(await deleteMemories({ paths: [path!] })).toEqual([path]);
+    expect(await deleteMemories({ paths: [path!] })).toEqual([path!]);
     await expect(deleteMemories({ paths: [join(root, NAMES.PACKAGE_JSON)] })).rejects.toThrow(
       NAMES.MEMORY_MD,
     );

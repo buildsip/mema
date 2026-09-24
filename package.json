@@ -1,5 +1,5 @@
 {
-  "name": "tiramisu",
+  "name": "tiramisu-workspace",
   "version": "1.0.0",
   "private": true,
   "description": "tiramisu development workspace",
@@ -9,23 +9,39 @@
   "type": "module",
   "main": "index.js",
   "scripts": {
-    "release": "node scripts/release.mjs",
+    "release": "bun scripts/release.mjs",
     "lint": "oxlint --report-unused-disable-directives",
     "lint:fix": "oxlint --fix --fix-suggestions",
-    "format": "oxfmt --write \"**/*.{ts,tsx,md}\"",
-    "test": "pnpm --filter @buildsip/file-utils test && pnpm --filter ./packages/cli test",
-    "typecheck": "pnpm -r --parallel typecheck",
-    "build": "pnpm --filter ./packages/cli build"
+    "format": "oxfmt --write \"**/*.{ts,tsx,mjs,md}\"",
+    "test": "bun run build && bun test --isolate",
+    "typecheck": "bun run --workspaces --if-present typecheck",
+    "build": "bun run --filter ./packages/cli build"
   },
   "devDependencies": {
     "@types/node": "^25.9.1",
     "fallow": "^2.85.0",
     "oxfmt": "^0.50.0",
     "oxlint": "^1.65.0",
-    "typescript": "5.9.2"
+    "typescript": "5.9.2",
+    "@types/bun": "^1.4.0"
   },
   "engines": {
-    "node": ">=22.5.0"
+    "node": ">=22.5.0",
+    "bun": ">=1.4.2"
   },
-  "packageManager": "pnpm@11.24.0+sha512.bd27e345e976dcb0be0b7a1228217b049a817e21b1f355c90dbe7dc46671895a8bc1e6d06c24554505ea93ea0b45f489a27ec1bfbc8de6a9659fca0f16fa0000"
+  "packageManager": "bun@1.4.2",
+  "workspaces": [
+    "packages/*"
+  ],
+  "trustedDependencies": [
+    "@embedded-postgres/darwin-arm64",
+    "@embedded-postgres/darwin-x64",
+    "@embedded-postgres/linux-arm",
+    "@embedded-postgres/linux-arm64",
+    "@embedded-postgres/linux-ia32",
+    "@embedded-postgres/linux-ppc64",
+    "@embedded-postgres/linux-x64",
+    "@embedded-postgres/windows-x64",
+    "esbuild"
+  ]
 }

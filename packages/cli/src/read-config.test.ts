@@ -1,7 +1,7 @@
 import { mkdir, mkdtemp, readFile, realpath, rm, symlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { afterEach, beforeEach, expect, it } from "vitest";
+import { afterEach, beforeEach, expect, it } from "bun:test";
 import { NAMES } from "./names";
 import { readConfig } from "./read-config";
 
@@ -33,7 +33,7 @@ it.each([
 
 it("ignores conflicting nested config files", async () => {
   const config = {
-    version: 1,
+    version: 1 as const,
     availableToWorkspace: true,
     frontmatter: { custom: { required: ["ticket"] } },
     prune: { databaseUrlCommand: "./database-url", unvotedTtl: "120d" },
@@ -87,16 +87,17 @@ it.each(["0d", "-1d", "1.5d", "12h", "2w", "90d12h", " 1d", "1d ", "01d", "99999
   },
 );
 
-it.each([null, {}, "", "   ", "bad\0command", { command: "doppler", args: [] }, ["doppler"]])(
-  "rejects invalid database URL commands %j",
-  async (databaseUrlCommand) => {
-    await writeFile(
-      join(repo, NAMES.TIRAMISU_JSON),
-      JSON.stringify({ prune: { databaseUrlCommand } }),
-    );
-    await expect(readConfig(repo)).rejects.toThrow("Invalid config");
-  },
-);
+it.each(
+  [null, {}, "", "   ", "bad\0command", { command: "doppler", args: [] }, ["doppler"]].map(
+    (databaseUrlCommand) => ({ databaseUrlCommand }),
+  ),
+)("rejects invalid database URL commands %j", async ({ databaseUrlCommand }) => {
+  await writeFile(
+    join(repo, NAMES.TIRAMISU_JSON),
+    JSON.stringify({ prune: { databaseUrlCommand } }),
+  );
+  await expect(readConfig(repo)).rejects.toThrow("Invalid config");
+});
 
 it.each([
   { value: undefined, availableToWorkspace: false },

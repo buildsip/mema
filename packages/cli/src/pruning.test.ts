@@ -6,7 +6,7 @@ import { tmpdir } from "node:os";
 import { join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 import { type Client } from "pg";
-import { afterAll, afterEach, beforeAll, beforeEach, expect, it, vi } from "vitest";
+import { afterAll, afterEach, beforeAll, beforeEach, expect, it, jest, spyOn } from "bun:test";
 import { deleteMemories } from "./commands/delete-memories";
 import { insert } from "./commands/insert";
 import { prune } from "./commands/prune";
@@ -39,10 +39,10 @@ beforeEach(async () => {
   await migrateDatabase({ url, migrationsFolder });
   folder = await mkdtemp(join(temp, "workspace-"));
   repo = await makeRepo("app");
-  vi.spyOn(Date, "now").mockReturnValue(now);
+  spyOn(Date, "now").mockReturnValue(now);
 });
 
-afterEach(() => vi.restoreAllMocks());
+afterEach(() => jest.restoreAllMocks());
 afterAll(async () => {
   await close?.();
   if (temp) await rm(temp, { recursive: true, force: true });
@@ -92,14 +92,14 @@ async function memory({
   scope?: string[];
   at?: number;
 } = {}) {
-  vi.mocked(Date.now).mockReturnValue(at);
+  spyOn(Date, "now").mockReturnValue(at);
   const [path] = await insert({
     roots: [owner],
     repo: owner,
     body: "Useful knowledge",
     frontmatter: { title, scope, doNotDelete: protectedMemory },
   });
-  vi.mocked(Date.now).mockReturnValue(now);
+  spyOn(Date, "now").mockReturnValue(now);
   const stored = await readMemory({ path: join(path!, "memory.md"), project: owner, repo: owner });
   return { path: path!, id: stored.frontmatter.id };
 }
@@ -336,7 +336,7 @@ it("records agent votes for renamed, package-moved, and empty updates, and skips
   await client.query("DROP SCHEMA tiramisu CASCADE");
   await expect(
     update({ roots: [repo], repo, path: moved!, body: "No database needed" }),
-  ).resolves.toEqual([moved]);
+  ).resolves.toEqual([moved!]);
 });
 
 it("reports a saved update path when the database fails and never migrates implicitly", async () => {
@@ -392,7 +392,7 @@ it("runs upvote and prune through CLI JSON and MCP contracts", async () => {
   await mkdir(join(home, ".cursor"), { recursive: true });
   const cli = fileURLToPath(new URL("../dist/index.js", import.meta.url));
   const run = (command: string[]) =>
-    spawnSync(process.execPath, [cli, ...command], {
+    spawnSync("node", [cli, ...command], {
       cwd: repo,
       env: cliEnv({ home }),
       encoding: "utf8",

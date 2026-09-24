@@ -1,5 +1,5 @@
 import { dirname, join, parse, resolve } from "node:path";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "bun:test";
 import { findUp, getAncestors, relativePosix } from "./index";
 
 const root = resolve("example");

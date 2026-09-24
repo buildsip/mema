@@ -31,13 +31,13 @@
   ],
   "scripts": {
     "db:generate": "drizzle-kit generate",
-    "build": "node scripts/build.mjs",
-    "tiramisu": "pnpm build && node ./dist/index.js",
+    "build": "bun scripts/build.mjs",
+    "tiramisu": "bun run build && node ./dist/index.js",
     "format": "oxfmt --write src scripts",
-    "test": "pnpm build && vitest run",
+    "test": "bun run build && bun test --isolate",
     "typecheck": "tsc --noEmit",
-    "prepack": "node scripts/build.mjs && node scripts/readme.mjs copy",
-    "postpack": "node scripts/readme.mjs clean"
+    "prepack": "bun scripts/build.mjs && bun scripts/readme.mjs copy",
+    "postpack": "bun scripts/readme.mjs clean"
   },
   "engines": {
     "node": ">=22.5.0"
@@ -64,11 +64,9 @@
     "@types/semver": "^7.8.0",
     "drizzle-kit": "^0.31.10",
     "embedded-postgres": "18.4.0-beta.17",
-    "esbuild": "^0.28.0",
     "oxfmt": "^0.50.0",
     "oxlint": "^1.65.0",
-    "typescript": "5.9.2",
-    "vitest": "^4.0.18"
+    "typescript": "5.9.2"
   },
   "homepage": "https://github.com/buildsip/tiramisu#readme",
   "bugs": {
