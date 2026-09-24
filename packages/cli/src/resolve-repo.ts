@@ -1,6 +1,3 @@
-import { isInside } from "@buildsip/file-utils";
-import { realpath } from "node:fs/promises";
-import { resolve } from "node:path";
 import { resolveGitRoot } from "./resolve-git-root";
 import { resolveRoots } from "./resolve-roots";
 
@@ -10,10 +7,10 @@ type Workspace = {
 };
 
 /**
- * Canonicalizes workspace folders and the Git root the agent is working on.
+ * Validates workspace Git roots and selects the active repository from that list.
  *
- * @param roots - Paths to workspace projects
- * @param repo - Path to repo
+ * @param roots - Paths to every workspace Git root
+ * @param repo - Git root of the active repository
  *
  * @returns Canonicalized paths
  */
@@ -25,13 +22,17 @@ export async function resolveRepo({
   repo: string;
 }): Promise<Workspace> {
   if (!roots.length || !repo.trim()) {
-    throw new Error("roots and repo are required.");
+    throw new Error(
+      "Provide roots with every workspace Git root and repo with the active Git root.",
+    );
   }
   const folders = await resolveRoots({ roots });
-  const path = await realpath(resolve(repo));
-  if (!folders.some((root) => isInside({ path, parent: root }))) {
-    throw new Error("repo must be inside one of the workspace roots.");
+  const path = await resolveGitRoot(repo);
+  // Both sides are canonical paths, so aliases of the same repo compare equally.
+  if (!folders.includes(path)) {
+    throw new Error(
+      "Include repo in the workspace roots, then retry with repo set to one of those Git roots.",
+    );
   }
-  await resolveGitRoot(path);
   return { roots: folders, repo: path };
 }

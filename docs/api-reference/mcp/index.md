@@ -15,14 +15,16 @@ The `tiramisu` MCP server exposes memory commands over stdio. See [installation]
 
 ## Shared parameters
 
-Search, insert, and update require `roots`: the complete list of project roots in the workspace, including projects that are not targeted by the call. Keep this list complete across calls. These tools also require `repo` to select the active project.
+Search, insert, and update require `roots`: the complete list of Git roots in the workspace, including projects that are not targeted by the call. Keep this list complete across calls. These tools also require `repo` to select the active project.
 
 Prune takes only `repo` and reviews that repository. Delete takes only `paths`; upvote takes `paths` and `actor`. Both determine each memory's repository from its absolute path and do not accept `roots` or `repo`.
 
 | Parameter | Type       | Description                                                                                                                                            |
 | --------- | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `roots`   | `string[]` | Absolute paths of every workspace project root, including private and shared repositories. Pass the complete list; at least one directory is required. |
-| `repo`    | `string`   | Absolute Git root of the selected project. For search, insert, and update, it must be inside one of `roots`. Package directories are rejected.         |
+| `roots`   | `string[]` | Absolute paths of every workspace Git root, including private and shared repositories. Pass the complete list; at least one Git root is required. |
+| `repo`    | `string`   | Absolute Git root of the selected project. For search, insert, and update, it must equal one of `roots` after resolving path aliases. Package directories are rejected. |
+
+Every root is validated, including projects not targeted by the call. For a project outside Git, initialize a Git repository for the user by running `git init` from that project directory, then retry. For a subdirectory of an existing repository, pass that repository's Git root instead. Duplicate roots and symlink aliases are deduplicated.
 
 ```json
 {

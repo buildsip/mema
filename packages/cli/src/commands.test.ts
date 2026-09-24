@@ -540,7 +540,7 @@ describe("insert and update", () => {
     },
   );
 
-  it("requires a workspace-contained Git root", async () => {
+  it("requires repo to be one of the workspace Git roots", async () => {
     await mkdir(join(web, "src"));
     await expect(
       insert({
@@ -552,8 +552,8 @@ describe("insert and update", () => {
     ).rejects.toThrow("Git root");
     await expect(
       insert({
-        roots: [web],
-        repo: api,
+        roots: [root],
+        repo: team,
         body: "body",
         frontmatter: { title: "Outside root", scope: ["*"] },
       }),
@@ -815,21 +815,45 @@ describe("search", () => {
       "frontmatter.doNotEdit",
     );
   });
-  it("accepts a workspace folder containing the target repository", async () => {
+  it("rejects a non-Git workspace folder containing the target repository", async () => {
     await memory({ title: "Cache rule" });
-    expect(await search({ roots: [temp], repo: root, query: "cache" })).toHaveLength(1);
+    await expect(search({ roots: [temp], repo: root, query: "cache" })).rejects.toThrow(
+      `Initialize a Git repository for the user in ${temp} by running git init from that directory, then retry.`,
+    );
   });
 
-  it("deduplicates overlapping shared workspace folders without hiding broader roots", async () => {
+  it("requires a nested repository to be listed explicitly in roots", async () => {
+    const nested = join(root, "nested");
+    execFileSync("git", ["init", "--quiet", nested]);
+    await expect(search({ roots: [root], repo: nested, query: "cache" })).rejects.toThrow(
+      "Include repo in the workspace roots",
+    );
+    expect(await search({ roots: [root, nested], repo: nested, query: "cache" })).toEqual([]);
+  });
+
+  it("rejects a shared workspace subdirectory and identifies its Git root", async () => {
     const child = join(team, "child");
     await mkdir(child);
+    await expect(
+      search({ roots: [root, child], repo: root, query: "cache" }),
+    ).rejects.toThrow(`Use the Git root ${team} instead of its subdirectory ${child}`);
+  });
+
+  it("deduplicates workspace Git roots and symlink aliases without hiding package stores", async () => {
+    const child = join(team, "child");
+    const alias = join(temp, "team-alias");
+    const active = join(temp, "project-alias");
+    await mkdir(child);
+    await symlink(team, alias, "dir");
+    await symlink(root, active, "dir");
     await writeFile(join(child, NAMES.PACKAGE_JSON), "{}");
     await config({ project: team, value: { availableToWorkspace: true } });
     await memory({ project: team, title: "Cache root" });
     await memory({ project: child, title: "Cache child" });
-    expect(await search({ roots: [root, child, team], repo: root, query: "cache" })).toHaveLength(
-      2,
-    );
+    expect(
+      await search({ roots: [active, team, team, alias], repo: root, query: "cache" }),
+    ).toHaveLength(2);
+    expect(await search({ roots: [root, team], repo: active, query: "cache" })).toHaveLength(2);
   });
   it("searches all project packages globally and ranks titles above bodies", async () => {
     const best = await memory({ project: web, title: "Unicorn" });

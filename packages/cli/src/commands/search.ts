@@ -70,7 +70,7 @@ export function registerSearchCommand({ program }: { program: Command }) {
     .command("search")
     .requiredOption(
       "--roots <path...>",
-      "Workspace directories; repeat the flag or provide multiple paths.",
+      "Every workspace Git root; repeat the flag or provide multiple paths.",
     )
     .requiredOption("--repo <path>", "Git root of the workspace project the agent is working on.")
     .description("Search memory titles, frontmatter, directory tags, and Markdown bodies.")

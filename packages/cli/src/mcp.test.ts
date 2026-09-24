@@ -83,6 +83,29 @@ async function call({ name, args = {} }: { name: string; args?: Record<string, u
 }
 
 describe("MCP stdio server", () => {
+  it("instructs the agent to initialize non-Git workspace projects before retrying", async () => {
+    await connect();
+    const project = join(temp, "new project");
+    await mkdir(project);
+    const result = await call({
+      name: "search-memories",
+      args: { roots: [repo, project], query: "cache" },
+    });
+    expect(result.isError).toBe(true);
+    expect(text(result)).toContain(
+      `Initialize a Git repository for the user in ${project} by running git init from that directory, then retry.`,
+    );
+    // The tool supplies instructions; the agent performs initialization for the user.
+    expect(existsSync(join(project, ".git"))).toBe(false);
+    execFileSync("git", ["init", "--quiet", project]);
+    const retried = await call({
+      name: "search-memories",
+      args: { roots: [repo, project], query: "cache" },
+    });
+    expect(retried.isError).toBeUndefined();
+    expect(JSON.parse(text(retried))).toEqual([]);
+  });
+
   it("advertises exactly six tools, field descriptions, required fields, and the package version", async () => {
     const client = await connect();
     const pkg = JSON.parse(await readFile(new URL("../package.json", import.meta.url), "utf8"));

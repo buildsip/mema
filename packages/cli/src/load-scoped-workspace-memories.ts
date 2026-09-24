@@ -1,5 +1,4 @@
 import { relativePosix } from "@buildsip/file-utils";
-import { findRepo } from "./find-repo";
 import { findStores } from "./find-stores";
 import { loadMemories } from "./load-memories";
 import { matchesScope } from "./matches-scope";
@@ -37,12 +36,11 @@ export async function loadScopedWorkspaceMemories({
     );
   });
   const repos = new Set([workspace.repo]);
-  for (const root of workspace.roots) {
-    const other = await findRepo(root).catch(() => undefined);
-    if (!other || other === workspace.repo) continue;
+  for (const other of workspace.roots) {
+    if (other === workspace.repo) continue;
     const { availableToWorkspace } = await readConfig(other);
-    // Each workspace folder can expose a different subtree in the same shared repo.
-    const { stores } = await findStores({ repo: other, project: root });
+    // Each validated root exposes stores from its entire repository.
+    const { stores } = await findStores({ repo: other, project: other });
     memories.push(...(await loadMemories({ stores, repo: other, availableToWorkspaceOnly: true })));
     if (availableToWorkspace) repos.add(other);
   }

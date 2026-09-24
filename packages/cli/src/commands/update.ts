@@ -120,7 +120,7 @@ export function registerUpdateCommand({ program }: { program: Command }) {
     .command("update")
     .requiredOption(
       "--roots <path...>",
-      "Workspace directories; repeat the flag or provide multiple paths.",
+      "Every workspace Git root; repeat the flag or provide multiple paths.",
     )
     .requiredOption("--repo <path>", "Git root of the workspace project the agent is working on.")
     .requiredOption("--path <path>", "Absolute memory directory returned by a memory command.")
