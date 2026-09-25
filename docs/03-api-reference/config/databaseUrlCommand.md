@@ -48,15 +48,17 @@ home-directory credentials map. That name in the example is simply the secret's 
 
 ## Database setup
 
-Every accepted `tiramisu init` setup with pruning enabled requires a fresh command in one prompt,
-even when a command is already saved. Blank input is rejected; saved commands are
-not offered as defaults or executed automatically. A command failure or invalid PostgreSQL URL
+`tiramisu init` asks for a command when you opt into pruning, including when enabling it
+in an existing setup. Blank input is rejected. A command failure or invalid PostgreSQL URL
 prompts for another command in the same run.
 
-After validation, Tiramisu applies pending bundled migrations and saves the new command under
-`prune.databaseUrlCommand` in the root config.
-Canceling or a migration failure leaves existing config unchanged. Disabled pruning and declined
-reconfiguration do not execute a command or touch the database.
+After validation, Tiramisu applies pending bundled migrations and saves the command under
+`prune.databaseUrlCommand` in the root config. Repeated runs with pruning already enabled reuse
+the saved command without prompting and apply pending migrations without changing settings.
+If the saved command is missing or fails, fix it in `tiramisu.json` and rerun init.
+
+Canceling or a migration failure leaves existing config unchanged. Keeping pruning disabled
+does not execute a command or touch the database.
 
 Use a direct or session-pooled PostgreSQL connection. Transaction-pooling endpoints are not
 supported for setup because its advisory lock must remain on one server session. The database
