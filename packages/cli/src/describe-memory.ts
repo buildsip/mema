@@ -25,7 +25,7 @@ You may now add attachments beside ${NAMES.MEMORY_MD} in this directory when use
 
   const instructions = `${saved}
 The parent directories of a memory directory within \`${NAMES.MEMORIES}\` directories act as tags when searching memories. You may create new parent directories (multiple levels allowed). Choose clear, human-readable names that help the user browse and understand their memories.
-You may move this memory directory anywhere within ${JSON.stringify(store)}, or leave it where it is. Never move it outside this exact ${NAMES.MEMORIES} directory or into another ${NAMES.MEMORIES} directory.`;
+You may move this memory directory anywhere within ${JSON.stringify(store)}, or leave it where it is. Nesting a memory directory inside another memory directory is an anti-pattern.`;
 
   try {
     const dirs = [store];
