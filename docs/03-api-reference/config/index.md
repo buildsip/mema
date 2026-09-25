@@ -1,5 +1,6 @@
 ---
 title: "Configuration"
+icon: Settings
 ---
 
 Fields in [`tiramisu.json`](../file-conventions/tiramisu-json.md).

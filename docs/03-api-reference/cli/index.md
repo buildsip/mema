@@ -1,5 +1,6 @@
 ---
 title: CLI
+icon: Terminal
 ---
 
 `tiramisu` reads and writes Git-native memories. Agents run the same command.

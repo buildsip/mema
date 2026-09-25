@@ -1,5 +1,6 @@
 ---
 title: prune
+icon: Scissors
 ---
 
 `tiramisu prune` lists every expired, unprotected memory directory in the selected repository for review. It never deletes anything.

@@ -1,5 +1,6 @@
 ---
 title: "Comparison with other tools"
+icon: Scale
 ---
 
 |                   | **Tiramisu**                                            | **MEX**                                           | **Skillsync**                             | **AgentMemory**                            | **Mem0**                                               | **OpenViking**                                     | **Cognee**                                                    | **Neo4j Agent Memory**                                       |

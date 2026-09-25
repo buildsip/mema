@@ -1,5 +1,6 @@
 ---
 title: insert
+icon: Plus
 ---
 
 `tiramisu insert` creates one memory from a JSON object. Search for a related memory before inserting.

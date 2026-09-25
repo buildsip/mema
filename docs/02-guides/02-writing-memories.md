@@ -1,5 +1,6 @@
 ---
 title: "Writing memories"
+icon: Pencil
 ---
 
 1. **A memory should be short.** Stick to a few paragraphs and one idea per file. If you need additional notes, like screenshots or text, use a parent directory and put them next to `memory.md` as an attachment.

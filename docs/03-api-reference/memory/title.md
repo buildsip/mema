@@ -1,5 +1,6 @@
 ---
 title: "title"
+icon: Type
 ---
 
 Nonempty string. Trailing and leading whitespace is trimmed on write.

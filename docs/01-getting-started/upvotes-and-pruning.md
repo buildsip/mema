@@ -1,5 +1,6 @@
 ---
 title: "Upvotes and pruning"
+icon: ThumbsUp
 ---
 
 - Upvotes are relevant when pruning memories. Ask the agent to upvote useful memories on your behalf. An upvote from a human counts more than an automatic upvote from an agent.

@@ -1,5 +1,6 @@
 ---
 title: "MCP installation"
+icon: Download
 ---
 
 Every CLI invocation installs or refreshes the global `tiramisu` server entry for agents detected by [add-mcp](https://add-mcp.com/docs/sdk). This includes help, version, [`init`](../cli/init.md), and [`mcp`](../cli/mcp.md).

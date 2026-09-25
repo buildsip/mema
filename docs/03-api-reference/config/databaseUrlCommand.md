@@ -1,5 +1,6 @@
 ---
 title: "prune.databaseUrlCommand"
+icon: Database
 ---
 
 A complete shell command that prints the PostgreSQL URL. Configure it inside `prune` in

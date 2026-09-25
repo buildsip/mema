@@ -1,5 +1,6 @@
 ---
 title: "availableToWorkspace"
+icon: Users
 ---
 
 When `true`, this repository's memories are included when another workspace project [searches](../cli/search.md).

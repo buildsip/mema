@@ -1,5 +1,6 @@
 ---
 title: upvote
+icon: ThumbsUp
 ---
 
 `tiramisu upvote` records a batch of human or agent upvotes.

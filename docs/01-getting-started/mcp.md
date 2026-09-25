@@ -1,5 +1,6 @@
 ---
 title: "MCP Tools"
+icon: Plug
 ---
 
 The MCP gives your agent six ways to work with memories.

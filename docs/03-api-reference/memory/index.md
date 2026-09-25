@@ -1,5 +1,6 @@
 ---
 title: "Memory"
+icon: Brain
 ---
 
 Fields stored in [`memory.md`](../file-conventions/memory-md.md).

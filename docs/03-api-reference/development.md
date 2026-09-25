@@ -1,5 +1,6 @@
 ---
 title: "Development"
+icon: Wrench
 ---
 
 This repository uses Bun 1.4.2 (pinned in `.bun-version`) for dependencies, scripts, tests, and builds. Node.js 22.5+ is still required to run the published CLI and its integration tests. Pull requests and pushes to main run lint, typecheck, and test on Node.js 24.

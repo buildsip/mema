@@ -1,5 +1,6 @@
 ---
 title: "created"
+icon: Calendar
 ---
 
 UTC calendar date when the memory was inserted. `YYYY-MM-DD`.

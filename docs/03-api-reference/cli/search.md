@@ -1,5 +1,6 @@
 ---
 title: search
+icon: Search
 ---
 
 `tiramisu search` ranks memories by title, frontmatter, directory tags, and Markdown body.
