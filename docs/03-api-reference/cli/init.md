@@ -52,7 +52,7 @@ There is no general reconfiguration prompt.
 | Add default instructions to AGENTS.md?                                                  | No marked Tiramisu section exists. Default No.                                                    |
 | You have Tiramisu instructions in AGENTS.md. Override with default instructions?        | A marked Tiramisu section already exists. One prompt on one line, default No.                     |
 
-MCP installation refreshes automatically. Every run asks `Install the global memory-writing skill?`, with No selected. Accepting installs or refreshes the skill; declining leaves existing copies untouched.
+MCP installation refreshes automatically. Every run asks `Install the global memory-writing skill?`, with Yes selected. Accepting installs or refreshes the skill; declining leaves existing copies untouched.
 
 Canceling any prompt exits with `tiramisu init cancelled.`
 
@@ -108,25 +108,15 @@ npx skills add buildsip/tiramisu --global
 
 For published packages, init installs `tiramisu` globally with the launcher that invoked it (`npx` → npm, `pnpm dlx` → pnpm, `bunx --bun` → bun). Direct invocation without launcher metadata uses npm. Yarn Berry uses npm for the global install; Yarn Classic uses `yarn global add`.
 
-A source checkout defaults to local build-and-link mode when the running CLI package contains both `src/index.ts` and `scripts/build.mjs`. Detection uses the CLI's own directory, not the project being initialized. These files are excluded from the npm package, so published installations default to the registry. If a newer release exists, registry mode asks before upgrading. Private packages use the local package directory even in registry mode.
+A source checkout builds and links locally when the running CLI package contains both `src/index.ts` and `scripts/build.mjs`. Detection uses the CLI's own directory, not the project being initialized. These files are excluded from the npm package, so a published installation uses the registry. If a newer release exists, a registry install asks before upgrading. Private packages use the local package directory instead of the registry.
 
-Run from the source repository; no environment setting is needed:
+Run from the source repository:
 
 ```bash title="Terminal"
 bun run --cwd packages/cli tiramisu init
 ```
 
-To explicitly select an install mode, set it in `packages/cli/.env`:
-
-```dotenv title="packages/cli/.env"
-TIRAMISU_INSTALL_MODE=link
-```
-
-The CLI loads `.env` from its own package directory, regardless of the current working directory. Existing environment variables take precedence. The file is ignored by Git and excluded from the published package.
-
-Link mode runs `bun run build` followed by `bun link` from the running CLI package directory. It skips registry checks and refreshes the global link on every accepted setup, even if the installed version is equal or newer. If accepted, the bundled writing skill is refreshed from the same local package for detected supported agents. Bun must be installed and its global bin directory must be on `PATH`; use `bun pm bin -g` to locate it.
-
-Unset `TIRAMISU_INSTALL_MODE` to use automatic detection. Set it to `registry` to force registry mode or `link` to force local build-and-link mode. Other values stop setup with an error.
+A source checkout runs `bun run build` followed by `bun link` from the running CLI package directory. It skips registry checks and refreshes the global link on every setup, even if the installed version is equal or newer. If accepted, the bundled writing skill is refreshed from the same local package for detected supported agents. Bun must be installed and its global bin directory must be on `PATH`; use `bun pm bin -g` to locate it.
 
 ## Examples
 

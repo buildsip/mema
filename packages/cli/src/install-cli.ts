@@ -12,21 +12,13 @@ import { NAMES } from "./names";
  * Keeps an existing install unless a newer release is accepted, falling back to npm
  * for modern Yarn.
  * Source checkouts rebuild and link through Bun; published packages use the registry.
- * TIRAMISU_INSTALL_MODE can override that choice. Private packages also stay local.
+ * Private packages also stay local.
  */
 export async function installCli(
   ctx: { log: Pick<typeof log, "info" | "warn" | "step"> },
   { cwd, cliRoot, verbose = false }: { cwd: string; cliRoot: string; verbose?: boolean },
 ) {
-  const mode = process.env.TIRAMISU_INSTALL_MODE ?? "registry";
-  if (mode !== "registry" && mode !== "link") {
-    throw new Error(
-      `Set TIRAMISU_INSTALL_MODE to "registry" or "link", then retry ${CLI_NAME} init.`,
-    );
-  }
   const cli = JSON.parse(readFileSync(join(cliRoot, NAMES.PACKAGE_JSON), "utf8"));
-  const launcher = getPackageManager();
-  let packageManager = launcher.name;
   const options = {
     cwd,
     encoding: "utf8" as const,
@@ -35,7 +27,11 @@ export async function installCli(
     // Windows package managers commonly launch through .cmd files, which need a shell.
     shell: process.platform === "win32",
   };
-  if (mode === "link") {
+  // Published packages omit both files. Look at the CLI package, not the repo being set up.
+  const checkout =
+    existsSync(join(cliRoot, "src", "index.ts")) &&
+    existsSync(join(cliRoot, "scripts", "build.mjs"));
+  if (checkout) {
     // Use the CLI's source directory, not the repository being initialized.
     // Refresh the link on every setup: development changes do not bump the package version.
     const local = { ...options, cwd: cliRoot, stdio: verbose ? "inherit" : "pipe" } as const;
@@ -58,6 +54,8 @@ export async function installCli(
     }
     return;
   }
+  const launcher = getPackageManager();
+  let packageManager = launcher.name;
   if (packageManager === "yarn") {
     const version = launcher.version;
     if (!version || !valid(version) || gt(version, "2.0.0-0")) {
@@ -146,7 +144,7 @@ export async function installCli(
       execFileSync(packageManager, args, { ...options, stdio: verbose ? "inherit" : "pipe" });
     } catch {
       throw new Error(
-        `Could not install ${cli.name} globally with ${packageManager}. Check that the package manager can reach its registry and write to its global install directory, then retry ${CLI_NAME} init --verbose. For a source checkout, remove the TIRAMISU_INSTALL_MODE override or set it to "link" to install the local package.`,
+        `Could not install ${cli.name} globally with ${packageManager}. Check that the package manager can reach its registry and write to its global install directory, then retry ${CLI_NAME} init --verbose.`,
       );
     }
   }

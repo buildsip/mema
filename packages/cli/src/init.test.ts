@@ -77,7 +77,6 @@ describe("tiramisu init", () => {
     migrate.mockReset().mockResolvedValue({ applied: 1 });
     input.mockReset().mockResolvedValue(dbCommand);
     stubEnv({ name: "TIRAMISU_DATABASE_URL", value: "" });
-    stubEnv({ name: "TIRAMISU_INSTALL_MODE", value: undefined });
     stubEnv({ name: "npm_config_user_agent", value: "pnpm/11.24.0 npm/? node/v22.0.0" });
     latest = "0.2.0";
     bunMissing = false;
@@ -189,6 +188,12 @@ describe("tiramisu init", () => {
       join(cliRoot, NAMES.PACKAGE_JSON),
       JSON.stringify({ name: "tiramisu", version: "0.1.0", bin: { tiramisu: "dist/index.js" } }),
     );
+  }
+
+  // beforeEach already writes scripts/build.mjs. src/index.ts is the other source-checkout marker.
+  function sourceCheckout() {
+    mkdirSync(join(cliRoot, "src"), { recursive: true });
+    writeFileSync(join(cliRoot, "src", "index.ts"), "");
   }
 
   it("creates only config at the monorepo root and installs the built local CLI", async () => {
@@ -315,7 +320,12 @@ describe("tiramisu init", () => {
     expect(existsSync(join(web, NAMES.TIRAMISU_JSON))).toBe(false);
     expect(confirm).toHaveBeenCalledTimes(3);
     expect(text).not.toHaveBeenCalled();
-    expect(ask.mock.calls.every(([options]) => options.initialValue === false)).toBe(true);
+    expect(
+      ask.mock.calls.every(
+        ([options]) =>
+          options.initialValue === (options.message === "Install the global memory-writing skill?"),
+      ),
+    ).toBe(true);
     expect(exec.mock.calls.filter(([command]) => command === "npx")).toHaveLength(2);
   });
 
@@ -401,7 +411,7 @@ describe("tiramisu init", () => {
       expect(text).not.toHaveBeenCalled();
       expect(getDatabaseUrl).not.toHaveBeenCalled();
       expect(migrateDatabase).not.toHaveBeenCalled();
-      expect(exec.mock.calls.filter(([command]) => command === "npx")).toHaveLength(0);
+      expect(exec.mock.calls.filter(([command]) => command === "npx")).toHaveLength(1);
     },
   );
 
@@ -734,10 +744,10 @@ describe("tiramisu init", () => {
       await init({ cwd: root, cliRoot });
       expect(confirm).toHaveBeenCalledWith({
         message: "Install the global memory-writing skill?",
-        initialValue: false,
+        initialValue: true,
       });
-      expect(detect).not.toHaveBeenCalled();
-      expect(exec.mock.calls.filter(([command]) => command === "npx")).toHaveLength(0);
+      expect(detect).toHaveBeenCalledTimes(1);
+      expect(exec.mock.calls.filter(([command]) => command === "npx")).toHaveLength(1);
       expect(existsSync(join(root, NAMES.TIRAMISU_JSON))).toBe(true);
     },
   );
@@ -745,7 +755,11 @@ describe("tiramisu init", () => {
   it("leaves the installed skill alone when installation is declined on a repeat run", async () => {
     acceptSkill();
     await init({ cwd: root, cliRoot });
-    ask.mockImplementation(async (options) => options.initialValue ?? false);
+    ask.mockImplementation(async (options) =>
+      options.message === "Install the global memory-writing skill?"
+        ? false
+        : (options.initialValue ?? false),
+    );
     exec.mockClear();
     detect.mockClear();
     await init({ cwd: root, cliRoot });
@@ -848,7 +862,12 @@ describe("tiramisu init", () => {
   it("declines optional additions by default", async () => {
     existing({ prune: false });
     await init({ cwd: root, cliRoot });
-    expect(ask.mock.calls.every(([options]) => options.initialValue === false)).toBe(true);
+    expect(
+      ask.mock.calls.every(
+        ([options]) =>
+          options.initialValue === (options.message === "Install the global memory-writing skill?"),
+      ),
+    ).toBe(true);
     expect(existsSync(join(root, NAMES.AGENTS_MD))).toBe(false);
     expect(existsSync(join(root, NAMES.VSCODE))).toBe(false);
   });
@@ -957,7 +976,7 @@ describe("tiramisu init", () => {
   it("rebuilds and links a public development package even when a newer CLI is installed", async () => {
     published();
     installed("0.2.0");
-    stubEnv({ name: "TIRAMISU_INSTALL_MODE", value: "link" });
+    sourceCheckout();
     await init({ cwd: root, cliRoot });
     const calls = exec.mock.calls.filter(([command]) => command === "bun");
     expect(calls).toEqual([
@@ -973,8 +992,7 @@ describe("tiramisu init", () => {
   it("automatically builds and links a source checkout without checking the registry", async () => {
     published();
     installed("0.2.0");
-    mkdirSync(join(cliRoot, "src"));
-    writeFileSync(join(cliRoot, "src", "index.ts"), "");
+    sourceCheckout();
     await init({ cwd: web, cliRoot });
     expect(execFileSync).toHaveBeenCalledWith(
       "bun",
@@ -987,20 +1005,6 @@ describe("tiramisu init", () => {
       expect.objectContaining({ cwd: cliRoot }),
     );
     expect(execFileSync).not.toHaveBeenCalledWith("npm", expect.anything(), expect.anything());
-  });
-
-  it("honors an explicit registry override in a source checkout", async () => {
-    published();
-    mkdirSync(join(cliRoot, "src"));
-    writeFileSync(join(cliRoot, "src", "index.ts"), "");
-    stubEnv({ name: "TIRAMISU_INSTALL_MODE", value: "registry" });
-    await init({ cwd: root, cliRoot });
-    expect(execFileSync).toHaveBeenCalledWith(
-      "npm",
-      ["install", "--global", "tiramisu@0.2.0"],
-      expect.objectContaining({ cwd: root }),
-    );
-    expect(execFileSync).not.toHaveBeenCalledWith("bun", expect.anything(), expect.anything());
   });
 
   it("does not treat the user's project as the CLI source checkout", async () => {
@@ -1019,7 +1023,7 @@ describe("tiramisu init", () => {
   });
 
   it("shows local build and link output in verbose mode", async () => {
-    stubEnv({ name: "TIRAMISU_INSTALL_MODE", value: "link" });
+    sourceCheckout();
     await init({ cwd: root, cliRoot, verbose: true });
     for (const args of [["run", "build"], ["link"]]) {
       expect(execFileSync).toHaveBeenCalledWith(
@@ -1031,7 +1035,7 @@ describe("tiramisu init", () => {
   });
 
   it.each(["run", "link"])("stops setup when the local %s fails", async (command) => {
-    stubEnv({ name: "TIRAMISU_INSTALL_MODE", value: "link" });
+    sourceCheckout();
     failure = command;
     await expect(init({ cwd: root, cliRoot })).rejects.toThrow(
       command === "run"
@@ -1043,15 +1047,6 @@ describe("tiramisu init", () => {
     if (command === "run") {
       expect(execFileSync).not.toHaveBeenCalledWith("bun", ["link"], expect.anything());
     }
-  });
-
-  it("rejects unknown install modes before installing or saving setup", async () => {
-    stubEnv({ name: "TIRAMISU_INSTALL_MODE", value: "invalid" });
-    await expect(init({ cwd: root, cliRoot })).rejects.toThrow(
-      'Set TIRAMISU_INSTALL_MODE to "registry" or "link"',
-    );
-    expect(log.step).not.toHaveBeenCalled();
-    expect(existsSync(join(root, NAMES.TIRAMISU_JSON))).toBe(false);
   });
 
   it("prompts before upgrading a published global CLI", async () => {

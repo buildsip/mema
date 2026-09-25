@@ -109,6 +109,7 @@ export async function init({
         errors.length === 0 && label?.type === "string" && label.value !== ""
           ? false
           : confirm({ message: "Add memory tab labels to VS Code / Cursor?", initialValue: false }),
+      // Enter installs or refreshes the skill. Declining leaves an existing copy alone.
       skill: () =>
         confirm({ message: "Install the global memory-writing skill?", initialValue: true }),
       instructions: () =>
