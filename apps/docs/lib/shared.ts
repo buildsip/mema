@@ -1,6 +1,8 @@
 import { createGetUrl } from 'fumadocs-core/source';
 
 export const appName = 'Tiramisu';
+// Absolute origin for metadata, robots, and the sitemap.
+export const siteUrl = 'https://trytiramisu.com';
 export const docsRoute = '/docs';
 export const docsImageRoute = '/og/docs';
 export const docsContentRoute = '/llms.mdx/docs';

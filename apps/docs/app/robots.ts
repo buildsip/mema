@@ -1,4 +1,5 @@
 import type { MetadataRoute } from 'next';
+import { siteUrl } from '@/lib/shared';
 
 // search: an index may store the page.
 // ai-input: an assistant may read the page to answer a question.
@@ -57,5 +58,6 @@ export default function robots(): MetadataRoute.Robots {
         other: { 'Content-Signal': contentSignal },
       },
     ],
+    sitemap: `${siteUrl}/sitemap.xml`,
   };
 }
