@@ -129,7 +129,7 @@ jobs:
       - name: Publish to npm
         run: |
           filename=$(cat packaged/pack-filename.txt)
-          npm publish "packaged/${filename}" --provenance --access public
+          npm publish "./packaged/${filename}" --provenance --access public
 
   release:
     name: Create GitHub release
