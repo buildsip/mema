@@ -3,13 +3,14 @@ import "./global.css";
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import Script from "next/script";
+import { siteUrl } from "@/lib/shared";
 import { cn } from "@/lib/utils";
 
 const geist = Geist({ subsets: ["latin"], variable: "--font-geist" });
 const geistMono = Geist_Mono({ subsets: ["latin"], variable: "--font-geist-mono" });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://trytiramisu.com"),
+  metadataBase: new URL(siteUrl),
   title: {
     default: "Tiramisu",
     template: "%s | Tiramisu",
