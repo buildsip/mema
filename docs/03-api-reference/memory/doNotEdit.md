@@ -1,5 +1,6 @@
 ---
 title: "doNotEdit"
+icon: Lock
 ---
 
 When `true`, [`update`](../cli/update.md) is rejected, including path-only repairs and attempts to set this flag to `false`.

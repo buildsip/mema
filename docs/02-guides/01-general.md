@@ -1,5 +1,6 @@
 ---
 title: "General guidelines"
+icon: BookOpen
 ---
 
 1. **Most of the time, you should commit new project memories to the same PR that generated them.**

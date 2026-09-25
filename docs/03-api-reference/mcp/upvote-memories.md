@@ -1,5 +1,6 @@
 ---
 title: "upvote-memories"
+icon: ThumbsUp
 ---
 
 Records upvotes using [`tiramisu upvote`](../cli/upvote.md)'s batch and database rules.

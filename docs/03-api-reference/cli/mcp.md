@@ -1,5 +1,6 @@
 ---
 title: mcp
+icon: Plug
 ---
 
 Starts the [MCP server](../mcp/index.md) over stdio.

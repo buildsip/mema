@@ -1,5 +1,6 @@
 ---
 title: "version"
+icon: Tag
 ---
 
 Supported config version. Optional. If present, must be the number `1`.

@@ -1,5 +1,6 @@
 ---
 title: ".memories"
+icon: Folder
 ---
 
 The memory store directory. Allowed only at a package root or the Git root.

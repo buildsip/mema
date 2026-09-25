@@ -1,5 +1,6 @@
 ---
 title: update
+icon: Pencil
 ---
 
 `tiramisu update` patches one existing memory. Only supplied fields change.

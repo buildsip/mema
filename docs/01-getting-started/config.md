@@ -1,5 +1,6 @@
 ---
 title: "tiramisu.json"
+icon: FileBraces
 ---
 
 ## availableToWorkspace

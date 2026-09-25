@@ -1,5 +1,6 @@
 ---
 title: "search-memories"
+icon: Search
 ---
 
 Searches memories using [`tiramisu search`](../cli/search.md)'s ranking and store discovery rules.

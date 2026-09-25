@@ -1,12 +1,13 @@
 ---
 title: "File-system conventions"
+icon: FolderTree
 ---
 
 Special files and directories tiramisu looks for on disk.
 
 Stores are allowed at the Git root and at directories that contain `package.json`. `node_modules` and `.git` are never treated as package stores.
 
-```txt
+```bash
 repo/
 ├── tiramisu.json
 ├── .memories/

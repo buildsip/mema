@@ -1,5 +1,6 @@
 ---
 title: "Principles"
+icon: Compass
 ---
 
 ## Knowledge about code has the same lifecycle as the code it describes

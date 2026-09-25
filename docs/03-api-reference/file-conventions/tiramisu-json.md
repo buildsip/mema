@@ -1,5 +1,6 @@
 ---
 title: "tiramisu.json"
+icon: FileBraces
 ---
 
 Repository-wide settings file, placed directly at the Git root alongside `.git`.

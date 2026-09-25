@@ -1,5 +1,6 @@
 ---
 title: delete
+icon: Trash
 ---
 
 `tiramisu delete` removes memory folders, including attachments.

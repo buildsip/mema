@@ -1,5 +1,6 @@
 ---
 title: "update-memory"
+icon: Pencil
 ---
 
 Patches one memory using [`tiramisu update`](../cli/update.md)'s validation and movement rules.

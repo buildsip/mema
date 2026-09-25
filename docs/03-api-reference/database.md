@@ -1,5 +1,6 @@
 ---
 title: "Database migrations"
+icon: Database
 ---
 
 Tiramisu uses Drizzle ORM with `pg`. PostgreSQL is optional and stores upvote events, not memory

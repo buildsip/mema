@@ -1,5 +1,6 @@
 ---
 title: "API Reference"
+icon: Library
 ---
 
 tiramisu API Reference.

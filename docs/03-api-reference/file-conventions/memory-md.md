@@ -1,5 +1,6 @@
 ---
 title: "memory.md"
+icon: FileText
 ---
 
 One memory: YAML frontmatter, then Markdown.

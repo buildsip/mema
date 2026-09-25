@@ -1,5 +1,6 @@
 ---
 title: "MCP"
+icon: Plug
 ---
 
 The `tiramisu` MCP server exposes memory commands over stdio. See [installation](./installation.md) to connect an agent.

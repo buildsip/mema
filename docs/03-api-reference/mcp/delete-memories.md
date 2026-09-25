@@ -1,5 +1,6 @@
 ---
 title: "delete-memories"
+icon: Trash
 ---
 
 Deletes selected memories and their attachments using [`tiramisu delete`](../cli/delete.md)'s batch validation rules.
