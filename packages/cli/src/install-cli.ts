@@ -11,22 +11,14 @@ import { NAMES } from "./names";
  * Installs the global CLI through the package manager that launched this process.
  * Keeps an existing install unless a newer release is accepted, falling back to npm
  * for modern Yarn.
- * TIRAMISU_INSTALL_MODE=link rebuilds and links the local package through Bun.
- * Private packages also stay local; published packages use the registry by default.
+ * Source checkouts rebuild and link through Bun; published packages use the registry.
+ * Private packages also stay local.
  */
 export async function installCli(
   ctx: { log: Pick<typeof log, "info" | "warn" | "step"> },
   { cwd, cliRoot, verbose = false }: { cwd: string; cliRoot: string; verbose?: boolean },
 ) {
-  const mode = process.env.TIRAMISU_INSTALL_MODE ?? "registry";
-  if (mode !== "registry" && mode !== "link") {
-    throw new Error(
-      `Set TIRAMISU_INSTALL_MODE to "registry" or "link", then retry ${CLI_NAME} init.`,
-    );
-  }
   const cli = JSON.parse(readFileSync(join(cliRoot, NAMES.PACKAGE_JSON), "utf8"));
-  const launcher = getPackageManager();
-  let packageManager = launcher.name;
   const options = {
     cwd,
     encoding: "utf8" as const,
@@ -35,22 +27,35 @@ export async function installCli(
     // Windows package managers commonly launch through .cmd files, which need a shell.
     shell: process.platform === "win32",
   };
-  if (mode === "link") {
+  // Published packages omit both files. Look at the CLI package, not the repo being set up.
+  const checkout =
+    existsSync(join(cliRoot, "src", "index.ts")) &&
+    existsSync(join(cliRoot, "scripts", "build.mjs"));
+  if (checkout) {
     // Use the CLI's source directory, not the repository being initialized.
     // Refresh the link on every setup: development changes do not bump the package version.
     const local = { ...options, cwd: cliRoot, stdio: verbose ? "inherit" : "pipe" } as const;
     try {
       ctx.log.step(`Building local ${cli.name} CLI.`);
       execFileSync("bun", ["run", "build"], local);
-      ctx.log.step(`Linking local ${cli.name} CLI globally.`);
-      execFileSync("bun", ["add", "-g", "."], local);
     } catch {
       throw new Error(
-        `Could not build or link the local tiramisu CLI. Run bun install in the tiramisu source repository and ensure Bun's global bin directory is on PATH (run bun pm bin -g to locate it), then retry ${CLI_NAME} init --verbose to see the failing command's output. Use TIRAMISU_INSTALL_MODE=registry when running a published package without source files.`,
+        `Could not build the local tiramisu CLI. Run bun install in the source repository, then run bun run build in ${cliRoot} and fix the reported errors. Retry ${CLI_NAME} init --verbose after the build succeeds.`,
+      );
+    }
+    try {
+      ctx.log.step(`Linking local ${cli.name} CLI globally.`);
+      // Register this directory and its bin directly, without reinstalling workspace dependencies.
+      execFileSync("bun", ["link"], local);
+    } catch {
+      throw new Error(
+        `Could not link the local tiramisu CLI. Run bun link in ${cliRoot} to see Bun's error and check write access to its global install directory. Retry ${CLI_NAME} init --verbose after linking succeeds.`,
       );
     }
     return;
   }
+  const launcher = getPackageManager();
+  let packageManager = launcher.name;
   if (packageManager === "yarn") {
     const version = launcher.version;
     if (!version || !valid(version) || gt(version, "2.0.0-0")) {
@@ -139,7 +144,7 @@ export async function installCli(
       execFileSync(packageManager, args, { ...options, stdio: verbose ? "inherit" : "pipe" });
     } catch {
       throw new Error(
-        `Could not install ${cli.name} globally with ${packageManager}. Check that the package manager can reach its registry and write to its global install directory, then retry ${CLI_NAME} init --verbose. When developing tiramisu from source, set TIRAMISU_INSTALL_MODE=link to install the local package.`,
+        `Could not install ${cli.name} globally with ${packageManager}. Check that the package manager can reach its registry and write to its global install directory, then retry ${CLI_NAME} init --verbose.`,
       );
     }
   }

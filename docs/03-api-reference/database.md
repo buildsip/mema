@@ -31,11 +31,11 @@ to a second database copy of those memories. `actor` records a category, not an 
 
 ## Initialization and upgrades
 
-`tiramisu init` with pruning enabled checks migration history every time setup is accepted,
+`tiramisu init` with pruning enabled checks migration history on every completed setup,
 including when another repository has already initialized the same database. It never decides
 whether to migrate based on existing votes or `tiramisu.json.version`.
 
-1. Collect and validate a fresh [`prune.databaseUrlCommand` credential command](./config/databaseUrlCommand.md) and execute it from the owning repository root.
+1. Use the saved [`prune.databaseUrlCommand` credential command](./config/databaseUrlCommand.md), or collect one when enabling pruning, and execute it from the owning repository root.
 2. Open a dedicated PostgreSQL connection and acquire Tiramisu's database-local advisory lock.
 3. Verify that stored migration timestamps and SQL hashes are an exact prefix of this release's
    bundled migrations. Refuse unknown, edited, or newer history before applying migrations.
@@ -54,8 +54,8 @@ tables. Missing history must be restored from backup, or setup must target a dif
 Unrelated schemas and tables are outside Tiramisu's migrations.
 
 Migrations run only during accepted init with pruning enabled, not ordinary memory operations.
-After upgrading the installed package, rerun init from the repository root, accept reconfiguration,
-and keep pruning enabled. Editing the config-file version does not upgrade the database.
+After upgrading the installed package, rerun init from the repository root. Existing pruning settings are preserved and the saved
+command is reused without prompting. Editing the config-file version does not upgrade the database.
 If database setup fails, init does not save its proposed config changes. Database migrations
 cannot be rolled back automatically if a later CLI installation or filesystem write fails;
 rerunning init safely skips the migrations already committed.

@@ -2,7 +2,7 @@ import { assertNoSymlinks, readTextIfExistsSync } from "@buildsip/file-utils";
 import type { Command } from "commander";
 import { mkdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
-import { confirm, group, intro, isCancel, log, outro } from "@clack/prompts";
+import { confirm, group, intro, log, outro } from "@clack/prompts";
 import { applyEdits, findNodeAtLocation, modify, parseTree, type ParseError } from "jsonc-parser";
 import { CLI_NAME } from "../cli-name";
 import { findRepo } from "../find-repo";
@@ -19,7 +19,7 @@ import { promptDatabaseCommand } from "../prompt-database-command";
 
 /**
  * Configures the Git root, even when started inside a nested package.
- * Prompts before reconfiguring, preserves existing memories and unrelated settings,
+ * Preserves saved settings, offers missing integrations and instruction replacement,
  * and installs the global CLI before saving the chosen configuration.
  *
  * `cliRoot` is the running CLI package directory, not the package being initialized.
@@ -42,19 +42,24 @@ export async function init({
   const configPath = join(root, NAMES.TIRAMISU_JSON);
 
   intro(`${CLI_NAME} init`);
-  if (source !== undefined) {
-    const update = await confirm({
-      message: `${name} is already initialized. Reconfigure its settings?`,
-      initialValue: false,
-    });
-    if (isCancel(update)) throw new Error(`${CLI_NAME} init cancelled.`);
-    if (!update) {
-      outro(`${name} unchanged.`);
-      return;
-    }
-  }
+  const initialized = source !== undefined;
+  const pruning = initialized && !!config.prune;
+  // Snapshot instruction and editor files before asking, so concurrent edits are detected.
+  const instructions = await prepareInstructions({ root, cliRoot });
+  const settingsPath = join(root, NAMES.VSCODE, NAMES.SETTINGS_JSON);
+  await assertNoSymlinks({ path: settingsPath, base: root });
+  const previous = readTextIfExistsSync(settingsPath);
+  const settingsText = previous ?? "{}\n";
+  const errors: ParseError[] = [];
+  const tree = parseTree(settingsText, errors, {
+    allowTrailingComma: true,
+    allowEmptyContent: true,
+  });
+  const key = "workbench.editor.customLabels.patterns";
+  const pattern = `**/${NAMES.MEMORIES}/**/${NAMES.MEMORY_MD}`;
+  const patterns = tree && findNodeAtLocation(tree, [key]);
+  const label = tree && findNodeAtLocation(tree, [key, pattern]);
   let url: string | undefined;
-  // Reconfiguration uses the same defaults as first-time setup, not the saved settings.
   const answers = await group<{
     availableToWorkspace: boolean | symbol;
     prune: boolean | symbol;
@@ -67,15 +72,22 @@ export async function init({
       // The flag answers only the sharing question; all other prompts still run.
       availableToWorkspace: async () =>
         availableToWorkspace ||
+        (initialized
+          ? config.availableToWorkspace === true
+          : confirm({
+              message:
+                "Make all memories in this repository available to the other projects in this workspace?",
+              initialValue: false,
+            })),
+      prune: async () =>
+        pruning ||
         confirm({
-          message:
-            "Make all memories in this repository available to the other projects in this workspace?",
-          initialValue: false,
+          message: initialized ? "Pruning is disabled. Enable?" : "Enable pruning?",
+          initialValue: !initialized,
         }),
-      prune: () => confirm({ message: "Enable pruning?", initialValue: true }),
-      // Require fresh input on every accepted root setup, even if a command is saved.
+      // Enabled pruning keeps its saved command; only new opt-ins need database input.
       databaseUrlCommand: async ({ results }) => {
-        if (!results.prune) return undefined;
+        if (!results.prune || pruning) return undefined;
         while (true) {
           const command = await promptDatabaseCommand();
           try {
@@ -92,17 +104,20 @@ export async function init({
           }
         }
       },
-      labels: () =>
-        confirm({ message: "Add memory tab labels to VS Code / Cursor?", initialValue: true }),
+      labels: async () =>
+        // A customized nonempty label is already configured and must not be replaced.
+        errors.length === 0 && label?.type === "string" && label.value !== ""
+          ? false
+          : confirm({ message: "Add memory tab labels to VS Code / Cursor?", initialValue: false }),
+      // Enter installs or refreshes the skill. Declining leaves an existing copy alone.
       skill: () =>
-        confirm({
-          message: "Install the global memory-writing skill? Existing copies will be replaced.",
-          initialValue: true,
-        }),
+        confirm({ message: "Install the global memory-writing skill?", initialValue: true }),
       instructions: () =>
         confirm({
-          message: `Add starter instructions for when to store or update memories to ${join(root, NAMES.AGENTS_MD)}?`,
-          initialValue: true,
+          message: instructions.exists
+            ? "You have Tiramisu instructions in AGENTS.md. Override with default instructions?"
+            : "Add default instructions to AGENTS.md?",
+          initialValue: false,
         }),
     },
     {
@@ -111,59 +126,61 @@ export async function init({
       },
     },
   );
-  // Preserve the custom schema while replacing the settings chosen during setup.
-  const next: Config = {
-    ...config,
-    version: 1,
-    availableToWorkspace: answers.availableToWorkspace,
-    prune: answers.prune
-      ? {
-          unvotedTtl: "90d",
-          humanUpvoteTtl: "180d",
-          agentUpvoteTtl: "90d",
-          databaseUrlCommand: answers.databaseUrlCommand,
-        }
-      : false,
-  };
+  // Repeat runs change only explicit opt-ins, keeping omitted fields and custom durations intact.
+  const next: Config = initialized
+    ? { ...config }
+    : {
+        version: 1,
+        availableToWorkspace: answers.availableToWorkspace,
+        prune: false,
+      };
+  if (availableToWorkspace) next.availableToWorkspace = true;
+  if (answers.prune && !pruning) {
+    next.prune = {
+      unvotedTtl: "90d",
+      humanUpvoteTtl: "180d",
+      agentUpvoteTtl: "90d",
+      databaseUrlCommand: answers.databaseUrlCommand,
+    };
+  }
 
-  const settingsPath = join(root, NAMES.VSCODE, NAMES.SETTINGS_JSON);
   let settings: string | undefined;
-  let previous: string | undefined;
   if (answers.labels) {
-    await assertNoSymlinks({ path: settingsPath, base: root });
-    previous = readTextIfExistsSync(settingsPath);
-    const text = previous ?? "{}\n";
-    const errors: ParseError[] = [];
-    const tree = parseTree(text, errors, { allowTrailingComma: true, allowEmptyContent: true });
     if (errors.length > 0 || (tree && tree.type !== "object"))
       throw new Error(
         `Cannot update ${settingsPath}: expected a valid JSON object (comments are allowed).`,
       );
-    const key = "workbench.editor.customLabels.patterns";
-    const patterns = tree && findNodeAtLocation(tree, [key]);
     if (patterns && patterns.type !== "object")
       throw new Error(`Cannot update ${settingsPath}: ${key} must be an object.`);
     // Edit only this property so existing JSONC comments and other settings survive.
     settings = applyEdits(
-      text,
-      modify(
-        text,
-        [key, `**/${NAMES.MEMORIES}/**/${NAMES.MEMORY_MD}`],
-        `\${dirname}/${NAMES.MEMORY_MD}`,
-        {
-          formattingOptions: { insertSpaces: true, tabSize: 2, eol: "\n" },
-        },
-      ),
+      settingsText,
+      modify(settingsText, [key, pattern], `\${dirname}/${NAMES.MEMORY_MD}`, {
+        formattingOptions: { insertSpaces: true, tabSize: 2, eol: "\n" },
+      }),
     );
   }
 
-  // Prepare the append before installing, then reject edits made while installation was running.
-  const instructions = answers.instructions
-    ? await prepareInstructions({ root, cliRoot })
-    : undefined;
+  // Refresh the schema using saved credentials setup without asking for a new command.
+  if (pruning && config.prune) {
+    const command = config.prune.databaseUrlCommand;
+    if (!command) {
+      throw new Error(
+        `Set prune.databaseUrlCommand in ${configPath} to a shell command that prints one PostgreSQL URL, then run ${CLI_NAME} init again.`,
+      );
+    }
+    try {
+      url = await getDatabaseUrl({ repo: root, command });
+    } catch (cause) {
+      throw new Error(
+        `Check prune.databaseUrlCommand in ${configPath}: it must succeed and print exactly one postgres:// or postgresql:// URL. Fix the command or its credentials, then run ${CLI_NAME} init again.`,
+        { cause },
+      );
+    }
+  }
 
   if (url) {
-    // The URL was validated by the database prompt. Never persist the URL itself.
+    // The URL was validated by getDatabaseUrl. Never persist the URL itself.
     const result = await migrateDatabase({
       url,
       migrationsFolder: join(cliRoot, "dist", "migrations"),
@@ -171,24 +188,27 @@ export async function init({
     log.info(
       result.applied
         ? `Applied ${result.applied} database migration(s).`
-        : "Database schema is already up to date; no migrations were applied.",
+        : "Database schema is already up to date. No migrations were applied.",
     );
   }
 
   await installCli({ log }, { cwd: root, cliRoot, verbose });
-  if (answers.skill) installWritingSkill({ log }, { cwd: root, cliRoot, verbose });
+  if (answers.skill) await installWritingSkill({ log }, { cwd: root, cliRoot, verbose });
 
-  if (instructions) {
+  if (answers.instructions && instructions.text !== instructions.previous) {
     await assertNoSymlinks({ path: instructions.path, base: root });
     writeText(instructions);
   }
   if (settings !== undefined) {
+    await assertNoSymlinks({ path: settingsPath, base: root });
     mkdirSync(join(root, NAMES.VSCODE), { recursive: true });
     writeText({ path: settingsPath, text: settings, previous });
   }
   // Recheck after prompts and installation; the config path may have changed in the meantime.
-  await assertNoSymlinks({ path: configPath, base: root });
-  writeText({ path: configPath, text: `${JSON.stringify(next, null, 2)}\n`, previous: source });
+  if (!initialized || JSON.stringify(next) !== JSON.stringify(config)) {
+    await assertNoSymlinks({ path: configPath, base: root });
+    writeText({ path: configPath, text: `${JSON.stringify(next, null, 2)}\n`, previous: source });
+  }
   outro(`${name} initialized.`);
 }
 
@@ -196,10 +216,7 @@ export function registerInitCommand({ program, cliRoot }: { program: Command; cl
   program
     .command("init")
     .description(`Initialize ${CLI_NAME}.`)
-    .option(
-      "--availableToWorkspace",
-      "Share this repository's memories with the workspace.",
-    )
+    .option("--availableToWorkspace", "Share this repository's memories with the workspace.")
     .option("--verbose", "Print setup command output.")
     .action(async (options: { availableToWorkspace?: boolean; verbose?: boolean }) => {
       await init({

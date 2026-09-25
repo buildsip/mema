@@ -1,8 +1,7 @@
 #!/usr/bin/env node
 
-import { existsSync, readFileSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { loadEnvFile } from "node:process";
 import { fileURLToPath } from "node:url";
 import { cancel, log } from "@clack/prompts";
 import { Command } from "commander";
@@ -44,11 +43,6 @@ program
 program.action(() => program.help());
 
 try {
-  // Load the CLI package's settings regardless of which repository is being initialized.
-  // Node preserves values already set in the environment.
-  const envPath = join(cliRoot, ".env");
-  if (existsSync(envPath)) loadEnvFile(envPath);
-
   // This also runs for help, version, and MCP startup. Warnings go to stderr to keep JSON intact.
   const agents = await installMcp({
     log: { warn: (message) => process.stderr.write(`${JSON.stringify({ warning: message })}\n`) },

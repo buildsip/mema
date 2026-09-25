@@ -1,3 +1,4 @@
+import * as agents from "add-mcp";
 import * as childProcess from "node:child_process";
 import * as fs from "node:fs";
 import * as prompts from "@clack/prompts";
@@ -31,6 +32,7 @@ import { migrateDatabase } from "./migrate-database";
 // Save real implementations before installing spies, so fallbacks cannot recurse into a mock.
 const original = { execFileSync, writeFileSync, confirm };
 const exec = spyOn(childProcess, "execFileSync");
+const detect = spyOn(agents, "detectGlobalAgents");
 const write = spyOn(fs, "writeFileSync");
 const getUrl = spyOn(databaseUrl, "getDatabaseUrl");
 const migrate = spyOn(database, "migrateDatabase");
@@ -60,12 +62,21 @@ describe("tiramisu init", () => {
 
   beforeEach(async () => {
     jest.clearAllMocks();
+    detect
+      .mockReset()
+      .mockResolvedValue([
+        "claude-code",
+        "codex",
+        "cursor",
+        "github-copilot-cli",
+        "vscode",
+        "windsurf",
+      ]);
     Object.defineProperty(process.versions, "bun", { ...bunVersion, value: undefined });
     getUrl.mockReset().mockResolvedValue("postgresql://example.test/memories");
     migrate.mockReset().mockResolvedValue({ applied: 1 });
     input.mockReset().mockResolvedValue(dbCommand);
     stubEnv({ name: "TIRAMISU_DATABASE_URL", value: "" });
-    stubEnv({ name: "TIRAMISU_INSTALL_MODE", value: undefined });
     stubEnv({ name: "npm_config_user_agent", value: "pnpm/11.24.0 npm/? node/v22.0.0" });
     latest = "0.2.0";
     bunMissing = false;
@@ -154,12 +165,35 @@ describe("tiramisu init", () => {
     );
   }
 
+  function acceptSkill() {
+    ask.mockImplementation(async (options) =>
+      options.message === "Install the global memory-writing skill?"
+        ? true
+        : (options.initialValue ?? false),
+    );
+  }
+
+  function addExtras() {
+    ask.mockImplementation(async (options) =>
+      options.message.startsWith("Add ") ||
+      options.message === "Install the global memory-writing skill?"
+        ? true
+        : (options.initialValue ?? false),
+    );
+  }
+
   function published() {
     stubEnv({ name: "npm_config_user_agent", value: "npm/11.0.0 node/v22.0.0" });
     writeFileSync(
       join(cliRoot, NAMES.PACKAGE_JSON),
       JSON.stringify({ name: "tiramisu", version: "0.1.0", bin: { tiramisu: "dist/index.js" } }),
     );
+  }
+
+  // beforeEach already writes scripts/build.mjs. src/index.ts is the other source-checkout marker.
+  function sourceCheckout() {
+    mkdirSync(join(cliRoot, "src"), { recursive: true });
+    writeFileSync(join(cliRoot, "src", "index.ts"), "");
   }
 
   it("creates only config at the monorepo root and installs the built local CLI", async () => {
@@ -220,8 +254,11 @@ describe("tiramisu init", () => {
             "Make all memories in this repository available to the other projects in this workspace?",
         }),
       );
-      expect(confirm).toHaveBeenCalledTimes(reconfigure ? 5 : 4);
-      expect(confirm).toHaveBeenCalledWith({ message: "Enable pruning?", initialValue: true });
+      expect(confirm).toHaveBeenCalledTimes(4);
+      expect(confirm).toHaveBeenCalledWith({
+        message: reconfigure ? "Pruning is disabled. Enable?" : "Enable pruning?",
+        initialValue: !reconfigure,
+      });
       expect(config.prune.databaseUrlCommand).toBe(dbCommand);
       expect(existsSync(join(web, NAMES.TIRAMISU_JSON))).toBe(false);
     },
@@ -256,7 +293,7 @@ describe("tiramisu init", () => {
     await init({ cwd: join(web, subdir), cliRoot });
     const config = JSON.parse(readFileSync(join(root, NAMES.TIRAMISU_JSON), "utf8"));
     expect(config.prune.databaseUrlCommand).toBe(dbCommand);
-    expect(confirm).toHaveBeenCalledTimes(6);
+    expect(confirm).toHaveBeenCalledTimes(4);
     expect(getDatabaseUrl).toHaveBeenCalledTimes(1);
     expect(getDatabaseUrl).toHaveBeenCalledWith({ repo: root, command: dbCommand });
     expect(migrateDatabase).toHaveBeenCalledTimes(1);
@@ -270,22 +307,26 @@ describe("tiramisu init", () => {
     );
   });
 
-  it("offers root reconfiguration again from the same nested directory", async () => {
+  it("keeps saved config byte-for-byte and refreshes the skill from a nested directory", async () => {
+    acceptSkill();
     const cwd = join(web, "src");
     await init({ cwd, cliRoot });
     const path = join(root, NAMES.TIRAMISU_JSON);
     const source = readFileSync(path, "utf8");
     ask.mockClear();
+    input.mockClear();
     await init({ cwd, cliRoot });
     expect(readFileSync(path, "utf8")).toBe(source);
-    expect(existsSync(join(web, NAMES.MEMORIES))).toBe(false);
     expect(existsSync(join(web, NAMES.TIRAMISU_JSON))).toBe(false);
-    expect(confirm).toHaveBeenCalledTimes(1);
-    expect(confirm).toHaveBeenCalledWith({
-      message: "tiramisu is already initialized. Reconfigure its settings?",
-      initialValue: false,
-    });
-    expect(outro).toHaveBeenLastCalledWith("tiramisu unchanged.");
+    expect(confirm).toHaveBeenCalledTimes(3);
+    expect(text).not.toHaveBeenCalled();
+    expect(
+      ask.mock.calls.every(
+        ([options]) =>
+          options.initialValue === (options.message === "Install the global memory-writing skill?"),
+      ),
+    ).toBe(true);
+    expect(exec.mock.calls.filter(([command]) => command === "npx")).toHaveLength(2);
   });
 
   it("preserves existing package memories during setup", async () => {
@@ -355,50 +396,49 @@ describe("tiramisu init", () => {
     expect(log.step).not.toHaveBeenCalled();
   });
 
-  it("offers reconfiguration and leaves settings untouched when declined", async () => {
-    const value = { frontmatter: { custom: {} }, prune: false };
-    existing(value);
-    await init({ cwd: root, cliRoot });
-    expect(JSON.parse(readFileSync(join(root, NAMES.TIRAMISU_JSON), "utf8"))).toEqual(value);
-    expect(confirm).toHaveBeenCalledTimes(1);
-    expect(log.step).not.toHaveBeenCalled();
-    expect(outro).toHaveBeenCalledWith("tiramisu unchanged.");
-  });
-
-  it.each([
-    false,
-    {
-      unvotedTtl: "120d",
-      humanUpvoteTtl: "200d",
-      agentUpvoteTtl: "100d",
-      databaseUrlCommand: "secrets read",
+  it.each([false, undefined])(
+    "keeps disabled pruning (%j) unless explicitly enabled",
+    async (prune) => {
+      const value = { frontmatter: { custom: {} }, prune };
+      existing(value);
+      const before = readFileSync(join(root, NAMES.TIRAMISU_JSON), "utf8");
+      await init({ cwd: root, cliRoot });
+      expect(readFileSync(join(root, NAMES.TIRAMISU_JSON), "utf8")).toBe(before);
+      expect(confirm).toHaveBeenCalledWith({
+        message: "Pruning is disabled. Enable?",
+        initialValue: false,
+      });
+      expect(text).not.toHaveBeenCalled();
+      expect(getDatabaseUrl).not.toHaveBeenCalled();
+      expect(migrateDatabase).not.toHaveBeenCalled();
+      expect(exec.mock.calls.filter(([command]) => command === "npx")).toHaveLength(1);
     },
-  ])("resets setup defaults while preserving custom schemas and memories (%j)", async (prune) => {
+  );
+
+  it("preserves sharing, pruning durations, custom schemas, and memories on repeat setup", async () => {
     const value = {
       version: 1,
       availableToWorkspace: true,
       frontmatter: { custom: { properties: { ticket: { type: "string" } } } },
-      prune,
+      prune: {
+        unvotedTtl: "120d",
+        humanUpvoteTtl: "200d",
+        agentUpvoteTtl: "100d",
+        databaseUrlCommand: "secrets read",
+      },
     };
     existing(value);
     mkdirSync(join(root, NAMES.MEMORIES), { recursive: true });
     writeFileSync(join(root, NAMES.MEMORIES, "keep.txt"), "keep");
-    ask.mockResolvedValueOnce(true);
     await init({ cwd: root, cliRoot });
-    expect(JSON.parse(readFileSync(join(root, NAMES.TIRAMISU_JSON), "utf8"))).toEqual({
-      version: 1,
-      availableToWorkspace: false,
-      frontmatter: value.frontmatter,
-      prune: {
-        unvotedTtl: "90d",
-        humanUpvoteTtl: "180d",
-        agentUpvoteTtl: "90d",
-        databaseUrlCommand: dbCommand,
-      },
-    });
+    expect(JSON.parse(readFileSync(join(root, NAMES.TIRAMISU_JSON), "utf8"))).toEqual(value);
     expect(readFileSync(join(root, NAMES.MEMORIES, "keep.txt"), "utf8")).toBe("keep");
-    expect(ask.mock.calls[1]?.[0].initialValue).toBe(false);
-    expect(ask.mock.calls[2]?.[0].initialValue).toBe(true);
+    expect(text).not.toHaveBeenCalled();
+    expect(ask.mock.calls.map(([options]) => options.message)).toEqual([
+      "Add memory tab labels to VS Code / Cursor?",
+      "Install the global memory-writing skill?",
+      "Add default instructions to AGENTS.md?",
+    ]);
   });
 
   it("initializes a store already populated by insert without disturbing its data", async () => {
@@ -473,21 +513,20 @@ describe("tiramisu init", () => {
     expect(text).not.toHaveBeenCalled();
   });
 
-  it("requires a new command and checks migrations on accepted root reconfiguration", async () => {
+  it("reuses the saved database command for migrations without prompting", async () => {
     existing({ version: 1, prune: { databaseUrlCommand: "old-command" } });
-    ask.mockResolvedValueOnce(true);
     await init({ cwd: root, cliRoot });
-    expect(text).toHaveBeenCalledTimes(1);
+    expect(text).not.toHaveBeenCalled();
     expect(getDatabaseUrl).toHaveBeenCalledTimes(1);
-    expect(getDatabaseUrl).toHaveBeenCalledWith({ repo: root, command: dbCommand });
+    expect(getDatabaseUrl).toHaveBeenCalledWith({ repo: root, command: "old-command" });
     expect(migrateDatabase).toHaveBeenCalledTimes(1);
     expect(
       JSON.parse(readFileSync(join(root, NAMES.TIRAMISU_JSON), "utf8")).prune.databaseUrlCommand,
-    ).toBe(dbCommand);
+    ).toBe("old-command");
   });
 
-  it("rejects blank input without supplying the old command or a default", async () => {
-    existing({ prune: { databaseUrlCommand: "old-command" } });
+  it("rejects blank database input when enabling disabled pruning", async () => {
+    existing({ prune: false });
     ask.mockResolvedValueOnce(true);
     input.mockImplementationOnce(async (options) => {
       expect(options.initialValue).toBeUndefined();
@@ -504,27 +543,16 @@ describe("tiramisu init", () => {
     expect(getDatabaseUrl).toHaveBeenCalledWith({ repo: root, command: dbCommand });
   });
 
-  it("leaves settings and the database untouched when reconfiguration from a package is declined", async () => {
+  it("keeps enabled pruning settings when refreshing from a package", async () => {
     const settings = { prune: { unvotedTtl: "120d", databaseUrlCommand: "root-command" } };
     existing(settings);
     await init({ cwd: web, cliRoot });
     expect(text).not.toHaveBeenCalled();
-    expect(getDatabaseUrl).not.toHaveBeenCalled();
-    expect(migrateDatabase).not.toHaveBeenCalled();
+    expect(getDatabaseUrl).toHaveBeenCalledWith({ repo: root, command: "root-command" });
+    expect(migrateDatabase).toHaveBeenCalledTimes(1);
     expect(existsSync(join(web, NAMES.MEMORIES))).toBe(false);
     expect(JSON.parse(readFileSync(join(root, NAMES.TIRAMISU_JSON), "utf8"))).toEqual(settings);
-    expect(confirm).toHaveBeenCalledTimes(1);
-  });
-
-  it("disables pruning without running the saved database command", async () => {
-    existing({ prune: { databaseUrlCommand: "old-command" } });
-    ask.mockResolvedValueOnce(true).mockResolvedValueOnce(false).mockResolvedValueOnce(false);
-    await init({ cwd: root, cliRoot });
-    const value = JSON.parse(readFileSync(join(root, NAMES.TIRAMISU_JSON), "utf8"));
-    expect(value.prune).toBe(false);
-    expect(getDatabaseUrl).not.toHaveBeenCalled();
-    expect(migrateDatabase).not.toHaveBeenCalled();
-    expect(text).not.toHaveBeenCalled();
+    expect(confirm).toHaveBeenCalledTimes(3);
   });
 
   it("asks again after invalid output and saves only the successful command", async () => {
@@ -544,8 +572,8 @@ describe("tiramisu init", () => {
     expect(JSON.stringify(value)).not.toContain("wrong-command");
   });
 
-  it("allows cancellation after invalid output without changing the saved command", async () => {
-    existing({ prune: { databaseUrlCommand: "old-command" } });
+  it("allows cancellation after invalid output without enabling pruning", async () => {
+    existing({ prune: false });
     const path = join(root, NAMES.TIRAMISU_JSON);
     const before = readFileSync(path, "utf8");
     getUrl.mockRejectedValueOnce(new Error("Invalid PostgreSQL URL."));
@@ -562,8 +590,8 @@ describe("tiramisu init", () => {
     expect(existsSync(join(web, NAMES.MEMORIES))).toBe(false);
   });
 
-  it("leaves the saved command untouched when database setup fails", async () => {
-    existing({ prune: { databaseUrlCommand: "old-command" } });
+  it("leaves pruning disabled when database setup fails", async () => {
+    existing({ prune: false });
     const before = readFileSync(join(root, NAMES.TIRAMISU_JSON), "utf8");
     ask.mockResolvedValueOnce(true);
     migrate.mockRejectedValue(new Error("Database setup failed."));
@@ -581,6 +609,7 @@ describe("tiramisu init", () => {
   });
 
   it("preserves JSONC comments, unrelated settings, and other labels", async () => {
+    addExtras();
     mkdirSync(join(root, NAMES.VSCODE));
     writeFileSync(
       join(root, NAMES.VSCODE, NAMES.SETTINGS_JSON),
@@ -601,6 +630,7 @@ describe("tiramisu init", () => {
   it.each(["", "// Empty settings\n", "{}", '{"editor.tabSize":4}'])(
     "handles settings %j",
     async (text) => {
+      addExtras();
       mkdirSync(join(root, NAMES.VSCODE));
       writeFileSync(join(root, NAMES.VSCODE, NAMES.SETTINGS_JSON), text);
       await init({ cwd: root, cliRoot });
@@ -621,6 +651,7 @@ describe("tiramisu init", () => {
     '{"workbench.editor.customLabels.patterns":null}',
     '{"workbench.editor.customLabels.patterns":[]}',
   ])("rejects invalid settings %j before installing", async (text) => {
+    addExtras();
     mkdirSync(join(root, NAMES.VSCODE));
     const path = join(root, NAMES.VSCODE, NAMES.SETTINGS_JSON);
     writeFileSync(path, text);
@@ -651,27 +682,19 @@ describe("tiramisu init", () => {
     expect(outro).not.toHaveBeenCalled();
   });
 
-  it.each([
-    { skill: true, instructions: true },
-    { skill: true, instructions: false },
-    { skill: false, instructions: true },
-    { skill: false, instructions: false },
-  ])("independently opts into skill=$skill and instructions=$instructions", async (answers) => {
-    ask.mockImplementation(async (options) => {
-      if (options.message.startsWith("Install the global memory-writing skill")) {
-        expect(options.initialValue).toBe(true);
-        return answers.skill;
-      }
-      if (options.message.startsWith("Add starter instructions")) {
-        expect(options.message).toContain(join(root, NAMES.AGENTS_MD));
-        return answers.instructions;
-      }
-      return options.initialValue ?? false;
-    });
-    await init({ cwd: join(web, "src"), cliRoot });
-    const installs = exec.mock.calls.filter(([command]) => command === "npx");
-    expect(installs).toHaveLength(answers.skill ? 1 : 0);
-    if (answers.skill) {
+  it.each([true, false])(
+    "installs the accepted skill independently of instructions: %s",
+    async (instructions) => {
+      ask.mockImplementation(async (options) => {
+        if (options.message === "Install the global memory-writing skill?") return true;
+        if (options.message === "Add default instructions to AGENTS.md?") {
+          expect(options.initialValue).toBe(false);
+          return instructions;
+        }
+        return options.initialValue ?? false;
+      });
+      await init({ cwd: join(web, "src"), cliRoot });
+      expect(exec.mock.calls.filter(([command]) => command === "npx")).toHaveLength(1);
       expect(execFileSync).toHaveBeenCalledWith(
         "npx",
         [
@@ -681,36 +704,71 @@ describe("tiramisu init", () => {
           join(cliRoot, NAMES.SKILLS, NAMES.MEMORY_WRITING_SKILL),
           "--global",
           "--yes",
+          "--agent",
+          "claude-code",
+          "codex",
+          "cursor",
+          "github-copilot",
+          "windsurf",
         ],
         expect.objectContaining({ cwd: root }),
       );
-    }
-    expect(existsSync(join(root, NAMES.AGENTS_MD))).toBe(answers.instructions);
-    expect(existsSync(join(web, NAMES.AGENTS_MD))).toBe(false);
-    if (answers.instructions) {
-      const text = readFileSync(join(root, NAMES.AGENTS_MD), "utf8");
-      expect(text).toContain("## When to create a memory");
-      expect(text).toContain(NAMES.MEMORY_WRITING_SKILL);
-      expect(text).toContain(
-        readFileSync(join(cliRoot, NAMES.TEMPLATES, NAMES.AGENTS_MD), "utf8").trimEnd(),
-      );
-    }
-  });
+      expect(existsSync(join(root, NAMES.AGENTS_MD))).toBe(instructions);
+      expect(existsSync(join(web, NAMES.AGENTS_MD))).toBe(false);
+      if (instructions) {
+        expect(readFileSync(join(root, NAMES.AGENTS_MD), "utf8")).toContain(
+          readFileSync(join(cliRoot, NAMES.TEMPLATES, NAMES.AGENTS_MD), "utf8").trimEnd(),
+        );
+      }
+    },
+  );
 
   it.each(["", "# Team rules", "# Team rules\n", "# Team rules\r\n\r\n"])(
     "appends starter instructions while preserving existing AGENTS.md bytes: %j",
     async (previous) => {
+      addExtras();
       const path = join(root, NAMES.AGENTS_MD);
       writeFileSync(path, previous);
       await init({ cwd: root, cliRoot });
       const text = readFileSync(path, "utf8");
       expect(text.startsWith(previous)).toBe(true);
-      expect(text.match(/<!-- tiramisu:instructions -->/g)).toHaveLength(1);
+      expect(text.match(/<!-- tiramisu -->/g)).toHaveLength(1);
       if (previous.includes("\r\n")) expect(text.replaceAll("\r\n", "")).not.toContain("\n");
     },
   );
 
+  it.each([false, true])(
+    "asks about skill installation on every run (initialized: %s)",
+    async (initialized) => {
+      if (initialized) existing({ prune: false });
+      await init({ cwd: root, cliRoot });
+      expect(confirm).toHaveBeenCalledWith({
+        message: "Install the global memory-writing skill?",
+        initialValue: true,
+      });
+      expect(detect).toHaveBeenCalledTimes(1);
+      expect(exec.mock.calls.filter(([command]) => command === "npx")).toHaveLength(1);
+      expect(existsSync(join(root, NAMES.TIRAMISU_JSON))).toBe(true);
+    },
+  );
+
+  it("leaves the installed skill alone when installation is declined on a repeat run", async () => {
+    acceptSkill();
+    await init({ cwd: root, cliRoot });
+    ask.mockImplementation(async (options) =>
+      options.message === "Install the global memory-writing skill?"
+        ? false
+        : (options.initialValue ?? false),
+    );
+    exec.mockClear();
+    detect.mockClear();
+    await init({ cwd: root, cliRoot });
+    expect(detect).not.toHaveBeenCalled();
+    expect(exec.mock.calls.filter(([command]) => command === "npx")).toHaveLength(0);
+  });
+
   it("refreshes the skill but preserves customized starter rules on repeated setup", async () => {
+    addExtras();
     installed("0.2.0");
     await init({ cwd: root, cliRoot });
     const path = join(root, NAMES.AGENTS_MD);
@@ -719,13 +777,160 @@ describe("tiramisu init", () => {
       "## Our team's rules\n\nOnly save memories when requested.",
     );
     writeFileSync(path, customized);
-    ask.mockResolvedValueOnce(true);
+    acceptSkill();
     await init({ cwd: root, cliRoot });
     expect(readFileSync(path, "utf8")).toBe(customized);
     expect(exec.mock.calls.filter(([command]) => command === "npx")).toHaveLength(2);
   });
 
+  it.each(["\n", "\r\n"])(
+    "replaces only the marked instructions using %j line endings",
+    async (newline) => {
+      existing({ prune: false });
+      const path = join(root, NAMES.AGENTS_MD);
+      const before = `# Team rules${newline}${newline}`;
+      const after = `${newline}${newline}Keep this footer.`;
+      writeFileSync(
+        path,
+        `${before}<!-- tiramisu -->${newline}Custom instructions${newline}<!-- /tiramisu -->${after}`,
+      );
+      ask.mockImplementation(async (options) => {
+        if (
+          options.message ===
+          "You have Tiramisu instructions in AGENTS.md. Override with default instructions?"
+        ) {
+          expect(options.initialValue).toBe(false);
+          expect(options.message).not.toContain("\n");
+          return true;
+        }
+        return options.initialValue ?? false;
+      });
+      await init({ cwd: root, cliRoot });
+      const template = readFileSync(join(cliRoot, NAMES.TEMPLATES, NAMES.AGENTS_MD), "utf8")
+        .trimEnd()
+        .replace(/\r?\n/g, newline);
+      expect(readFileSync(path, "utf8")).toBe(
+        `${before}<!-- tiramisu -->${newline}${template}${newline}<!-- /tiramisu -->${after}`,
+      );
+    },
+  );
+
+  it.each([
+    "<!-- tiramisu -->Custom rules",
+    "<!-- /tiramisu -->",
+    "<!-- /tiramisu --><!-- tiramisu -->",
+    "<!-- tiramisu --><!-- tiramisu --><!-- /tiramisu -->",
+  ])("rejects ambiguous instruction markers without writing: %j", async (value) => {
+    const path = join(root, NAMES.AGENTS_MD);
+    writeFileSync(path, value);
+    await expect(init({ cwd: root, cliRoot })).rejects.toThrow("keep exactly one matching pair");
+    expect(readFileSync(path, "utf8")).toBe(value);
+    expect(log.step).not.toHaveBeenCalled();
+  });
+
+  it("preserves instructions edited while the override prompt is open", async () => {
+    existing({ prune: false });
+    const path = join(root, NAMES.AGENTS_MD);
+    writeFileSync(path, "<!-- tiramisu -->Old<!-- /tiramisu -->");
+    ask.mockImplementation(async (options) => {
+      if (options.message.includes("Override with default instructions?")) {
+        writeFileSync(path, "Concurrent edit");
+        return true;
+      }
+      return options.initialValue ?? false;
+    });
+    await expect(init({ cwd: root, cliRoot })).rejects.toThrow("Settings changed");
+    expect(readFileSync(path, "utf8")).toBe("Concurrent edit");
+  });
+
+  it.each(["${dirname}/memory.md", "My custom memory label"])(
+    "keeps an existing label %j without prompting",
+    async (label) => {
+      existing({ prune: false });
+      mkdirSync(join(root, NAMES.VSCODE));
+      const path = join(root, NAMES.VSCODE, NAMES.SETTINGS_JSON);
+      const source = `{ // Custom settings\n "workbench.editor.customLabels.patterns": { "**/.memories/**/memory.md": ${JSON.stringify(label)} } }`;
+      writeFileSync(path, source);
+      await init({ cwd: root, cliRoot });
+      expect(readFileSync(path, "utf8")).toBe(source);
+      expect(
+        ask.mock.calls.some(([options]) => options.message.includes("memory tab labels")),
+      ).toBe(false);
+    },
+  );
+
+  it("declines optional additions by default", async () => {
+    existing({ prune: false });
+    await init({ cwd: root, cliRoot });
+    expect(
+      ask.mock.calls.every(
+        ([options]) =>
+          options.initialValue === (options.message === "Install the global memory-writing skill?"),
+      ),
+    ).toBe(true);
+    expect(existsSync(join(root, NAMES.AGENTS_MD))).toBe(false);
+    expect(existsSync(join(root, NAMES.VSCODE))).toBe(false);
+  });
+
+  it("preserves settings edited while the label prompt is open", async () => {
+    existing({ prune: false });
+    mkdirSync(join(root, NAMES.VSCODE));
+    const path = join(root, NAMES.VSCODE, NAMES.SETTINGS_JSON);
+    writeFileSync(path, "{}");
+    ask.mockImplementation(async (options) => {
+      if (options.message.includes("memory tab labels")) {
+        writeFileSync(path, '{"editor.tabSize":8}');
+        return true;
+      }
+      return options.initialValue ?? false;
+    });
+    await expect(init({ cwd: root, cliRoot })).rejects.toThrow("Settings changed");
+    expect(readFileSync(path, "utf8")).toBe('{"editor.tabSize":8}');
+  });
+
+  it.each([false, undefined])(
+    "enables disabled pruning (%j) and immediately asks for the database command",
+    async (prune) => {
+      existing({ availableToWorkspace: true, prune });
+      ask.mockResolvedValueOnce(true);
+      await init({ cwd: root, cliRoot });
+      expect(ask.mock.calls[0]?.[0]).toEqual({
+        message: "Pruning is disabled. Enable?",
+        initialValue: false,
+      });
+      expect(text).toHaveBeenCalledTimes(1);
+      expect(input.mock.invocationCallOrder[0]).toBeGreaterThan(ask.mock.invocationCallOrder[0]!);
+      expect(input.mock.invocationCallOrder[0]).toBeLessThan(ask.mock.invocationCallOrder[1]!);
+      expect(getDatabaseUrl).toHaveBeenCalledWith({ repo: root, command: dbCommand });
+      expect(migrateDatabase).toHaveBeenCalledTimes(1);
+      expect(JSON.parse(readFileSync(join(root, NAMES.TIRAMISU_JSON), "utf8"))).toEqual({
+        availableToWorkspace: true,
+        prune: {
+          unvotedTtl: "90d",
+          humanUpvoteTtl: "180d",
+          agentUpvoteTtl: "90d",
+          databaseUrlCommand: dbCommand,
+        },
+      });
+    },
+  );
+
+  it.each([undefined, "broken-command"])(
+    "does not replace an enabled pruning command (%j) when setup fails",
+    async (command) => {
+      existing({ prune: { databaseUrlCommand: command } });
+      getUrl.mockRejectedValue(new Error("Secret command output"));
+      const path = join(root, NAMES.TIRAMISU_JSON);
+      const before = readFileSync(path, "utf8");
+      await expect(init({ cwd: root, cliRoot })).rejects.toThrow("prune.databaseUrlCommand");
+      expect(readFileSync(path, "utf8")).toBe(before);
+      expect(text).not.toHaveBeenCalled();
+      expect(migrateDatabase).not.toHaveBeenCalled();
+    },
+  );
+
   it("leaves files unchanged when skill installation fails", async () => {
+    acceptSkill();
     const path = join(root, NAMES.AGENTS_MD);
     writeFileSync(path, "Existing team instructions");
     failure = "skills";
@@ -746,6 +951,7 @@ describe("tiramisu init", () => {
   });
 
   it("preserves AGENTS.md edits made while installing the skill", async () => {
+    addExtras();
     const path = join(root, NAMES.AGENTS_MD);
     writeFileSync(path, "Before install");
     const run = exec.getMockImplementation()!;
@@ -759,6 +965,7 @@ describe("tiramisu init", () => {
   });
 
   it("skips reinstalling an equal or newer private global CLI", async () => {
+    acceptSkill();
     installed("0.2.0");
     await init({ cwd: root, cliRoot });
     expect(log.step).toHaveBeenCalledTimes(1);
@@ -769,12 +976,12 @@ describe("tiramisu init", () => {
   it("rebuilds and links a public development package even when a newer CLI is installed", async () => {
     published();
     installed("0.2.0");
-    stubEnv({ name: "TIRAMISU_INSTALL_MODE", value: "link" });
+    sourceCheckout();
     await init({ cwd: root, cliRoot });
     const calls = exec.mock.calls.filter(([command]) => command === "bun");
     expect(calls).toEqual([
       ["bun", ["run", "build"], expect.objectContaining({ cwd: cliRoot, stdio: "pipe" })],
-      ["bun", ["add", "-g", "."], expect.objectContaining({ cwd: cliRoot, stdio: "pipe" })],
+      ["bun", ["link"], expect.objectContaining({ cwd: cliRoot, stdio: "pipe" })],
     ]);
     expect(execFileSync).not.toHaveBeenCalledWith("npm", expect.anything(), expect.anything());
     expect(confirm).toHaveBeenCalledTimes(5);
@@ -782,13 +989,43 @@ describe("tiramisu init", () => {
     expect(outro).toHaveBeenCalledWith("tiramisu initialized.");
   });
 
-  it("shows local build and link output in verbose mode", async () => {
-    stubEnv({ name: "TIRAMISU_INSTALL_MODE", value: "link" });
-    await init({ cwd: root, cliRoot, verbose: true });
-    for (const args of [
+  it("automatically builds and links a source checkout without checking the registry", async () => {
+    published();
+    installed("0.2.0");
+    sourceCheckout();
+    await init({ cwd: web, cliRoot });
+    expect(execFileSync).toHaveBeenCalledWith(
+      "bun",
       ["run", "build"],
-      ["add", "-g", "."],
-    ]) {
+      expect.objectContaining({ cwd: cliRoot }),
+    );
+    expect(execFileSync).toHaveBeenCalledWith(
+      "bun",
+      ["link"],
+      expect.objectContaining({ cwd: cliRoot }),
+    );
+    expect(execFileSync).not.toHaveBeenCalledWith("npm", expect.anything(), expect.anything());
+  });
+
+  it("does not treat the user's project as the CLI source checkout", async () => {
+    published();
+    mkdirSync(join(root, "src"));
+    mkdirSync(join(root, "scripts"));
+    writeFileSync(join(root, "src", "index.ts"), "");
+    writeFileSync(join(root, "scripts", "build.mjs"), "");
+    await init({ cwd: root, cliRoot });
+    expect(execFileSync).toHaveBeenCalledWith(
+      "npm",
+      ["install", "--global", "tiramisu@0.2.0"],
+      expect.objectContaining({ cwd: root }),
+    );
+    expect(execFileSync).not.toHaveBeenCalledWith("bun", expect.anything(), expect.anything());
+  });
+
+  it("shows local build and link output in verbose mode", async () => {
+    sourceCheckout();
+    await init({ cwd: root, cliRoot, verbose: true });
+    for (const args of [["run", "build"], ["link"]]) {
       expect(execFileSync).toHaveBeenCalledWith(
         "bun",
         args,
@@ -797,24 +1034,19 @@ describe("tiramisu init", () => {
     }
   });
 
-  it.each(["run", "add"])("stops setup when the local %s fails", async (command) => {
-    stubEnv({ name: "TIRAMISU_INSTALL_MODE", value: "link" });
+  it.each(["run", "link"])("stops setup when the local %s fails", async (command) => {
+    sourceCheckout();
     failure = command;
-    await expect(init({ cwd: root, cliRoot })).rejects.toThrow("tiramisu init --verbose");
+    await expect(init({ cwd: root, cliRoot })).rejects.toThrow(
+      command === "run"
+        ? "Could not build the local tiramisu CLI"
+        : "Could not link the local tiramisu CLI",
+    );
     expect(existsSync(join(root, NAMES.TIRAMISU_JSON))).toBe(false);
     expect(execFileSync).not.toHaveBeenCalledWith("npx", expect.anything(), expect.anything());
     if (command === "run") {
-      expect(execFileSync).not.toHaveBeenCalledWith("bun", ["add", "-g", "."], expect.anything());
+      expect(execFileSync).not.toHaveBeenCalledWith("bun", ["link"], expect.anything());
     }
-  });
-
-  it("rejects unknown install modes before installing or saving setup", async () => {
-    stubEnv({ name: "TIRAMISU_INSTALL_MODE", value: "invalid" });
-    await expect(init({ cwd: root, cliRoot })).rejects.toThrow(
-      'Set TIRAMISU_INSTALL_MODE to "registry" or "link"',
-    );
-    expect(log.step).not.toHaveBeenCalled();
-    expect(existsSync(join(root, NAMES.TIRAMISU_JSON))).toBe(false);
   });
 
   it("prompts before upgrading a published global CLI", async () => {
@@ -889,6 +1121,7 @@ describe("tiramisu init", () => {
   });
 
   it("never downgrades a newer installed release", async () => {
+    acceptSkill();
     published();
     installed("0.3.0");
     await init({ cwd: root, cliRoot });
@@ -935,7 +1168,7 @@ describe("tiramisu init", () => {
         [...args, "tiramisu@0.2.0"],
         expect.objectContaining({ cwd: root }),
       );
-      expect(ask.mock.calls[6]?.[0].message).toContain("0.1.0 to 0.2.0");
+      expect(ask.mock.calls[4]?.[0].message).toContain("0.1.0 to 0.2.0");
     },
   );
 
