@@ -1,3 +1,5 @@
+// scripts/ is outside the package tsconfig, so the editor does not load Bun's test types on its own.
+/// <reference types="bun" />
 import { expect, it } from "bun:test";
 import { rewriteImagesForNpm } from "./readme.mjs";
 

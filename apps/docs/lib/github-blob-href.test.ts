@@ -8,10 +8,10 @@ describe('githubBlobHref', () => {
   test('maps a link that leaves docs onto the repository file', () => {
     expect(
       githubBlobHref({
-        href: '../../skills/tiramisu-memory-writing/SKILL.md',
+        href: '../../packages/cli/skills/tiramisu-memory-writing/SKILL.md',
         pagePath,
       }),
-    ).toBe(`${blob}/skills/tiramisu-memory-writing/SKILL.md`);
+    ).toBe(`${blob}/packages/cli/skills/tiramisu-memory-writing/SKILL.md`);
   });
 
   test('keeps the hash', () => {

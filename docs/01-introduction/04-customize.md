@@ -5,11 +5,11 @@ icon: Settings
 
 ## Memory creation instructions
 
-During `tiramisu init`, [default prompt rules](../../templates/AGENTS.md) are added to your `AGENTS.md` file to guide when the agent should capture a memory. You can edit these instructions to fit your team's workflow.
+During `tiramisu init`, [default prompt rules](../../packages/cli/templates/AGENTS.md) are added to your `AGENTS.md` file to guide when the agent should capture a memory. You can edit these instructions to fit your team's workflow.
 
 ## Memory writing instructions
 
-Tiramisu includes a [default skill called `tiramisu-memory-writing`](../../skills/tiramisu-memory-writing/SKILL.md). It instructs the agent on how to format memory titles and bodies before it calls the [`insert-memory`](../02-api-reference/mcp.md#insert-memory) or [`update-memory`](../02-api-reference/mcp.md#update-memory) MCP tools.
+Tiramisu includes a [default skill called `tiramisu-memory-writing`](../../packages/cli/skills/tiramisu-memory-writing/SKILL.md). It instructs the agent on how to format memory titles and bodies before it calls the [`insert-memory`](../02-api-reference/mcp.md#insert-memory) or [`update-memory`](../02-api-reference/mcp.md#update-memory) MCP tools.
 
 You can replace the default skill with your own. Point your agent to the custom skill by adding an instruction to your `AGENTS.md` file:
 
