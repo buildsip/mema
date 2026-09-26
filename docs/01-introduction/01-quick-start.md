@@ -39,19 +39,19 @@ This step is useful for teams. Solo devs can skip to [Step 3](#step-3-install-to
 3. Install Tiramisu in **each repo**:
 
 ```bash package="npm"
-npx tiramisu init --availableToWorkspace
+npx tiramisu@latest init --availableToWorkspace
 ```
 
 ```bash package="pnpm"
-pnpm dlx tiramisu init --availableToWorkspace
+pnpm dlx tiramisu@latest init --availableToWorkspace
 ```
 
 ```bash package="yarn"
-yarn dlx tiramisu init --availableToWorkspace
+yarn dlx tiramisu@latest init --availableToWorkspace
 ```
 
 ```bash package="bun"
-bunx tiramisu init --availableToWorkspace
+bunx tiramisu@latest init --availableToWorkspace
 ```
 
 ## Step 3: Install to project
@@ -59,17 +59,17 @@ bunx tiramisu init --availableToWorkspace
 Inside your **project(s)**, run:
 
 ```bash package="npm"
-npx tiramisu init
+npx tiramisu@latest init
 ```
 
 ```bash package="pnpm"
-pnpm dlx tiramisu init
+pnpm dlx tiramisu@latest init
 ```
 
 ```bash package="yarn"
-yarn dlx tiramisu init
+yarn dlx tiramisu@latest init
 ```
 
 ```bash package="bun"
-bunx tiramisu init
+bunx tiramisu@latest init
 ```

@@ -1,10 +1,10 @@
 /**
  * The user can install the CLI using different package managers:
  *
- * npx tiramisu init
- * pnpm dlx tiramisu init
- * yarn dlx tiramisu init
- * bunx --bun tiramisu init
+ * npx tiramisu@latest init
+ * pnpm dlx tiramisu@latest init
+ * yarn dlx tiramisu@latest init
+ * bunx --bun tiramisu@latest init
  */
 export function getPackageManager() {
   // Launchers identify themselves; bunx --bun also identifies itself through the runtime.
