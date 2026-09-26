@@ -1,5 +1,5 @@
 ---
-title: "tiramisu.json"
+title: Configuration
 icon: FileBraces
 ---
 
@@ -48,16 +48,23 @@ Define a JSON schema in your `tiramisu.json` file:
 > [!TIP]
 > Existing memories remain searchable when you add, change, or remove custom fields. Only newly created or edited memories will be required to comply with the new schema.
 
+[`insert-memory`](../03-api-reference/mcp.md#insert-memory) and [`update-memory`](../03-api-reference//mcp.md#update-memory) MCP tools validate the input memory against the schema. Without a custom schema, extra fields are rejected.
+
+#### Schema changes
+
+When the `frontmatter.custom` schema changes, existing files are not migrated or revalidated against the custom schema changes when read. [`search-memories`](../03-api-reference/mcp.md#search-memories) keeps their custom fields searchable.
+
 ## prune
 
 To enable [pruning](./01-getting-started.md#step-1-configure-pruning-optional), update your `tiramisu.json` file:
 
-```json file="tiramisu.json"
+```json title="tiramisu.json"
 {
   "prune": {
     "unvotedTtl": "90d",
     "humanUpvoteTtl": "180d",
-    "agentUpvoteTtl": "90d"
+    "agentUpvoteTtl": "90d",
+    "databaseUrlCommand": "doppler secrets get TIRAMISU_DATABASE_URL --plain"
   }
 }
 ```
@@ -75,13 +82,31 @@ To enable [pruning](./01-getting-started.md#step-1-configure-pruning-optional), 
 
 ### databaseUrlCommand
 
-A command that supplies the database connection string.
+A command that supplies the database connection string used for upvote storage. It must print exactly one `postgres://` or
+`postgresql://` URL to stdout.
+
+Multiple repositories may share one database.
 
 To configure the `databaseUrlCommand`, update your `tiramisu.json` file:
 
-```json file="tiramisu.json"
+```json title="tiramisu.json"
 {
   // Example for doppler
   "databaseUrlCommand": "doppler secrets get TIRAMISU_DATABASE_URL --plain"
+}
+```
+
+Use a direct or session-pooled PostgreSQL connection. Transaction-pooling endpoints are not supported.
+
+> [!WARNING]
+> The database `role` needs permission to create the `tiramisu` schema and create/alter its objects.
+
+## version
+
+The configuration file version. Don't change this number.
+
+```json title="tiramisu.json"
+{
+  "version": 1
 }
 ```

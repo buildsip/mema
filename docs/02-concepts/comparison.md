@@ -1,5 +1,5 @@
 ---
-title: "Comparison with other tools"
+title: "Comparison (WIP)"
 icon: Scale
 ---
 

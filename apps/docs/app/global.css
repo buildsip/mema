@@ -178,13 +178,29 @@ html > body[data-scroll-locked] {
   text-decoration-color: var(--link);
 }
 
+/* Markdown headings inside the docs body. The page title is its own h1, outside .prose. */
+#nd-page .prose :is(h1) {
+  font-size: 1.5em;
+  font-weight: 600;
+}
+
+#nd-page .prose :is(h2) {
+  font-size: 1.25em;
+  font-weight: 600;
+}
+
+#nd-page .prose :is(h3) {
+  font-size: 1em;
+  font-weight: 600;
+}
+
 /* Fumadocs tab labels use a muted color that disappears on this theme. */
-[role='tablist'] [role='tab'] {
+[role="tablist"] [role="tab"] {
   color: var(--foreground);
   opacity: 0.85;
 }
 
-[role='tablist'] [role='tab'][aria-selected='true'] {
+[role="tablist"] [role="tab"][aria-selected="true"] {
   opacity: 1;
   color: var(--primary);
   border-bottom-color: var(--primary);
