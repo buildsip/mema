@@ -21,7 +21,12 @@ import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 const cliRoot = fileURLToPath(new URL("..", import.meta.url));
 const pkg = JSON.parse(readFileSync(join(cliRoot, "package.json"), "utf8"));
 // Route Commander errors through our catch block so agent commands return JSON errors.
-const program = new Command().name(CLI_NAME).version(pkg.version).exitOverride();
+// Accept lowercase -v while preserving Commander's existing -V and --version flags.
+const program = new Command()
+  .name(CLI_NAME)
+  .version(pkg.version)
+  .version(pkg.version, "-v")
+  .exitOverride();
 program.configureOutput({ writeErr: () => {} });
 
 registerInitCommand({ program, cliRoot });
