@@ -1,3 +1,5 @@
+// scripts/ is outside the package tsconfig, so the editor does not load Bun's test types on its own.
+/// <reference types="bun" />
 import { expect, it } from "bun:test";
 import { execFileSync } from "node:child_process";
 import { mkdtempSync, rmSync } from "node:fs";
@@ -11,7 +13,15 @@ it("includes the init template and writing skill in the npm tarball", () => {
     // The test script builds first. Keep npm's cache and tarball inside this test's directory.
     const output = execFileSync(
       "npm",
-      ["pack", "--ignore-scripts", "--json", "--pack-destination", temp, "--cache", join(temp, "cache")],
+      [
+        "pack",
+        "--ignore-scripts",
+        "--json",
+        "--pack-destination",
+        temp,
+        "--cache",
+        join(temp, "cache"),
+      ],
       {
         cwd: fileURLToPath(new URL("../", import.meta.url)),
         encoding: "utf8",
