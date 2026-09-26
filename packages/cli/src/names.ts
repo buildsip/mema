@@ -1,6 +1,6 @@
 /**
  * Well-known file and directory names we look for on disk.
- * Keep every search/write of these names on this enum so a typo cannot invent a second path.
+ * Keep shared internal paths here; other ecosystems' manifests live in is-package-manifest.ts.
  */
 export enum NAMES {
   /** Repository instructions, extended only when the user accepts during init. */
@@ -11,8 +11,6 @@ export enum NAMES {
   SKILLS = "skills",
   MEMORY_WRITING_SKILL = "tiramisu-memory-writing",
   SKILL_MD = "SKILL.md",
-  /** Marks a package directory that can own a memory store. */
-  PACKAGE_JSON = "package.json",
   /** Marks a Git working-tree root. This is a directory in a normal clone and a file in a worktree. */
   GIT = ".git",
   /** Memory store directory. Only allowed at a package root or the repo root. */

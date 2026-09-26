@@ -1,7 +1,7 @@
-import { findUp, isInside, relativePosix, statIfExists } from "@buildsip/file-utils";
-import { join, resolve } from "node:path";
+import { findUp, isInside, relativePosix } from "@buildsip/file-utils";
+import { resolve } from "node:path";
+import { hasPackageManifest } from "./has-package-manifest";
 import { matchesScope } from "./matches-scope";
-import { NAMES } from "./names";
 import { validateScopes } from "./validate-scopes";
 
 /** Chooses the deepest store containing all scopes and omits scope when the store implies it. */
@@ -15,11 +15,7 @@ export async function placeMemory({ repo, scope }: { repo: string; scope: string
       test: async (parent) => {
         // Find the nearest package that contains every scope, falling back to the repo below.
         if (!scopePaths.every((scopePath) => isInside({ path: scopePath, parent }))) return false;
-        const manifest = await statIfExists({
-          path: join(parent, NAMES.PACKAGE_JSON),
-          ignoreNotDirectory: true,
-        });
-        return manifest?.isFile() === true;
+        return hasPackageManifest(parent);
       },
     })) ?? repo;
   // A parent scope already covers its children; keep only the broadest supplied paths.

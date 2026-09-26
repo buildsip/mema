@@ -49,7 +49,7 @@ beforeEach(async () => {
   roots = [root, team];
   for (const path of [root, team, web, api]) {
     await mkdir(path, { recursive: true });
-    await writeFile(join(path, NAMES.PACKAGE_JSON), "{}");
+    await writeFile(join(path, "package.json"), "{}");
   }
   await mkdir(join(web, "auth"));
   for (const repo of roots) execFileSync("git", ["init", "--quiet", repo]);
@@ -289,6 +289,39 @@ describe("insert and update", () => {
       ).toEqual([path]);
   });
 
+  it("saves, searches, moves, and deletes memories across language boundaries", async () => {
+    const rust = join(root, "crates", "engine");
+    const ruby = join(root, "gems", "client");
+    for (const path of [rust, ruby]) await mkdir(path, { recursive: true });
+    await writeFile(join(rust, "Cargo.toml"), '[package]\nname = "engine"\n');
+    await writeFile(join(ruby, "client.gemspec"), "Gem::Specification.new do |s|\nend\n");
+    const old = await memory({ project: rust, title: "Cache behavior" });
+    expect(old).toBe(join(rust, NAMES.MEMORIES, "cache-behavior"));
+    await writeFile(join(old, "trace.txt"), "keep this attachment");
+    const id = (await frontmatter(old)).id;
+    for (const scope of [".", "crates", "crates/engine/Cargo.toml"])
+      expect(
+        (await search({ roots, repo: root, query: "cache", scope: [scope] })).map(
+          (entry) => entry.path,
+        ),
+      ).toEqual([old]);
+
+    const moved = await edit({ path: old, scope: ["gems/client"] });
+    expect(moved).toBe(join(ruby, NAMES.MEMORIES, "cache-behavior"));
+    expect((await frontmatter(moved)).id).toBe(id);
+    expect(await frontmatter(moved)).not.toHaveProperty("scope");
+    expect(await readFile(join(moved, "trace.txt"), "utf8")).toBe("keep this attachment");
+    expect(existsSync(old)).toBe(false);
+    expect(await search({ roots, repo: root, query: "cache", scope: ["crates"] })).toEqual([]);
+    expect(
+      (await search({ roots, repo: root, query: "cache", scope: ["gems"] })).map(
+        (entry) => entry.path,
+      ),
+    ).toEqual([moved]);
+    await deleteMemories({ paths: [moved] });
+    expect(existsSync(moved)).toBe(false);
+  });
+
   it("places file and directory scopes in the nearest common package without prior init", async () => {
     await mkdir(join(web, "src", "commands"), { recursive: true });
     await writeFile(join(web, "src", "constants.ts"), "");
@@ -303,7 +336,7 @@ describe("insert and update", () => {
   it("chooses a nested common package and keeps the broader scope when children are redundant", async () => {
     const nested = join(web, "plugins", "auth");
     await mkdir(nested, { recursive: true });
-    await writeFile(join(nested, NAMES.PACKAGE_JSON), "{}");
+    await writeFile(join(nested, "package.json"), "{}");
     await mkdir(join(nested, "src"));
     await writeFile(join(nested, "src", "session.ts"), "");
     const path = await memory({
@@ -731,9 +764,9 @@ describe("partial updates", () => {
     const stray = join(root, NAMES.MEMORY_MD);
     await writeFile(stray, source);
     await expect(update({ roots, repo: root, path: root })).rejects.toThrow("Choose a memory path");
-    await expect(
-      update({ roots, repo: root, path: join(web, NAMES.PACKAGE_JSON) }),
-    ).rejects.toThrow("existing memory directory");
+    await expect(update({ roots, repo: root, path: join(web, "package.json") })).rejects.toThrow(
+      "existing memory directory",
+    );
     const link = join(root, "link");
     await symlink(path, link, "dir");
     await expect(update({ roots, repo: root, path: link })).rejects.toThrow("Symbolic links");
@@ -853,7 +886,7 @@ describe("search", () => {
     await mkdir(child);
     await symlink(team, alias, "dir");
     await symlink(root, active, "dir");
-    await writeFile(join(child, NAMES.PACKAGE_JSON), "{}");
+    await writeFile(join(child, "package.json"), "{}");
     await config({ project: team, value: { availableToWorkspace: true } });
     await memory({ project: team, title: "Cache root" });
     await memory({ project: child, title: "Cache child" });
@@ -893,12 +926,12 @@ describe("search", () => {
     const other = await memory({ project: api, title: "Cache api" });
     const nested = join(web, "plugins", "auth");
     await mkdir(nested, { recursive: true });
-    await writeFile(join(nested, NAMES.PACKAGE_JSON), "{}");
+    await writeFile(join(nested, "package.json"), "{}");
     const auth = await memory({ project: nested, title: "Cache auth" });
     const outside = join(root, "packages", "billing");
     await mkdir(outside, { recursive: true });
     await memory({ title: "Cache unrelated", scope: ["packages/billing"] });
-    await writeFile(join(outside, NAMES.PACKAGE_JSON), "{}");
+    await writeFile(join(outside, "package.json"), "{}");
     const bad = await memory({ project: outside, title: "Cache malformed sibling" });
     await writeFile(join(bad, NAMES.MEMORY_MD), "invalid YAML memory");
     const result = await search({ roots, repo: root, query: "cache", scope: ["apps"] });
@@ -931,7 +964,7 @@ describe("search", () => {
     const route = join(web, "app", "(auth)", "[id]");
     const nested = join(route, "forms");
     await mkdir(nested, { recursive: true });
-    await writeFile(join(nested, NAMES.PACKAGE_JSON), "{}");
+    await writeFile(join(nested, "package.json"), "{}");
     const scoped = await memory({
       project: web,
       title: "Cache route",
@@ -956,7 +989,7 @@ describe("search", () => {
   it("does not discover sibling packages with a similar directory prefix", async () => {
     const sibling = join(root, "apps", "web-old");
     await mkdir(sibling);
-    await writeFile(join(sibling, NAMES.PACKAGE_JSON), "{}");
+    await writeFile(join(sibling, "package.json"), "{}");
     const keep = await memory({ project: web, title: "Cache web" });
     const bad = await memory({ project: sibling, title: "Cache sibling" });
     await writeFile(join(bad, NAMES.MEMORY_MD), "invalid YAML memory");
@@ -967,7 +1000,7 @@ describe("search", () => {
   it("skips ignored untracked packages during directory discovery", async () => {
     const ignored = join(web, "generated");
     await mkdir(join(ignored, NAMES.MEMORIES, "bad"), { recursive: true });
-    await writeFile(join(ignored, NAMES.PACKAGE_JSON), "{}");
+    await writeFile(join(ignored, "package.json"), "{}");
     await writeFile(join(ignored, NAMES.MEMORIES, "bad", NAMES.MEMORY_MD), "invalid YAML memory");
     await writeFile(join(root, ".gitignore"), "apps/web/generated/\n");
     const keep = await memory({ project: web, title: "Cache web" });
@@ -1037,7 +1070,7 @@ describe("search", () => {
   it("shares all stores only when the other repo root opts in, regardless of local scope", async () => {
     const child = join(team, "team-rules");
     await mkdir(child);
-    await writeFile(join(child, NAMES.PACKAGE_JSON), "{}");
+    await writeFile(join(child, "package.json"), "{}");
     await mkdir(join(child, "unrelated"));
     const parent = await memory({ project: team, title: "Cache root" });
     const nested = await memory({
@@ -1059,7 +1092,7 @@ describe("search", () => {
   it.each([false, true])("ignores sharing %s declared in another repo's package", async (value) => {
     const child = join(team, "team-rules");
     await mkdir(child);
-    await writeFile(join(child, NAMES.PACKAGE_JSON), "{}");
+    await writeFile(join(child, "package.json"), "{}");
     await config({ project: team, value: { availableToWorkspace: false } });
     await config({ project: child, value: { availableToWorkspace: value } });
     await memory({ project: child, title: "Cache rules" });
@@ -1187,7 +1220,7 @@ describe("delete", () => {
       frontmatter: { title: "Outside", scope: ["."] },
     });
     expect(await deleteMemories({ paths: [path!] })).toEqual([path!]);
-    await expect(deleteMemories({ paths: [join(root, NAMES.PACKAGE_JSON)] })).rejects.toThrow(
+    await expect(deleteMemories({ paths: [join(root, "package.json")] })).rejects.toThrow(
       NAMES.MEMORY_MD,
     );
     expect(existsSync(path!)).toBe(false);

@@ -6,6 +6,9 @@ icon: Rocket
 
 ![workspace structure](../assets/file-tree.svg)
 
+> [!TIP]
+> Tiramisu works across multiple languages and agent harnesses. Check the [compatibility tables](./03-compatibility.md).
+
 ## Step 1: Configure pruning (Optional)
 
 [Upvotes and pruning](./05-upvotes-and-pruning.md) reduce stale memories.
