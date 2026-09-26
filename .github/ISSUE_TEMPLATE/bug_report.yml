@@ -1,0 +1,60 @@
+name: Bug Report
+description: Something isn't working as expected
+labels: ["bug"]
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened?
+      description: A clear description of the bug.
+      placeholder: "I asked the agent to save a memory..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction
+      description: What you asked the agent to do, and what it replied or did.
+      placeholder: |
+        1. I asked the agent to save a memory.
+        3. In a new chat I asked something about that memory.
+        4. The agent said it found no memory about that.
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      description: What did you expect to happen?
+    validations:
+      required: false
+
+  - type: input
+    id: harness
+    attributes:
+      label: Agent harness
+      description: The agent you were talking to, such as Cursor, Claude Code, Codex, etc. If you ran a tiramisu command yourself, write CLI.
+      placeholder: Cursor
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Tiramisu version
+      description: Output of `tiramisu --version`
+    validations:
+      required: true
+
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating system
+      options:
+        - macOS
+        - Linux
+        - Windows
+    validations:
+      required: true
