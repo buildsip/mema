@@ -4,6 +4,10 @@ description: Getting Started with Tiramisu
 icon: Rocket
 ---
 
+**Tiramisu is a git-native memory system for AI coding agents.** It stores curated memories as Markdown files inside your repositories.
+
+Tiramisu is [open source](https://github.com/buildsip/tiramisu).
+
 ![workspace structure](../assets/file-tree.svg)
 
 > [!TIP]
