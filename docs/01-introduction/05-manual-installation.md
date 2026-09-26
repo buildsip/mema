@@ -94,4 +94,4 @@ bunx --bun skills add buildsip/tiramisu --global
 }
 ```
 
-6. If you've enabled [pruning](./05-upvotes-and-pruning.md), migrate your database using the drizzle schema from [`tiramisu/packages/cli/migrations`](../../packages/cli/migrations).
+6. If you've enabled [pruning](./06-upvotes-and-pruning.md), migrate your database using the drizzle schema from [`tiramisu/packages/cli/migrations`](../../packages/cli/migrations).

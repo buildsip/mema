@@ -15,7 +15,7 @@ Tiramisu is [open source](https://github.com/buildsip/tiramisu).
 
 ## Step 1: Configure pruning (Optional)
 
-[Upvotes and pruning](./05-upvotes-and-pruning.md) reduce stale memories.
+[Upvotes and pruning](./06-upvotes-and-pruning.md) reduce stale memories.
 
 When a memory helps solve a task, it gets upvoted, which extends its lifespan. These events are stored in the [database](../02-api-reference/database.md). On request, the agent can prune memories, meaning it reviews expired memories and suggests updates or deletions.
 

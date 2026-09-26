@@ -16,13 +16,13 @@ Creates one memory.
 | `body`        | `string`   | Yes      | Markdown content.                             |
 | `frontmatter` | `object`   | Yes      | Memory metadata and configured custom fields. |
 
-| `frontmatter` field                       | Type       | Required                                                                  |
-| ----------------------------------------- | ---------- | ------------------------------------------------------------------------- |
-| [`title`](./memory-format.md#title)             | `string`   | Yes                                                                       |
-| [`scope`](./memory-format.md#scope)             | `string[]` | Yes.                                                                      |
-| [`doNotEdit`](./memory-format.md#donotedit)     | `boolean`  | No                                                                        |
-| [`doNotDelete`](./memory-format.md#donotdelete) | `boolean`  | No                                                                        |
-| Custom fields                             | `any`      | No. Must be declared in [`frontmatter.custom`](./configuration.md#custom). |
+| `frontmatter` field                             | Type       | Required                                                                   |
+| ----------------------------------------------- | ---------- | -------------------------------------------------------------------------- |
+| [`title`](./memory-format.md#title)             | `string`   | Yes                                                                        |
+| [`scope`](./memory-format.md#scope)             | `string[]` | Yes.                                                                       |
+| [`doNotEdit`](./memory-format.md#donotedit)     | `boolean`  | No                                                                         |
+| [`doNotDelete`](./memory-format.md#donotdelete) | `boolean`  | No                                                                         |
+| Custom fields                                   | `any`      | No. Must be declared in [`frontmatter.custom`](./configuration.md#custom). |
 
 Choose the narrowest [scope](./memory-format.md#scope) where the memory provides useful context. For example, a login-session cookie memory used throughout authentication applies to `["apps/web/auth"]`. Use `["."]` only for context useful across the whole repository.
 
@@ -92,13 +92,13 @@ Updates an existing memory. Omitted fields retain their values. A path-only call
 | `body`        | `string`   | No       | New Markdown body.                                                    |
 | `frontmatter` | `object`   | No       | Memory metadata and configured custom fields.                         |
 
-| `frontmatter` field                       | Type       | Required                                                                  |
-| ----------------------------------------- | ---------- | ------------------------------------------------------------------------- |
-| [`title`](./memory-format.md#title)             | `string`   | No.                                                                       |
-| [`scope`](./memory-format.md#scope)             | `string[]` | No.                                                                       |
-| [`doNotEdit`](./memory-format.md#donotedit)     | `boolean`  | No                                                                        |
-| [`doNotDelete`](./memory-format.md#donotdelete) | `boolean`  | No                                                                        |
-| Custom fields                             | `any`      | No. Must be declared in [`frontmatter.custom`](./configuration.md#custom). |
+| `frontmatter` field                             | Type       | Required                                                                   |
+| ----------------------------------------------- | ---------- | -------------------------------------------------------------------------- |
+| [`title`](./memory-format.md#title)             | `string`   | No.                                                                        |
+| [`scope`](./memory-format.md#scope)             | `string[]` | No.                                                                        |
+| [`doNotEdit`](./memory-format.md#donotedit)     | `boolean`  | No                                                                         |
+| [`doNotDelete`](./memory-format.md#donotdelete) | `boolean`  | No                                                                         |
+| Custom fields                                   | `any`      | No. Must be declared in [`frontmatter.custom`](./configuration.md#custom). |
 
 Changing scope can move the memory to another package or the repo root. Every update also repairs the memory folder's name to match the title, even if the title did not change.
 
@@ -117,13 +117,9 @@ Memories are automatically placed into the deepest package or repo root containi
 <summary>CLI equivalent: `tiramisu update`</summary>
 
 ```bash title="Terminal"
-tiramisu insert --roots /Users/adam/Desktop/acme/acme-app --repo /Users/adam/Desktop/acme/acme-app <<'EOF'
+tiramisu update --roots /Users/adam/Desktop/acme/acme-app --repo /Users/adam/Desktop/acme/acme-app --path /Users/adam/Desktop/acme/acme-app/.memories/cache-responses <<'EOF'
 {
-  "body": "Retry the client once after a reconnect; do not stack interceptors.",
-  "frontmatter": {
-    "title": "Axios retry duplication after reconnect",
-    "scope": ["apps/web"]
-  }
+  "body": "Invalidate cached responses when permissions change."
 }
 EOF
 ```
@@ -131,7 +127,7 @@ EOF
 Alternatively, you may pass the `.json` file using the `--input` flag.
 
 ```bash title="Terminal"
-tiramisu update --roots /Users/adam/Desktop/acme/acme-app --repo /Users/adam/Desktop/acme/acme-app --path /Users/adam/Desktop/acme/acme-app/apps/web/.memories/axios-retry-duplication-after-reconnect --input updated-memory.json
+tiramisu update --roots /Users/adam/Desktop/acme/acme-app --repo /Users/adam/Desktop/acme/acme-app --path /Users/adam/Desktop/acme/acme-app/.memories/cache-responses --input updated-memory.json
 ```
 
 </details>
@@ -178,14 +174,6 @@ Search reads memories from:
 
 During search, memory titles get a 3x boost and directory tags get a 2x boost.
 
-## `delete-memories`
-
-Deletes memories and their attachments.
-
-| Parameter | Type       | Required | Description                           |
-| --------- | ---------- | -------- | ------------------------------------- |
-| `paths`   | `string[]` | Yes      | Absolute paths to memory directories. |
-
 <details>
 
 <summary>CLI equivalent: `tiramisu search`</summary>
@@ -195,6 +183,14 @@ tiramisu search --roots /Users/adam/Desktop/acme/acme-app --repo /Users/adam/Des
 ```
 
 </details>
+
+## `delete-memories`
+
+Deletes memories and their attachments.
+
+| Parameter | Type       | Required | Description                           |
+| --------- | ---------- | -------- | ------------------------------------- |
+| `paths`   | `string[]` | Yes      | Absolute paths to memory directories. |
 
 **Example:**
 
@@ -206,7 +202,7 @@ tiramisu search --roots /Users/adam/Desktop/acme/acme-app --repo /Users/adam/Des
 
 Passing the `path` to a memory tagged with [`doNotDelete`](./memory-format.md#donotdelete) blocks the entire operation.
 
-[Nested memories (anti-pattern)](../01-introduction/06-guide.md#nesting-a-memory-inside-another-memory) must be selected explicitly when deleting their parent folder.
+[Nested memories (anti-pattern)](../01-introduction/07-guide.md#nesting-a-memory-inside-another-memory) must be selected explicitly when deleting their parent folder.
 
 Paths may span multiple Git repositories within the workspace.
 
@@ -251,7 +247,7 @@ Upvotes useful memories. Upvotes requested by the user are recorded as `human`. 
 
 ```bash title="Terminal"
 tiramisu upvote \
-  --paths /Users/adam/Desktop/acme/acme-app/.memories/cache-error/app/.memories/cache-error \
+  --paths /Users/adam/Desktop/acme/acme-app/.memories/cache-error \
   --actor human
 ```
 
