@@ -30,7 +30,7 @@ The id is used to track the memory across renames, and for upvotes when those ar
 
 ### created
 
-Required. UTC calendar date when the memory was inserted (`YYYY-MM-DD`). Don't change it. Pruning uses this date for the unvoted lifetime.
+Required. UTC calendar date when the memory was inserted (`YYYY-MM-DD`). Don't change it. [Pruning](../01-introduction/05-upvotes-and-pruning.md) uses this date for the unvoted lifetime.
 
 ### title
 
@@ -40,7 +40,7 @@ Required. The memory title. Can be changed anytime.
 title: Axios reconnect retry
 ```
 
-The title becomes the name of the memory directory. [`update`](../03-api-reference/mcp.md#update-memory) always repairs the memory directory to this slug.
+The title becomes the name of the memory directory. [`update`](./mcp.md#update-memory) always repairs the memory directory to this slug.
 
 ### doNotDelete
 
@@ -104,4 +104,4 @@ retireWhen: Zero occurrences in Sentry for 60 days
 Content
 ```
 
-To use custom fields, define [a schema](./config.md#custom).
+To use custom fields, define [a schema](./configuration.md#custom).

@@ -21,7 +21,7 @@ yarn i -g tiramisu
 bun i -g tiramisu
 ```
 
-2. Create `tiramisu.json` at the root of your repository with the [options](config.md) you want:
+2. Create `tiramisu.json` at the root of your repository with the [options](../02-api-reference/configuration.md) you want:
 
 ```json title="tiramisu.json"
 {
@@ -82,4 +82,4 @@ bunx skills add buildsip/tiramisu --global
 }
 ```
 
-6. If you've enabled pruning, migrate your database using the drizzle schema from `tiramisu/packages/cli/migrations`.
+6. If you've enabled [pruning](./05-upvotes-and-pruning.md), migrate your database using the drizzle schema from [`tiramisu/packages/cli/migrations`](../../packages/cli/migrations).

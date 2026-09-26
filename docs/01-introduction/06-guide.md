@@ -7,11 +7,11 @@ icon: Book
 
 1. **Most of the time, you should commit new project memories to the same PR that generated them.**
 2. **Review `.memories` like code.**
-3. **Ask the agent to upvote a memory when it provided useful context.** The agent also upvotes by itself, but `human` upvotes might be more valuable depending on your [configuration](../03-api-reference/configuration.md#lifetimes).
+3. **Ask the agent to upvote a memory when it provided useful context.** The agent also upvotes by itself, but `human` upvotes might be more valuable depending on your [configuration](../02-api-reference/configuration.md#lifetimes).
 
 ## Writing memories
 
-1. **A memory should be short.** Stick to one idea per file. If you need additional context that doesn't have to be searchable, like screenshots, put the file next to `memory.md` as an attachment.
+1. **A memory should be short.** Stick to one idea per file. If you need additional context that doesn't have to be searchable, like screenshots, put the file next to `memory.md` as an [attachment](../02-api-reference/file-conventions.md#attachments).
 2. **Memories are context, not rules.**
 
 Some good examples:
@@ -24,7 +24,7 @@ Some good examples:
 - blockers
 - facts, e.g. "our staging DB resets every Sunday"
 
-Use `AGENTS.md` and skills for rules.
+Use [`AGENTS.md`](./04-customize.md#memory-creation-instructions) and [skills](./04-customize.md#memory-writing-instructions) for rules.
 
 3. **Directory names act as search tags, so they matter when searching memories.** Use straightforward names, like `errors/`, `gotchas/`, `decisions/`, `architecture/`.
 4. **You may create your own custom tags,** e.g. `kind`, `anchors`, Linear URLs, etc.
@@ -35,7 +35,7 @@ retireWhen: Zero occurrences in Sentry for 60 days
 sentry: https://sentry.io/organizations/acme/issues/12345/
 ```
 
-Defining obsolescence up front turns pruning from a guess into a fast, deterministic check for both agents and humans. Add `retireWhen` to the [schema](../01-getting-started/config.md#custom) if you use it.
+Defining obsolescence up front turns pruning from a guess into a fast, deterministic check for both agents and humans. Add `retireWhen` to the [schema](../02-api-reference/configuration.md#custom) if you use it.
 
 ## Anti-patterns
 

@@ -15,7 +15,7 @@ bun run build
 
 ## Packaging
 
-To inspect the npm package, run `npm pack --dry-run` in `packages/cli`. Its packaging hooks use Bun to build and prepare the `README`.
+To inspect the npm package, run `npm pack --dry-run` in [`packages/cli`](../../packages/cli). Its packaging hooks use Bun to build and prepare the [`README`](../../README.md).
 
 ## Release
 

@@ -9,7 +9,7 @@ During `tiramisu init`, [default prompt rules](../../templates/AGENTS.md) are ad
 
 ## Memory writing instructions
 
-Tiramisu includes a [default skill called `tiramisu-memory-writing`](../../skills/tiramisu-memory-writing/SKILL.md). It instructs the agent on how to format memory titles and bodies before it calls the `insert-memory` or `update-memory` MCP tools.
+Tiramisu includes a [default skill called `tiramisu-memory-writing`](../../skills/tiramisu-memory-writing/SKILL.md). It instructs the agent on how to format memory titles and bodies before it calls the [`insert-memory`](../02-api-reference/mcp.md#insert-memory) or [`update-memory`](../02-api-reference/mcp.md#update-memory) MCP tools.
 
 You can replace the default skill with your own. Point your agent to the custom skill by adding an instruction to your `AGENTS.md` file:
 
@@ -45,7 +45,7 @@ Content goes here...
 > [!TIP]
 > Defining obsolescence up front using a `deleteWhen` custom field turns pruning from a guess into a fast, deterministic check for both agents and humans.
 
-To use custom fields, define [a schema](./config.md#custom).
+To use custom fields, define [a schema](../02-api-reference/configuration.md#custom).
 
 ## Directory names
 

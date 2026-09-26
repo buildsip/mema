@@ -8,9 +8,9 @@ icon: Rocket
 
 ## Step 1: Configure pruning (Optional)
 
-[Upvotes and pruning](./upvotes-and-pruning.md) reduce stale memories.
+[Upvotes and pruning](./05-upvotes-and-pruning.md) reduce stale memories.
 
-When a memory helps solve a task, it gets upvoted, which extends its lifespan. These events are stored in the database. On request, the agent can prune memories, meaning it reviews expired memories and suggests updates or deletions.
+When a memory helps solve a task, it gets upvoted, which extends its lifespan. These events are stored in the [database](../02-api-reference/database.md). On request, the agent can prune memories, meaning it reviews expired memories and suggests updates or deletions.
 
 If you skip this step, upvotes are disabled, but the agent can still prune manually by searching your codebase to verify relevance.
 

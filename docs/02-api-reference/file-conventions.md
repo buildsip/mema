@@ -85,4 +85,4 @@ Attachments aren't indexed during search.
 
 Repository settings.
 
-Read more about [configuration](./config.md).
+Read more about [configuration](./configuration.md).
