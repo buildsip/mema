@@ -33,13 +33,6 @@ The names of the memory's parent directories act as searchable tags.
 └── ADRs/
 ```
 
-### Supported languages
-
-| Language   | Identifier     |
-| ---------- | -------------- |
-| Javascript | `package.json` |
-| Typescript | `package.json` |
-
 ## Directories used to categories memories
 
 Directories between `.memories` and the memory directory become tags during search.

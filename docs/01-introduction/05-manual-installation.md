@@ -38,6 +38,8 @@ bun i -g tiramisu
 
 3. Add the MCP tools:
 
+**Option 1: Using `add-mcp`**
+
 ```bash package="npm"
 npx add-mcp "tiramisu mcp" --auto-approve
 ```
@@ -52,6 +54,16 @@ yarn dlx add-mcp "tiramisu mcp" --auto-approve
 
 ```bash package="bun"
 bunx add-mcp "tiramisu mcp" --auto-approve
+```
+
+**Option 2: Manual installation**
+
+Refer to your agent's documentation on how to add a global MCP server.
+
+Add:
+
+```bash
+tiramisu mcp
 ```
 
 4. Add the memory writing skill:

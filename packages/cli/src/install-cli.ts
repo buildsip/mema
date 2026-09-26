@@ -18,7 +18,7 @@ export async function installCli(
   ctx: { log: Pick<typeof log, "info" | "warn" | "step"> },
   { cwd, cliRoot, verbose = false }: { cwd: string; cliRoot: string; verbose?: boolean },
 ) {
-  const cli = JSON.parse(readFileSync(join(cliRoot, NAMES.PACKAGE_JSON), "utf8"));
+  const cli = JSON.parse(readFileSync(join(cliRoot, "package.json"), "utf8"));
   const options = {
     cwd,
     encoding: "utf8" as const,
@@ -86,7 +86,7 @@ export async function installCli(
     ).trim();
     if (packageManager === "yarn") globalRoot = join(globalRoot, NAMES.NODE_MODULES);
   }
-  const installedPath = globalRoot && join(globalRoot, cli.name, NAMES.PACKAGE_JSON);
+  const installedPath = globalRoot && join(globalRoot, cli.name, "package.json");
   const installed =
     installedPath && existsSync(installedPath)
       ? JSON.parse(readFileSync(installedPath, "utf8"))

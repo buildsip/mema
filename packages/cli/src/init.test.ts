@@ -128,10 +128,13 @@ describe("tiramisu init", () => {
     mkdirSync(join(cliRoot, NAMES.SKILLS, NAMES.MEMORY_WRITING_SKILL), { recursive: true });
     writeFileSync(
       join(cliRoot, NAMES.SKILLS, NAMES.MEMORY_WRITING_SKILL, NAMES.SKILL_MD),
-      readFileSync(new URL("../../../skills/tiramisu-memory-writing/SKILL.md", import.meta.url), "utf8"),
+      readFileSync(
+        new URL("../../../skills/tiramisu-memory-writing/SKILL.md", import.meta.url),
+        "utf8",
+      ),
     );
     writeFileSync(
-      join(cliRoot, NAMES.PACKAGE_JSON),
+      join(cliRoot, "package.json"),
       JSON.stringify({
         name: "tiramisu",
         version: "0.1.0",
@@ -139,8 +142,8 @@ describe("tiramisu init", () => {
         bin: { tiramisu: "dist/index.js" },
       }),
     );
-    writeFileSync(join(root, NAMES.PACKAGE_JSON), '{"name":"@acme/monorepo"}');
-    writeFileSync(join(web, NAMES.PACKAGE_JSON), '{"name":"@acme/web"}');
+    writeFileSync(join(root, "package.json"), '{"name":"@acme/monorepo"}');
+    writeFileSync(join(web, "package.json"), '{"name":"@acme/web"}');
     execFileSync("git", ["init", "--quiet", root]);
   });
 
@@ -156,7 +159,7 @@ describe("tiramisu init", () => {
   function installed(version: string) {
     mkdirSync(join(globalRoot, "tiramisu"), { recursive: true });
     writeFileSync(
-      join(globalRoot, "tiramisu", NAMES.PACKAGE_JSON),
+      join(globalRoot, "tiramisu", "package.json"),
       JSON.stringify({
         name: "tiramisu",
         version,
@@ -185,7 +188,7 @@ describe("tiramisu init", () => {
   function published() {
     stubEnv({ name: "npm_config_user_agent", value: "npm/11.0.0 node/v22.0.0" });
     writeFileSync(
-      join(cliRoot, NAMES.PACKAGE_JSON),
+      join(cliRoot, "package.json"),
       JSON.stringify({ name: "tiramisu", version: "0.1.0", bin: { tiramisu: "dist/index.js" } }),
     );
   }
@@ -382,7 +385,7 @@ describe("tiramisu init", () => {
     execFileSync("git", ["worktree", "add", "--detach", worktree], { cwd: root, stdio: "pipe" });
     const nested = join(worktree, "packages", "web");
     mkdirSync(join(nested, "src"), { recursive: true });
-    writeFileSync(join(nested, NAMES.PACKAGE_JSON), '{"name":"web"}');
+    writeFileSync(join(nested, "package.json"), '{"name":"web"}');
     await init({ cwd: join(nested, "src"), cliRoot });
     expect(existsSync(join(worktree, NAMES.TIRAMISU_JSON))).toBe(true);
     expect(existsSync(join(nested, NAMES.MEMORIES))).toBe(false);
@@ -1133,7 +1136,7 @@ describe("tiramisu init", () => {
   it("refuses to overwrite a different global package using the same name", async () => {
     mkdirSync(join(globalRoot, "tiramisu"), { recursive: true });
     writeFileSync(
-      join(globalRoot, "tiramisu", NAMES.PACKAGE_JSON),
+      join(globalRoot, "tiramisu", "package.json"),
       '{"name":"tiramisu","version":"10.0.0"}',
     );
     await expect(init({ cwd: root, cliRoot })).rejects.toThrow("not this CLI");
@@ -1179,7 +1182,7 @@ describe("tiramisu init", () => {
     writeFileSync(join(root, "pnpm-lock.yaml"), "");
     writeFileSync(join(web, "yarn.lock"), "");
     writeFileSync(join(web, "bun.lock"), "");
-    writeFileSync(join(web, NAMES.PACKAGE_JSON), '{"name":"web","packageManager":"bun@1.3.0"}');
+    writeFileSync(join(web, "package.json"), '{"name":"web","packageManager":"bun@1.3.0"}');
     await init({ cwd: web, cliRoot });
     expect(execFileSync).toHaveBeenCalledWith(
       "npm",

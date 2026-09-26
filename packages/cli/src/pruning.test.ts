@@ -163,12 +163,16 @@ it("prunes only the selected repo, including its package stores", async () => {
   await mkdir(join(repo, "packages/web"), { recursive: true });
   await writeFile(join(repo, "packages/web/package.json"), "{}");
   const packaged = await memory({ title: "Package", scope: ["packages/web"] });
+  await mkdir(join(repo, "crates/engine"), { recursive: true });
+  await writeFile(join(repo, "crates/engine/Cargo.toml"), '[package]\nname = "engine"\n');
+  const rust = await memory({ title: "Rust package", scope: ["crates/engine"] });
+  expect(rust.path).toBe(join(repo, "crates/engine/.memories/rust-package"));
   const team = await makeRepo("team");
   await configure({ repo: team, shared: true });
   const shared = await memory({ owner: team });
   const hidden = await makeRepo("private");
   await memory({ owner: hidden });
-  expect(await prune({ repo })).toEqual([local.path, packaged.path].sort());
+  expect(await prune({ repo })).toEqual([local.path, packaged.path, rust.path].sort());
   expect(await prune({ repo: team })).toEqual([shared.path]);
   await configure({ repo, enabled: false });
   await expect(prune({ repo })).rejects.toThrow("Pruning is disabled");

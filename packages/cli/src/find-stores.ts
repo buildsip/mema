@@ -2,6 +2,8 @@ import { getAncestors, isInside, relativePosix, statIfExists } from "@buildsip/f
 import { execFile } from "node:child_process";
 import { basename, dirname, join, resolve } from "node:path";
 import { promisify } from "node:util";
+import { hasPackageManifest } from "./has-package-manifest";
+import { isPackageManifest } from "./is-package-manifest";
 import { NAMES } from "./names";
 import { normalizeScopes } from "./normalize-scopes";
 
@@ -43,7 +45,7 @@ export async function findStores({
   }
   // Writing walks up (scope "apps" → repo .memories). Reading also looks down:
   // a memory scoped to apps/web lives in apps/web/.memories, and a search for
-  // "apps" still needs that store. Ask Git which package.json files sit under
+  // "apps" still needs that store. Ask Git which package manifests sit under
   // each existing scope directory so we can load those child stores too.
   if (scopeDirectories.length) {
     // Git lists tracked and non-ignored untracked paths without opening their contents.
@@ -56,21 +58,25 @@ export async function findStores({
     }
     const { stdout } = await exec("git", args, { maxBuffer: 64 * 1024 * 1024 });
     for (const file of stdout.split("\0").filter(Boolean)) {
-      if (basename(file) !== NAMES.PACKAGE_JSON) continue;
+      if (!isPackageManifest(basename(file))) continue;
       // Git can still list manifests under these folders; they are never package stores.
       if (file.split("/").some((part) => skip.has(part))) continue;
       scopeStarts.add(dirname(join(repo, file)));
     }
   }
   const stores = new Set<string>();
+  // Many packages share ancestors. Read each directory at most once per search,
+  // without retaining stale results when manifests change between commands.
+  const packages = new Map<string, boolean>();
   for (const scopeStart of scopeStarts) {
     // A matching file can use memories from its package and any parent package up to the repo.
     for (const parent of getAncestors({ path: scopeStart, root: repo })) {
-      const manifest = await statIfExists({
-        path: join(parent, NAMES.PACKAGE_JSON),
-        ignoreNotDirectory: true,
-      });
-      if (parent === repo || manifest?.isFile()) stores.add(parent);
+      if (parent === repo) {
+        stores.add(parent);
+        continue;
+      }
+      if (!packages.has(parent)) packages.set(parent, await hasPackageManifest(parent));
+      if (packages.get(parent)) stores.add(parent);
     }
   }
   return { stores: [...stores].sort() };

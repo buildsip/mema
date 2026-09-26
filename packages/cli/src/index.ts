@@ -13,14 +13,13 @@ import { registerSearchCommand } from "./commands/search";
 import { registerInsertCommand } from "./commands/insert";
 import { registerUpdateCommand } from "./commands/update";
 import { CLI_NAME } from "./cli-name";
-import { NAMES } from "./names";
 import { installMcp } from "./install-mcp";
 import { createMcpServer } from "./mcp/create-mcp-server";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 
 // The built entry point lives in dist; its parent is the installed tiramisu package.
 const cliRoot = fileURLToPath(new URL("..", import.meta.url));
-const pkg = JSON.parse(readFileSync(join(cliRoot, NAMES.PACKAGE_JSON), "utf8"));
+const pkg = JSON.parse(readFileSync(join(cliRoot, "package.json"), "utf8"));
 // Route Commander errors through our catch block so agent commands return JSON errors.
 const program = new Command().name(CLI_NAME).version(pkg.version).exitOverride();
 program.configureOutput({ writeErr: () => {} });

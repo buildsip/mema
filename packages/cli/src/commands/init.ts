@@ -38,7 +38,7 @@ export async function init({
   const root = await findRepo(cwd);
   const { config, source } = await readConfig(root);
   // Setup messages use the CLI package's name, regardless of the project being configured.
-  const { name } = JSON.parse(readFileSync(join(cliRoot, NAMES.PACKAGE_JSON), "utf8"));
+  const { name } = JSON.parse(readFileSync(join(cliRoot, "package.json"), "utf8"));
   const configPath = join(root, NAMES.TIRAMISU_JSON);
 
   intro(`${CLI_NAME} init`);
