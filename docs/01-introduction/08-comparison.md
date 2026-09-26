@@ -1,5 +1,5 @@
 ---
-title: "Comparison (WIP)"
+title: Comparison (WIP)
 icon: Scale
 ---
 

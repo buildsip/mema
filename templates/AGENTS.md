@@ -1,4 +1,4 @@
-## When to create a memory using tiramisu
+## When to create a memory using Tiramisu
 
 Memory = useful context.
 

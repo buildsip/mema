@@ -48,15 +48,15 @@ Define a JSON schema in your `tiramisu.json` file:
 > [!TIP]
 > Existing memories remain searchable when you add, change, or remove custom fields. Only newly created or edited memories will be required to comply with the new schema.
 
-[`insert-memory`](../03-api-reference/mcp.md#insert-memory) and [`update-memory`](../03-api-reference//mcp.md#update-memory) MCP tools validate the input memory against the schema. Without a custom schema, extra fields are rejected.
+[`insert-memory`](./mcp.md#insert-memory) and [`update-memory`](./mcp.md#update-memory) MCP tools validate the input memory against the schema. Without a custom schema, extra fields are rejected.
 
 #### Schema changes
 
-When the `frontmatter.custom` schema changes, existing files are not migrated or revalidated against the custom schema changes when read. [`search-memories`](../03-api-reference/mcp.md#search-memories) keeps their custom fields searchable.
+When the `frontmatter.custom` schema changes, existing files are not migrated or revalidated against the custom schema changes when read. [`search-memories`](./mcp.md#search-memories) keeps their custom fields searchable.
 
 ## prune
 
-To enable [pruning](./01-getting-started.md#step-1-configure-pruning-optional), update your `tiramisu.json` file:
+To enable [pruning](../01-introduction/01-quick-start.md#step-1-configure-pruning-optional), update your `tiramisu.json` file:
 
 ```json title="tiramisu.json"
 {
@@ -73,7 +73,7 @@ To enable [pruning](./01-getting-started.md#step-1-configure-pruning-optional), 
 
 | Name             | Description                                        |
 | ---------------- | -------------------------------------------------- |
-| `unvotedTtl`     | Lifetime in days from the memory's `created` date. |
+| `unvotedTtl`     | Lifetime in days from the memory's [`created`](./memory-format.md#created) date. |
 | `humanUpvoteTtl` | Lifetime in days from its last human upvote.       |
 | `agentUpvoteTtl` | Lifetime in days from its last agent upvote.       |
 
