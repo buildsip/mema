@@ -60,7 +60,7 @@ it.each([
     parseValue({
       schema: insertSchema,
       label: "insert input",
-      value: { body: "Markdown", frontmatter: { title: "Title", scope: ["*"], ...input } },
+      value: { body: "Markdown", frontmatter: { title: "Title", scope: ["."], ...input } },
     }),
   ).toThrow(
     new RegExp(
@@ -84,7 +84,7 @@ it("names unknown top-level keys and explains where memory fields belong", () =>
       label: "insert input",
       value: {
         body: "Markdown",
-        frontmatter: { title: "Title", scope: ["*"] },
+        frontmatter: { title: "Title", scope: ["."] },
         typo: true,
         custom: {},
       },
@@ -174,7 +174,7 @@ it("keeps Ajv custom schema validation and reports required fields, array indice
 it("preserves Markdown whitespace and custom fields when parsing JSON input", () => {
   const value = {
     body: "  indented code\n\n",
-    frontmatter: { title: "Title", scope: ["*"], ticket: "ENG-1", details: { anchors: ["a"] } },
+    frontmatter: { title: "Title", scope: ["."], ticket: "ENG-1", details: { anchors: ["a"] } },
   };
   expect(parseValue({ schema: insertSchema, label: "insert input", value })).toEqual(value);
 });
@@ -230,7 +230,7 @@ it.each(["provided-id", null])("rejects caller-supplied IDs on insert: %s", (id)
       label: "insert input",
       value: {
         body: "body",
-        frontmatter: { title: "Title", scope: ["*"], id },
+        frontmatter: { title: "Title", scope: ["."], id },
       },
     }),
   ).toThrow(/Omit id[^\n]*\n  → at frontmatter.id/);
@@ -243,7 +243,7 @@ it.each(["2020-01-01", null])("rejects caller-supplied created dates on insert: 
       label: "insert input",
       value: {
         body: "body",
-        frontmatter: { title: "Title", scope: ["*"], created },
+        frontmatter: { title: "Title", scope: ["."], created },
       },
     }),
   ).toThrow(/Omit created[^\n]*\n  → at frontmatter.created/);

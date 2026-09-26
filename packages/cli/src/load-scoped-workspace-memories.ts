@@ -9,12 +9,12 @@ import { validateScopes } from "./validate-scopes";
 
 /**
  * Loads scoped memories from the active repo plus shared workspace memories.
- * A scope of * includes the entire active repo; other repos still need availableToWorkspace.
+ * A scope of . includes the entire active repo; other repos still need availableToWorkspace.
  */
 export async function loadScopedWorkspaceMemories({
   roots,
   repo,
-  scope = ["*"],
+  scope = ["."],
 }: {
   roots: string[];
   repo: string;
@@ -25,7 +25,7 @@ export async function loadScopedWorkspaceMemories({
   const { stores } = await findStores({ repo: workspace.repo, project: workspace.repo, scopes });
   const local = await loadMemories({ stores, repo: workspace.repo });
   const memories = local.filter((memory) => {
-    if (scopes.some((value) => ["*", "."].includes(value))) return true;
+    if (scopes.some((value) => value === ".")) return true;
     // An omitted memory scope applies to its owner; parent scopes also match child files.
     const owner = relativePosix({ from: workspace.repo, to: memory.project }) || ".";
     const appliesTo = normalizeScopes(memory.frontmatter.scope ?? [owner]);

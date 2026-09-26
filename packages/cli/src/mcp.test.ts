@@ -187,7 +187,7 @@ describe("MCP stdio server", () => {
       name: "insert-memory",
       args: {
         body: "Cache responses carefully",
-        frontmatter: { title: "Cache responses", scope: ["*"] },
+        frontmatter: { title: "Cache responses", scope: ["."] },
       },
     });
     expect(created.isError).toBeUndefined();
@@ -364,7 +364,7 @@ describe("MCP stdio server", () => {
           body: "Original",
           frontmatter: {
             title,
-            scope: ["*"],
+            scope: ["."],
             doNotEdit: protectedMemory,
             doNotDelete: protectedMemory,
           },
@@ -394,7 +394,7 @@ describe("MCP stdio server", () => {
     await connect();
     const args = {
       body: "Details",
-      frontmatter: { title: "Ticket", scope: ["*"], ticket: "ENG-1" },
+      frontmatter: { title: "Ticket", scope: ["."], ticket: "ENG-1" },
     };
     expect((await call({ name: "insert-memory", args })).isError).toBeUndefined();
     const invalid = await call({
