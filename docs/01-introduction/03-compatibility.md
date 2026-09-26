@@ -1,6 +1,6 @@
 ---
-title: Customize
-icon: Settings
+title: Compatibility
+icon: Puzzle
 ---
 
 ## Supported agents
