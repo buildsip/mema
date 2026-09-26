@@ -16,7 +16,7 @@ export async function search({
   roots,
   repo,
   query,
-  scope = ["*"],
+  scope = ["."],
   limit = 50,
   offset = 0,
 }: {
@@ -77,7 +77,7 @@ export function registerSearchCommand({ program }: { program: Command }) {
     .requiredOption("--query <text>", "Nonempty search query.")
     .option(
       "--scope <path...>",
-      "Existing repository-relative file or directory paths; directories include child packages. Defaults to * (the whole repo).",
+      "Existing repository-relative file or directory paths; directories include child packages. Defaults to . (the whole repo).",
     )
     .option("--limit <number>", "Maximum number of results.", "50")
     .option("--offset <number>", "Number of ranked results to skip.", "0")

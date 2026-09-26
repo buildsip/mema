@@ -7,9 +7,7 @@ import { validateScopes } from "./validate-scopes";
 /** Chooses the deepest store containing all scopes and omits scope when the store implies it. */
 export async function placeMemory({ repo, scope }: { repo: string; scope: string[] }) {
   const normalizedScopes = await validateScopes({ repo, scope });
-  const scopePaths = normalizedScopes.map((scopePath) =>
-    scopePath === "*" ? repo : resolve(repo, scopePath),
-  );
+  const scopePaths = normalizedScopes.map((scopePath) => resolve(repo, scopePath));
   const store =
     (await findUp({
       path: scopePaths[0]!,
@@ -32,6 +30,6 @@ export async function placeMemory({ repo, scope }: { repo: string; scope: string
       ),
   );
 
-  const owner = relativePosix({ from: repo, to: store }) || "*";
+  const owner = relativePosix({ from: repo, to: store }) || ".";
   return { project: store, scope: scopes.includes(owner) ? undefined : scopes };
 }

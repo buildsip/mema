@@ -19,14 +19,14 @@ const skip = new Set<string>([NAMES.NODE_MODULES, NAMES.GIT, NAMES.MEMORIES]);
 export async function findStores({
   repo,
   project,
-  scopes = ["*"],
+  scopes = ["."],
 }: {
   repo: string;
   project: string;
   scopes?: string[];
 }) {
   const normalizedScopes = normalizeScopes(scopes);
-  const globalScope = normalizedScopes.includes("*") || normalizedScopes.includes(".");
+  const globalScope = normalizedScopes.includes(".");
   const scopeStarts = new Set(
     globalScope ? [project] : normalizedScopes.map((scope) => resolve(repo, scope)),
   );
