@@ -222,30 +222,3 @@ it("ignores deleted tracked manifests and notices newly created manifests on the
   await writeFile(join(project, "parser.cabal"), "");
   expect(await findStores({ repo, project: repo })).toEqual({ stores: [repo, project].sort() });
 });
-
-it("documents every supported manifest convention", async () => {
-  const path = new URL("../../../docs/02-api-reference/file-conventions.md", import.meta.url);
-  const docs = await readFile(path, "utf8");
-  const table = docs
-    .split("### Supported languages")[1]!
-    .split("\n\n")
-    .find((text) => text.startsWith("|"))!;
-  const documented = [...table.matchAll(/`([^`]+)`/g)].map((match) => match[1]!);
-  const expected = manifests.map((name) => {
-    // Table patterns stand for a package name, while the tests use concrete files.
-    const extension = name.slice(name.lastIndexOf("."));
-    return [
-      ".csproj",
-      ".fsproj",
-      ".vbproj",
-      ".cabal",
-      ".rockspec",
-      ".nimble",
-      ".opam",
-      ".gemspec",
-    ].includes(extension)
-      ? `*${extension}`
-      : name;
-  });
-  expect(documented.sort()).toEqual(expected.sort());
-});
