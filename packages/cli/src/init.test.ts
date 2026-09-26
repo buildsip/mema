@@ -684,6 +684,47 @@ describe("tiramisu init", () => {
     expect(outro).not.toHaveBeenCalled();
   });
 
+  it.each([
+    {
+      stderr: Buffer.from("error: refusing to install dependency with unsafe name \n"),
+      stdout: "",
+      message: "Command failed",
+      expected: "refusing to install dependency with unsafe name",
+    },
+    {
+      stderr: "",
+      stdout: Buffer.from("Could not link the executable\n"),
+      message: "Command failed",
+      expected: "Could not link the executable",
+    },
+    {
+      stderr: null,
+      stdout: null,
+      message: "spawnSync bun ENOENT",
+      expected: "spawnSync bun ENOENT",
+    },
+  ])("preserves package manager failure details: $expected", async ({ expected, ...details }) => {
+    published();
+    stubEnv({ name: "npm_config_user_agent", value: "bun/1.4.2" });
+    const fallback = exec.getMockImplementation()!;
+    const error = Object.assign(new Error(details.message), details);
+    exec.mockImplementation(((...args: Parameters<typeof execFileSync>) => {
+      if (args[0] === "bun" && args[1]?.[0] === "add") {
+        // Bun can update the manifest and binary before another dependency fails.
+        installed("0.2.0");
+        throw error;
+      }
+      return Reflect.apply(fallback, undefined, args);
+    }) as typeof execFileSync);
+
+    await expect(init({ cwd: root, cliRoot })).rejects.toMatchObject({
+      message: expect.stringContaining(expected),
+      cause: error,
+    });
+    expect(existsSync(join(root, NAMES.TIRAMISU_JSON))).toBe(false);
+    expect(outro).not.toHaveBeenCalled();
+  });
+
   it.each([true, false])(
     "installs the accepted skill independently of instructions: %s",
     async (instructions) => {

@@ -1729,6 +1729,14 @@ describe("built CLI", () => {
     expect(JSON.parse(result.stderr).error).toBeTypeOf("string");
   });
 
+  it.each(["-v", "-V", "--version"])("prints the installed version for %s", async (flag) => {
+    const pkg = JSON.parse(await readFile(new URL("../package.json", import.meta.url), "utf8"));
+    const result = run({ args: [flag] });
+    expect(result.status).toBe(0);
+    expect(result.stdout).toBe(`${pkg.version}\n`);
+    expect(result.stderr).toBe("");
+  });
+
   it("lists only this increment's commands and exits successfully for help", () => {
     const result = run({ args: ["--help"] });
     expect(result.status).toBe(0);

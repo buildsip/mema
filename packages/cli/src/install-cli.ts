@@ -139,9 +139,22 @@ export async function installCli(
           : ["add", "-g", spec];
     try {
       execFileSync(packageManager, args, { ...options, stdio: verbose ? "inherit" : "pipe" });
-    } catch {
+    } catch (error) {
+      // Package managers can install files before failing. Keep their output to explain why.
+      // With --verbose the streams are inherited, so fall back to the process error message.
+      const failure = error as {
+        stderr?: string | Buffer;
+        stdout?: string | Buffer;
+        message?: string;
+      };
+      const details =
+        String(failure?.stderr ?? "").trim() ||
+        String(failure?.stdout ?? "").trim() ||
+        failure?.message ||
+        String(error);
       throw new Error(
-        `Could not install ${cli.name} globally with ${packageManager}. Check that the package manager can reach its registry and write to its global install directory, then retry ${CLI_NAME} init --verbose.`,
+        `Could not install ${cli.name} globally with ${packageManager}. Resolve the package manager error below, then retry ${CLI_NAME} init --verbose.\n\n${details}`,
+        { cause: error },
       );
     }
   }
