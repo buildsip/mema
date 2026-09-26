@@ -7,7 +7,7 @@ export enum NAMES {
   AGENTS_MD = "AGENTS.md",
   /** Bundled templates copied into user repositories during setup. */
   TEMPLATES = "templates",
-  /** Bundled skills that users can install globally. */
+  /** Root skill directory used when installing from a source checkout. */
   SKILLS = "skills",
   MEMORY_WRITING_SKILL = "tiramisu-memory-writing",
   SKILL_MD = "SKILL.md",

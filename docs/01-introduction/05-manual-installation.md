@@ -41,19 +41,19 @@ bun i -g tiramisu
 **Option 1: Using `add-mcp`**
 
 ```bash package="npm"
-npx add-mcp "tiramisu mcp" --auto-approve
+npx add-mcp "tiramisu mcp" -g --auto-approve
 ```
 
 ```bash package="pnpm"
-pnpm dlx add-mcp "tiramisu mcp" --auto-approve
+pnpm dlx add-mcp "tiramisu mcp" -g --auto-approve
 ```
 
 ```bash package="yarn"
-yarn dlx add-mcp "tiramisu mcp" --auto-approve
+yarn dlx add-mcp "tiramisu mcp" -g --auto-approve
 ```
 
 ```bash package="bun"
-bunx --bun add-mcp "tiramisu mcp" --auto-approve
+bunx --bun add-mcp "tiramisu mcp" -g --auto-approve
 ```
 
 **Option 2: Manual installation**

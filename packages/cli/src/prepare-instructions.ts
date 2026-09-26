@@ -20,6 +20,7 @@ export async function prepareInstructions({ root, cliRoot }: { root: string; cli
     );
   }
 
+  // The template ships with the CLI package, including published installs.
   const template = readFileSync(join(cliRoot, NAMES.TEMPLATES, NAMES.AGENTS_MD), "utf8");
   // Match the existing file’s line endings when appending the complete template.
   const newline = previous?.includes("\r\n") ? "\r\n" : "\n";
