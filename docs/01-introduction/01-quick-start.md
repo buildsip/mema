@@ -51,7 +51,7 @@ yarn dlx tiramisu@latest init --availableToWorkspace
 ```
 
 ```bash package="bun"
-bunx tiramisu@latest init --availableToWorkspace
+bunx --bun tiramisu@latest init --availableToWorkspace
 ```
 
 ## Step 3: Install to project
@@ -71,5 +71,5 @@ yarn dlx tiramisu@latest init
 ```
 
 ```bash package="bun"
-bunx tiramisu@latest init
+bunx --bun tiramisu@latest init
 ```

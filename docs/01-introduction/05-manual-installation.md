@@ -53,7 +53,7 @@ yarn dlx add-mcp "tiramisu mcp" --auto-approve
 ```
 
 ```bash package="bun"
-bunx add-mcp "tiramisu mcp" --auto-approve
+bunx --bun add-mcp "tiramisu mcp" --auto-approve
 ```
 
 **Option 2: Manual installation**
@@ -81,7 +81,7 @@ yarn dlx skills add buildsip/tiramisu --global
 ```
 
 ```bash package="bun"
-bunx skills add buildsip/tiramisu --global
+bunx --bun skills add buildsip/tiramisu --global
 ```
 
 5. VS Code / Cursor memory tab labels
