@@ -5,12 +5,19 @@ icon: Code
 
 Run from the repository root:
 
-```bash
+```bash file="Terminal"
 bun install
 bun run lint
 bun run typecheck
 bun run test
 bun run build
+```
+
+To uninstall in development mode, run:
+
+```bash file="Terminal"
+cd packages/cli
+bun unlink
 ```
 
 ## Packaging
