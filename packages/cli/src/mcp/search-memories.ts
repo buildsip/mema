@@ -24,7 +24,7 @@ export const searchMemories = tool({
       scope: scopeSchema
         .optional()
         .describe(
-          'Literal repository-relative file or directory paths; directories include descendants. Omit or use ["*"] or ["."] for the whole repo. No other wildcards. Prefer a narrow scope when working in a specific part of a repository.',
+          'Literal repository-relative file or directory paths; directories include descendants. Omit or use ["."] for the whole repo. Prefer a narrow scope when working in a specific part of a repository.',
         ),
       limit: z
         .number({ error: "Provide limit as a positive integer, or omit it for 50 results." })

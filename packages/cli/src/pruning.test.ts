@@ -82,7 +82,7 @@ async function memory({
   owner = repo,
   title = "Memory",
   protected: protectedMemory = false,
-  scope = ["*"],
+  scope = ["."],
   // Default age is past unvotedTtl so prune tests do not depend on Git commit dates.
   at = now - 365 * day,
 }: {
