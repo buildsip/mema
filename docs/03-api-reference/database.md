@@ -1,84 +1,21 @@
 ---
-title: "Database migrations"
+title: Database
 icon: Database
 ---
 
-Tiramisu uses Drizzle ORM with `pg`. PostgreSQL is optional and stores upvote events, not memory
-content. [`upvote`](./cli/upvote.md), pruning-enabled [`update`](./cli/update.md), and [`prune`](./cli/prune.md) use this ledger. Runtime operations do not apply migrations.
+Tiramisu uses Drizzle ORM with `pg`. PostgreSQL is optional and stores upvote events, not memory content.
 
-Before opening a connection, Tiramisu converts the legacy `sslmode` values `prefer`, `require`, and
-`verify-ca` to `verify-full`. This preserves pg's current certificate and hostname verification
-and removes its warning about future SSL defaults. Explicit `uselibpqcompat=true` and other SSL
-modes are preserved. Only the URL passed to pg changes; the credential command and its saved
-configuration stay unchanged.
+Before opening a connection, Tiramisu converts the legacy `sslmode` values `prefer`, `require`, and `verify-ca` to `verify-full`. This preserves pg's current certificate and hostname verification and removes its warning about future SSL defaults. Explicit `uselibpqcompat=true` and other SSL modes are preserved.
 
-## Shared event table
+`tiramisu init` automatically migrates the database for you.
+
+# Table
 
 One `tiramisu.upvotes` table is shared by all repositories using the database:
 
-| Column       | PostgreSQL type            | Meaning                                                             |
-| ------------ | -------------------------- | ------------------------------------------------------------------- |
-| `id`         | `uuid`, primary key        | Event ID; future callers must reuse it when retrying the same event |
-| `memory_id`  | `text`, required, nonblank | Stable ID from memory frontmatter                                   |
-| `actor`      | `text`, required           | Checked against `human` and `agent`                                 |
-| `created_at` | `timestamptz`, required    | Defaults to the database's current timestamp                        |
-
-An index on `memory_id` supports looking up votes. There is no repository column or
-per-repository table. New memories generate UUIDs; existing string IDs remain accepted.
-Equal memory IDs refer to the same logical memory and share votes in a shared database.
-Independent copies must use new memory IDs. Git owns the memory files, so there is no foreign key
-to a second database copy of those memories. `actor` records a category, not an authenticated user.
-
-## Initialization and upgrades
-
-`tiramisu init` with pruning enabled checks migration history on every completed setup,
-including when another repository has already initialized the same database. It never decides
-whether to migrate based on existing votes or `tiramisu.json.version`.
-
-1. Use the saved [`prune.databaseUrlCommand` credential command](./config/databaseUrlCommand.md), or collect one when enabling pruning, and execute it from the owning repository root.
-2. Open a dedicated PostgreSQL connection and acquire Tiramisu's database-local advisory lock.
-3. Verify that stored migration timestamps and SQL hashes are an exact prefix of this release's
-   bundled migrations. Refuse unknown, edited, or newer history before applying migrations.
-4. Apply only the pending migrations using Drizzle. Pending SQL and its history records are
-   committed together; failures roll back that transaction.
-5. Close the connection, releasing the lock even if setup fails.
-
-History lives in `tiramisu.__drizzle_migrations`, separate from other applications' Drizzle history.
-Applied migrations are immutable. The first setup creates `tiramisu.upvotes`; later identical runs
-do nothing. Upgrading applies new reviewed SQL to the existing schema, preserving its votes.
-Do not use `drizzle-kit push`, drop/recreate the schema, or edit history to force compatibility.
-
-An existing `tiramisu` schema without a migration journal is refused even if its tables are empty.
-An empty journal from a failed first migration can be retried when it contains no application
-tables. Missing history must be restored from backup, or setup must target a different database.
-Unrelated schemas and tables are outside Tiramisu's migrations.
-
-Migrations run only during accepted init with pruning enabled, not ordinary memory operations.
-After upgrading the installed package, rerun init from the repository root. Existing pruning settings are preserved and the saved
-command is reused without prompting. Editing the config-file version does not upgrade the database.
-If database setup fails, init does not save its proposed config changes. Database migrations
-cannot be rolled back automatically if a later CLI installation or filesystem write fails;
-rerunning init safely skips the migrations already committed.
-
-## Developing a migration
-
-Edit `packages/cli/src/upvotes.ts`, then run from `packages/cli`:
-
-```sh
-bun run db:generate
-```
-
-Review and commit the generated SQL, journal, and snapshot under `migrations/`. Never edit an
-already released migration. Prefer changes that remain compatible with running older clients;
-destructive changes need a separate explicit upgrade plan and backups. Transactional execution
-protects against failures, not against intentionally destructive SQL.
-
-`bun run build` copies migrations into `dist/migrations`; the npm package already includes `dist`.
-Runtime paths resolve from the installed package, never the consumer repository. Drizzle Kit
-and embedded PostgreSQL are development dependencies only.
-
-`bun run test` starts a disposable PostgreSQL instance on localhost under a temporary directory.
-It does not use developer credentials or an existing database. Tests cover repeated and concurrent
-init, existing votes, additive upgrades, failed SQL rollback, history mismatches, and packaged assets.
-The test runtime requires local process/port permissions and a non-root user; its platform package
-has an approved install script that restores packaged library symlinks.
+| Column       | PostgreSQL type         | Meaning                                      |
+| ------------ | ----------------------- | -------------------------------------------- |
+| `id`         | `uuid`, primary key     | Event ID                                     |
+| `memory_id`  | `text`, required        | Stable ID from memory frontmatter            |
+| `actor`      | `text`, required        | `human` or `agent`                           |
+| `created_at` | `timestamptz`, required | Defaults to the database's current timestamp |

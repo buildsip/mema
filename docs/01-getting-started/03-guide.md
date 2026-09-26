@@ -1,7 +1,16 @@
 ---
-title: "Writing memories"
-icon: Pencil
+title: "Guide"
+icon: BookOpen
 ---
+
+# General
+
+1. **Most of the time, you should commit new project memories to the same PR that generated them.**
+2. **Review `.memories` like code.**
+3. **Ask the agent to upvote a memory when it provided useful context.** The agent also upvotes by itself, but human upvotes are more valuable.
+4. **Open a separate PR when you prune memories.** Let your teammates review which memories were pruned. Ask the agent to upvote the pruning candidates you decide to keep.
+
+# Writing memories
 
 1. **A memory should be short.** Stick to a few paragraphs and one idea per file. If you need additional notes, like screenshots or text, use a parent directory and put them next to `memory.md` as an attachment.
 2. **Memories are context, not rules.** Some good examples:
@@ -28,3 +37,21 @@ sentry: https://sentry.io/organizations/acme/issues/12345/
 ```
 
 Defining obsolescence up front turns pruning from a guess into a fast, deterministic check for both agents and humans. Add `retireWhen` to the [schema](../01-getting-started/config.md#custom) if you use it.
+
+# Anti-patterns
+
+## Nesting a memory inside another memory
+
+A nested memory is a `memory.md` sitting inside another memory's folder, like:
+
+```bash
+.memories/
+└── webpack-error/
+    ├── memory.md
+    └── compile-error/
+        └── memory.md   # ❌ nested memory
+```
+
+The outer folder name becomes a search tag on the inner memory. The outer memory cannot be edited until the inner one is moved out, because an edit renames the whole folder and would take the inner memory with it.
+
+Deleting the outer memory is refused unless the inner memory is deleted in the same action.
