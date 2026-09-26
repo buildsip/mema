@@ -123,7 +123,7 @@ describe("tiramisu init", () => {
     mkdirSync(join(cliRoot, NAMES.TEMPLATES), { recursive: true });
     writeFileSync(
       join(cliRoot, NAMES.TEMPLATES, NAMES.AGENTS_MD),
-      readFileSync(new URL("../templates/AGENTS.md", import.meta.url), "utf8"),
+      readFileSync(new URL("../../../templates/AGENTS.md", import.meta.url), "utf8"),
     );
     mkdirSync(join(cliRoot, NAMES.SKILLS, NAMES.MEMORY_WRITING_SKILL), { recursive: true });
     writeFileSync(

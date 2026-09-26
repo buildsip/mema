@@ -5,7 +5,7 @@ icon: Settings
 
 ## Memory creation instructions
 
-During `tiramisu init`, default prompt rules are added to your `AGENTS.md` file to guide when the agent should capture a memory. You can edit these instructions to fit your team's workflow.
+During `tiramisu init`, [default prompt rules](../../templates/AGENTS.md) are added to your `AGENTS.md` file to guide when the agent should capture a memory. You can edit these instructions to fit your team's workflow.
 
 ## Memory writing instructions
 
