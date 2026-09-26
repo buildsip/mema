@@ -1,45 +1,7 @@
 ---
-title: Initialization
-icon: Sparkles
+title: Manual Installation
+icon: Wrench
 ---
-
-# Automatic (recommended)
-
-```bash package="npm"
-npx tiramisu init
-```
-
-```bash package="pnpm"
-pnpm dlx tiramisu init
-```
-
-```bash package="yarn"
-yarn dlx tiramisu init
-```
-
-```bash package="bun"
-bunx tiramisu init
-```
-
-`tiramisu init` does the following:
-
-- installs the MCP tools
-- writes [`tiramisu.json`](../file-conventions/tiramisu-json.md)
-- installs the `tiramisu` package globally
-- optionally, installs the `tiramisu-memory-writing` skill
-- optionally, adds memory labels to VS Code / Cursor
-- if pruning is enabled, it migrates your database
-- optionally, adds instructions about when to create a memory to your `AGENTS.md` file
-
-| Options                  | Description                                                         |
-| ------------------------ | ------------------------------------------------------------------- |
-| `--availableToWorkspace` | Share this project's memories with other projects in the workspace. |
-| `--verbose`              | Print package-manager output while installing the CLI.              |
-
-> [!TIP]
-> `init` detects which agents are installed and adds the MCP server and skill only to those.
-
-# Manual
 
 1. Install the `tiramisu` CLI:
 

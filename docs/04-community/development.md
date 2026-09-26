@@ -1,6 +1,6 @@
 ---
-title: "Development"
-icon: Wrench
+title: Development
+icon: Code
 ---
 
 Run from the repository root:
@@ -13,11 +13,11 @@ bun run test
 bun run build
 ```
 
-# Packaging
+## Packaging
 
 To inspect the npm package, run `npm pack --dry-run` in `packages/cli`. Its packaging hooks use Bun to build and prepare the `README`.
 
-# Release
+## Release
 
 ```bash package="Patch"
 bun run release patch

@@ -128,7 +128,7 @@ describe("tiramisu init", () => {
     mkdirSync(join(cliRoot, NAMES.SKILLS, NAMES.MEMORY_WRITING_SKILL), { recursive: true });
     writeFileSync(
       join(cliRoot, NAMES.SKILLS, NAMES.MEMORY_WRITING_SKILL, NAMES.SKILL_MD),
-      readFileSync(new URL("../skills/tiramisu-memory-writing/SKILL.md", import.meta.url), "utf8"),
+      readFileSync(new URL("../../../skills/tiramisu-memory-writing/SKILL.md", import.meta.url), "utf8"),
     );
     writeFileSync(
       join(cliRoot, NAMES.PACKAGE_JSON),

@@ -20,19 +20,19 @@ doNotEdit: false
 Content
 ```
 
-# Fields
+## Fields
 
-## id
+### id
 
 Required. Stable identifier for this memory. Don't change it.
 
 The id is used to track the memory across renames, and for upvotes when those are enabled.
 
-## created
+### created
 
 Required. UTC calendar date when the memory was inserted (`YYYY-MM-DD`). Don't change it. Pruning uses this date for the unvoted lifetime.
 
-## title
+### title
 
 Required. The memory title. Can be changed anytime.
 
@@ -42,7 +42,7 @@ title: Axios reconnect retry
 
 The title becomes the name of the memory directory. [`update`](../03-api-reference/mcp.md#update-memory) always repairs the memory directory to this slug.
 
-## doNotDelete
+### doNotDelete
 
 | Type      | Required | Default |
 | --------- | -------- | ------- |
@@ -54,7 +54,7 @@ To prevent the agent from deleting a memory, set `doNotDelete` to `true` in your
 doNotDelete: true
 ```
 
-## doNotEdit
+### doNotEdit
 
 | Type      | Required | Default |
 | --------- | -------- | ------- |
@@ -66,7 +66,7 @@ To prevent the agent from editing a memory, set `doNotEdit` to `true` in your `m
 doNotEdit: true
 ```
 
-## scope
+### scope
 
 Optional. **`Scope` contains literal paths relative to the git root, not globs.**
 
@@ -82,13 +82,13 @@ scope:
 
 This memory applies to the `web` and `api` directories and all files beneath them.
 
-# Custom fields
+## Custom fields
 
 Custom frontmatter fields act as searchable tags.
 
 Example:
 
-```bash
+```bash title="memory.md"
 ---
 id: 7fe24e91-4808-4f80-bc39-5d86f7a74be0
 created: 2026-09-19

@@ -11,6 +11,7 @@ import { notFound, redirect } from 'next/navigation';
 import { getMDXComponents } from '@/components/mdx';
 import type { Metadata } from 'next';
 import { createRelativeLink } from 'fumadocs-ui/mdx';
+import { createGithubFileLink } from '@/lib/github-file-link';
 import { getPageImageUrl, getPageMarkdownUrl, gitConfig } from '@/lib/shared';
 
 // There is no docs/index.md. /docs opens the first page in filename order.
@@ -61,8 +62,8 @@ export default async function Page(props: PageProps<'/docs/[[...slug]]'>) {
       <DocsBody>
         <MDX
           components={getMDXComponents({
-            // this allows you to link to other pages with relative file paths
-            a: createRelativeLink(source, page),
+            // Docs pages stay on the site. A relative link that leaves docs/ opens that file on GitHub.
+            a: createRelativeLink(source, page, createGithubFileLink(page.path)),
           })}
         />
       </DocsBody>

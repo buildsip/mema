@@ -9,7 +9,7 @@ Before opening a connection, Tiramisu converts the legacy `sslmode` values `pref
 
 `tiramisu init` automatically migrates the database for you.
 
-# Table
+## Table
 
 One `tiramisu.upvotes` table is shared by all repositories using the database:
 

@@ -1,9 +1,9 @@
 ---
-title: "File conventions"
+title: File Conventions
 icon: FolderTree
 ---
 
-# `.memories`
+## `.memories`
 
 The memories store, also known as `.memories`, is a directory that may be placed at the root of the git repository or at the root of a package.
 
@@ -33,14 +33,14 @@ The names of the memory's parent directories act as searchable tags.
 └── ADRs/
 ```
 
-## Supported languages
+### Supported languages
 
 | Language   | Identifier     |
 | ---------- | -------------- |
 | Javascript | `package.json` |
 | Typescript | `package.json` |
 
-# Directories used to categories memories
+## Directories used to categories memories
 
 Directories between `.memories` and the memory directory become tags during search.
 
@@ -53,11 +53,11 @@ repo/
             └── memory.md
 ```
 
-# Memory directory
+## Memory directory
 
 Each memory file (`memory.md`) lives in its own memory directory, named after the memory's title.
 
-# `memory.md`
+## `memory.md`
 
 The memory file.
 
@@ -75,13 +75,13 @@ Memory body goes here...
 
 The memory file respects a strict [format](./memory-format.md).
 
-# Attachments
+## Attachments
 
 Any sibling of `memory.md`, including nested files or directories.
 
 Attachments aren't indexed during search.
 
-# `tiramisu.json`
+## `tiramisu.json`
 
 Repository settings.
 

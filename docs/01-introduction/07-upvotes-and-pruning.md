@@ -1,5 +1,5 @@
 ---
-title: "Upvotes and pruning"
+title: Upvotes and Pruning
 icon: ThumbsUp
 ---
 
@@ -14,7 +14,7 @@ Reading alone does not record an upvote. A memory that helps the agent produce a
 
 Upvotes do not stack or shorten a longer lifetime.
 
-# How pruning works
+## How pruning works
 
 1. When you ask to prune, the agent calls the `prune-memories` MCP tool. It returns memory directories that meet the [pruning conditions](./config.md#prune) in the repository you choose. Memories marked `doNotDelete` are excluded.
 2. The agent then analyses the returned memories by searching the repo and suggests a list of candidates to delete.
@@ -22,7 +22,7 @@ Upvotes do not stack or shorten a longer lifetime.
 
 [Configure pruning](../02-api-reference/config.md#prune) in your `tiramisu.json` file.
 
-# Expiry
+## Expiry
 
 A memory becomes a pruning candidate when the current time reaches the latest of:
 

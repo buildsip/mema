@@ -1,11 +1,11 @@
 ---
-title: "MCP Tools"
+title: MCP Tools
 icon: Plug
 ---
 
 The MCP gives your agent six ways to work with memories.
 
-# `insert-memory`
+## `insert-memory`
 
 Creates one memory.
 
@@ -69,7 +69,7 @@ tiramisu insert --roots /Users/adam/Desktop/acme/acme-app --repo /Users/adam/Des
 
 </details>
 
-# `update-memory`
+## `update-memory`
 
 Updates an existing memory. Omitted fields retain their values. A path-only call repairs the title folder.
 
@@ -136,7 +136,7 @@ tiramisu update --roots /Users/adam/Desktop/acme/acme-app --repo /Users/adam/Des
 
 </details>
 
-# `search-memories`
+## `search-memories`
 
 Searches the memories.
 
@@ -172,13 +172,13 @@ Search reads memories from:
 > [!TIP]
 > Upvotes or memory age don't affect search results.
 
-## Search ranking
+### Search ranking
 
 **Directory tags** are the folders on the path from the **memory directory** to the root of the repository, such as `errors` and `auth` in `.memories/errors/cache/nextjs-cache/memory.md`.
 
 During search, memory titles get a 3x boost and directory tags get a 2x boost.
 
-# `delete-memories`
+## `delete-memories`
 
 Deletes memories and their attachments.
 
@@ -222,7 +222,7 @@ tiramisu delete \
 
 </details>
 
-# `upvote-memories`
+## `upvote-memories`
 
 > This feature requires pruning to be enabled.
 
@@ -257,7 +257,7 @@ tiramisu upvote \
 
 </details>
 
-# `prune-memories`
+## `prune-memories`
 
 > This feature requires pruning to be enabled.
 

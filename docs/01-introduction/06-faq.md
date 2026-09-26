@@ -3,7 +3,7 @@ title: FAQ
 icon: MessageCircleQuestionMark
 ---
 
-# Why doesn't tiramisu use vector search or reranking?
+## Why doesn't tiramisu use vector search or reranking?
 
 tiramisu doesn't store every session. It stores short, curated memories that are meant to remain useful over time.
 

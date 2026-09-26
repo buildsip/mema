@@ -178,20 +178,25 @@ html > body[data-scroll-locked] {
   text-decoration-color: var(--link);
 }
 
-/* Markdown headings inside the docs body. The page title is its own h1, outside .prose. */
-#nd-page .prose :is(h1) {
+#nd-page .prose :is(h2) {
+  margin-top: 2em;
+  margin-bottom: 1em;
   font-size: 1.5em;
   font-weight: 600;
-}
-
-#nd-page .prose :is(h2) {
-  font-size: 1.25em;
-  font-weight: 600;
+  line-height: 1.33333;
 }
 
 #nd-page .prose :is(h3) {
-  font-size: 1em;
+  margin-top: 1.6em;
+  margin-bottom: 0.6em;
+  font-size: 1.25em;
   font-weight: 600;
+  line-height: 1.6;
+}
+
+/* The first heading in the markdown body sits under the page title. Drop its top margin. */
+#nd-page .prose > :is(h1, h2, h3, h4, h5, h6):first-child {
+  margin-top: 0;
 }
 
 /* Fumadocs tab labels use a muted color that disappears on this theme. */

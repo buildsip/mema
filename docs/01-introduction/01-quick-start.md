@@ -70,5 +70,3 @@ yarn dlx tiramisu init
 ```bash package="bun"
 bunx tiramisu init
 ```
-
-This installs the CLI, the MCP tools, and configures your repo.
