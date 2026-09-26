@@ -3,9 +3,9 @@ title: FAQ
 icon: MessageCircleQuestionMark
 ---
 
-## Why doesn't tiramisu use vector search or reranking?
+## Why doesn't Tiramisu use vector search or reranking?
 
-tiramisu doesn't store every session. It stores short, curated memories that are meant to remain useful over time.
+Tiramisu doesn't store every session. It stores short, curated memories that are meant to remain useful over time.
 
 Search is also narrowed by `scope`, so an agent working in one package doesn't have to search memories from unrelated parts of the repo.
 

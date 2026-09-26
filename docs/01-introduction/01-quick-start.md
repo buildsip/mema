@@ -21,7 +21,7 @@ Spin up a PostgreSQL database to store upvotes.
 > [!TIP]
 > You can use the **same database** across all your organization's repositories. Try **[Neon](https://neon.tech)** or **[Supabase](https://supabase.com)** for free.
 
-### Option B: tiramisu app (Coming Soon)
+### Option B: Tiramisu app (Coming Soon)
 
 - ⚡ Cloud Database
 - 📊 Dashboard

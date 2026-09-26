@@ -1,6 +1,6 @@
 ---
 name: tiramisu-memory-writing
-description: Memory writing guidelines. Write or revise tiramisu memory titles and bodies. Use when preparing content for insert-memory or update-memory.
+description: Memory writing guidelines. Write or revise Tiramisu memory titles and bodies. Use when preparing content for insert-memory or update-memory.
 ---
 
 - Less is more.
