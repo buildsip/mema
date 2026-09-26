@@ -8,6 +8,9 @@ on:
     paths:
       - "apps/docs/**"
       - "docs/**"
+      - "package.json"
+      - "bun.lock"
+      - "bunfig.toml"
       - ".bun-version"
       - ".github/workflows/deploy-docs-prod.yml"
   workflow_dispatch:
@@ -50,11 +53,13 @@ jobs:
           # This job has production credentials. Do not restore an Actions cache into it.
           no-cache: true
 
-      # Install the packages in bun.lock. Fail if package.json and bun.lock disagree.
+      # Install all workspaces from the root lockfile. Fail if any manifest disagrees.
       - name: Install dependencies
+        working-directory: .
         run: bun install --frozen-lockfile
 
       - name: Check lockfile
+        working-directory: .
         run: git diff --exit-code -- bun.lock
 
       - name: Lint

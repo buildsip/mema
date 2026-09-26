@@ -40,11 +40,13 @@ jobs:
         with:
           bun-version-file: .bun-version
 
-      # This app has its own lockfile and builds without production credentials.
+      # All workspaces share the root lockfile; the docs build needs no production credentials.
       - name: Install dependencies
+        working-directory: .
         run: bun install
 
       - name: Check lockfile
+        working-directory: .
         run: git diff --exit-code -- bun.lock
 
       - name: Lint
