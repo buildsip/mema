@@ -7,7 +7,7 @@ icon: Book
 
 1. **Most of the time, you should commit new project memories to the same PR that generated them.**
 2. **Review `.memories` like code.**
-3. **Ask the agent to upvote a memory when it provided useful context.** The agent also upvotes by itself, but `human` upvotes might be more valuable depending on your [configuration](../02-api-reference/configuration.md#lifetimes).
+3. **If pruning is enabled, ask the agent to upvote a memory when it provided useful context.** The agent also upvotes by itself, but `human` upvotes might be more valuable depending on your [configuration](../02-api-reference/configuration.md#lifetimes).
 
 ## Writing memories
 

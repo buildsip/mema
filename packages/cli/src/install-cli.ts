@@ -6,6 +6,7 @@ import { gt, valid } from "semver";
 import { CLI_NAME } from "./cli-name";
 import { getPackageManager } from "./get-package-manager";
 import { NAMES } from "./names";
+import { isSourceCheckout } from "./is-source-checkout";
 
 /**
  * Installs the global CLI through the package manager that launched this process.
@@ -27,11 +28,7 @@ export async function installCli(
     // Windows package managers commonly launch through .cmd files, which need a shell.
     shell: process.platform === "win32",
   };
-  // Published packages omit both files. Look at the CLI package, not the repo being set up.
-  const checkout =
-    existsSync(join(cliRoot, "src", "index.ts")) &&
-    existsSync(join(cliRoot, "scripts", "build.mjs"));
-  if (checkout) {
+  if (isSourceCheckout({ root: cliRoot })) {
     // Use the CLI's source directory, not the repository being initialized.
     // Refresh the link on every setup: development changes do not bump the package version.
     const local = { ...options, cwd: cliRoot, stdio: verbose ? "inherit" : "pipe" } as const;

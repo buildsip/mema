@@ -5,6 +5,7 @@ import { accessSync } from "node:fs";
 import { join } from "node:path";
 import { CLI_NAME } from "./cli-name";
 import { NAMES } from "./names";
+import { isSourceCheckout } from "./is-source-checkout";
 
 // add-mcp and Vercel Skills use different IDs for some agents. Null means no Skills target.
 // Keep this exhaustive so an add-mcp upgrade cannot silently add an unmapped agent.
@@ -33,15 +34,19 @@ const targets: Record<AgentType, string | null> = {
   zed: "zed",
 };
 
-/** Installs or refreshes the bundled skill for detected agents after the user accepts. */
+/** Installs the GitHub skill, or unpublished local edits, after the user accepts. */
 export async function installWritingSkill(
   ctx: { log: Pick<typeof log, "step" | "warn"> },
   { cwd, cliRoot, verbose = false }: { cwd: string; cliRoot: string; verbose?: boolean },
 ) {
-  const source = join(cliRoot, NAMES.SKILLS, NAMES.MEMORY_WRITING_SKILL);
   try {
-    // Fail before downloading the installer if the published package is missing its skill.
-    accessSync(join(source, NAMES.SKILL_MD));
+    const checkout = isSourceCheckout({ root: cliRoot });
+    // packages/cli sits two levels below the root skill. Never resolve from the user's cwd.
+    const source = checkout
+      ? join(cliRoot, "..", "..", NAMES.SKILLS, NAMES.MEMORY_WRITING_SKILL)
+      : "buildsip/tiramisu";
+    // A missing development skill should fail instead of silently installing the GitHub copy.
+    if (checkout) accessSync(join(source, NAMES.SKILL_MD));
     const detected = await detectGlobalAgents();
     const selected = [...new Set(detected.flatMap((agent) => targets[agent] ?? []))];
     const unsupported = detected.filter((agent) => !targets[agent]);
@@ -61,7 +66,18 @@ export async function installWritingSkill(
     // init already obtained consent; both installers can run without further prompts.
     execFileSync(
       "npx",
-      ["--yes", "skills", "add", source, "--global", "--yes", "--agent", ...selected],
+      [
+        "--yes",
+        "skills",
+        "add",
+        source,
+        "--skill",
+        NAMES.MEMORY_WRITING_SKILL,
+        "--global",
+        "--yes",
+        "--agent",
+        ...selected,
+      ],
       {
         cwd,
         stdio: verbose ? "inherit" : "pipe",
@@ -70,7 +86,7 @@ export async function installWritingSkill(
     );
   } catch (error) {
     throw new Error(
-      `Could not install the tiramisu-memory-writing skill. Check access to your agent configuration directories and that npx can reach npm, then run ${CLI_NAME} init --verbose again. You can decline skill installation to continue setup without it.`,
+      `Could not install the tiramisu-memory-writing skill. Check access to your agent configuration directories and that npx can reach npm and GitHub, then run ${CLI_NAME} init --verbose again. For a source checkout, restore skills/tiramisu-memory-writing/SKILL.md at the repository root if it is missing. You can decline skill installation to continue setup without it.`,
       { cause: error },
     );
   }

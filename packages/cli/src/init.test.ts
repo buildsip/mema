@@ -115,7 +115,7 @@ describe("tiramisu init", () => {
     temp = realpathSync(mkdtempSync(join(tmpdir(), "mem-init-")));
     root = join(temp, "repo with spaces");
     web = join(root, "apps", "web");
-    cliRoot = join(temp, "tiramisu source");
+    cliRoot = join(temp, "tiramisu source", "packages", "cli");
     globalRoot = join(temp, "global with spaces", NAMES.NODE_MODULES);
     mkdirSync(join(web, "src"), { recursive: true });
     mkdirSync(join(cliRoot, "scripts"), { recursive: true });
@@ -124,14 +124,6 @@ describe("tiramisu init", () => {
     writeFileSync(
       join(cliRoot, NAMES.TEMPLATES, NAMES.AGENTS_MD),
       readFileSync(new URL("../templates/AGENTS.md", import.meta.url), "utf8"),
-    );
-    mkdirSync(join(cliRoot, NAMES.SKILLS, NAMES.MEMORY_WRITING_SKILL), { recursive: true });
-    writeFileSync(
-      join(cliRoot, NAMES.SKILLS, NAMES.MEMORY_WRITING_SKILL, NAMES.SKILL_MD),
-      readFileSync(
-        new URL("../skills/tiramisu-memory-writing/SKILL.md", import.meta.url),
-        "utf8",
-      ),
     );
     writeFileSync(
       join(cliRoot, "package.json"),
@@ -197,6 +189,13 @@ describe("tiramisu init", () => {
   function sourceCheckout() {
     mkdirSync(join(cliRoot, "src"), { recursive: true });
     writeFileSync(join(cliRoot, "src", "index.ts"), "");
+    // Mirror the monorepo layout so local setup can install unpublished skill edits.
+    const skill = join(cliRoot, "..", "..", NAMES.SKILLS, NAMES.MEMORY_WRITING_SKILL);
+    mkdirSync(skill, { recursive: true });
+    writeFileSync(
+      join(skill, NAMES.SKILL_MD),
+      readFileSync(new URL("../../../skills/tiramisu-memory-writing/SKILL.md", import.meta.url), "utf8"),
+    );
   }
 
   it("creates only config at the monorepo root and installs the built local CLI", async () => {
@@ -704,7 +703,9 @@ describe("tiramisu init", () => {
           "--yes",
           "skills",
           "add",
-          join(cliRoot, NAMES.SKILLS, NAMES.MEMORY_WRITING_SKILL),
+          "buildsip/tiramisu",
+          "--skill",
+          NAMES.MEMORY_WRITING_SKILL,
           "--global",
           "--yes",
           "--agent",

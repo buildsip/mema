@@ -2,12 +2,12 @@
 /// <reference types="bun" />
 import { expect, it } from "bun:test";
 import { execFileSync } from "node:child_process";
-import { mkdtempSync, rmSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
-it("includes the init template and writing skill in the npm tarball", () => {
+it("ships the init template without bundling the GitHub skill", () => {
   const temp = mkdtempSync(join(tmpdir(), "tiramisu-pack-"));
   try {
     // The test script builds first. Keep npm's cache and tarball inside this test's directory.
@@ -28,10 +28,17 @@ it("includes the init template and writing skill in the npm tarball", () => {
         shell: process.platform === "win32",
       },
     );
-    const [pack] = JSON.parse(output) as { files: { path: string }[] }[];
+    const [pack] = JSON.parse(output) as { filename: string; files: { path: string }[] }[];
     const files = pack!.files.map((file) => file.path);
     expect(files).toContain("templates/AGENTS.md");
-    expect(files).toContain("skills/tiramisu-memory-writing/SKILL.md");
+    expect(files.some((path) => path.startsWith("skills/") || path.startsWith("dist/skills/"))).toBe(false);
+    // Check the actual tarball so missing or stale templates fail before publishing.
+    const packed = execFileSync(
+      "tar",
+      ["-xOf", join(temp, pack!.filename), "package/templates/AGENTS.md"],
+      { encoding: "utf8" },
+    );
+    expect(packed).toBe(readFileSync(new URL("../templates/AGENTS.md", import.meta.url), "utf8"));
   } finally {
     rmSync(temp, { recursive: true, force: true });
   }

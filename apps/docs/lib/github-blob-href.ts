@@ -6,7 +6,7 @@ import { gitConfig } from './shared';
  *
  * `createRelativeLink` already rewrites links to other docs pages.
  * This handles a link that walks out of `docs/`, such as
- * `../../packages/cli/skills/tiramisu-memory-writing/SKILL.md`.
+ * `../../skills/tiramisu-memory-writing/SKILL.md`.
  *
  * `pagePath` is relative to the `docs/` folder. The link is resolved from
  * that file, then `docs/` is added back so `../` walks up to the repository

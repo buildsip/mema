@@ -71,11 +71,11 @@ To enable [pruning](../01-introduction/01-quick-start.md#step-1-configure-prunin
 
 ### Lifetimes
 
-| Name             | Description                                        |
-| ---------------- | -------------------------------------------------- |
+| Name             | Description                                                                      |
+| ---------------- | -------------------------------------------------------------------------------- |
 | `unvotedTtl`     | Lifetime in days from the memory's [`created`](./memory-format.md#created) date. |
-| `humanUpvoteTtl` | Lifetime in days from its last human upvote.       |
-| `agentUpvoteTtl` | Lifetime in days from its last agent upvote.       |
+| `humanUpvoteTtl` | Lifetime in days from its last human upvote.                                     |
+| `agentUpvoteTtl` | Lifetime in days from its last agent upvote.                                     |
 
 > [!TIP]
 > The memory becomes eligible for review when all applicable lifetimes have elapsed. Upvotes do not stack or shorten a longer lifetime.
@@ -92,7 +92,9 @@ To configure the `databaseUrlCommand`, update your `tiramisu.json` file:
 ```json title="tiramisu.json"
 {
   // Example for doppler
-  "databaseUrlCommand": "doppler secrets get TIRAMISU_DATABASE_URL --plain"
+  "prune": {
+    "databaseUrlCommand": "doppler secrets get TIRAMISU_DATABASE_URL --plain"
+  }
 }
 ```
 

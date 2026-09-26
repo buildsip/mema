@@ -11,19 +11,58 @@ const detect = spyOn(agents, "detectGlobalAgents");
 const exec = spyOn(childProcess, "execFileSync");
 const ctx = { log: { step: jest.fn(), warn: jest.fn() } };
 let root: string;
-let source: string;
+const source = "buildsip/tiramisu";
 
 beforeEach(() => {
   jest.resetAllMocks();
   detect.mockResolvedValue(["claude-code", "codex", "cursor", "windsurf"]);
   exec.mockReturnValue(Buffer.from(""));
   root = mkdtempSync(join(tmpdir(), "tiramisu-skill-"));
-  source = join(root, NAMES.SKILLS, NAMES.MEMORY_WRITING_SKILL);
-  mkdirSync(source, { recursive: true });
-  writeFileSync(join(source, NAMES.SKILL_MD), "# Writing guidelines");
 });
 
 afterEach(() => rmSync(root, { recursive: true, force: true }));
+
+it("installs unpublished root skill edits when running from a source checkout", async () => {
+  const cliRoot = join(root, "packages", "cli");
+  const local = join(root, NAMES.SKILLS, NAMES.MEMORY_WRITING_SKILL);
+  mkdirSync(join(cliRoot, "src"), { recursive: true });
+  mkdirSync(join(cliRoot, "scripts"), { recursive: true });
+  writeFileSync(join(cliRoot, "src", "index.ts"), "");
+  writeFileSync(join(cliRoot, "scripts", "build.mjs"), "");
+  mkdirSync(local, { recursive: true });
+  writeFileSync(join(local, NAMES.SKILL_MD), "# Unpublished writing guidance");
+
+  // The repository being initialized is unrelated to the CLI checkout.
+  await installWritingSkill(ctx, { cwd: join(root, "another repo"), cliRoot });
+  expect(exec.mock.calls[0]?.[1]).toEqual([
+    "--yes",
+    "skills",
+    "add",
+    local,
+    "--skill",
+    NAMES.MEMORY_WRITING_SKILL,
+    "--global",
+    "--yes",
+    "--agent",
+    "claude-code",
+    "codex",
+    "cursor",
+    "windsurf",
+  ]);
+});
+
+it("reports a missing checkout skill without installing the GitHub version", async () => {
+  const cliRoot = join(root, "packages", "cli");
+  mkdirSync(join(cliRoot, "src"), { recursive: true });
+  mkdirSync(join(cliRoot, "scripts"), { recursive: true });
+  writeFileSync(join(cliRoot, "src", "index.ts"), "");
+  writeFileSync(join(cliRoot, "scripts", "build.mjs"), "");
+
+  await expect(installWritingSkill(ctx, { cwd: root, cliRoot })).rejects.toThrow(
+    "restore skills/tiramisu-memory-writing/SKILL.md at the repository root",
+  );
+  expect(exec).not.toHaveBeenCalled();
+});
 
 it("explicitly targets every detected supported agent on each accepted installation", async () => {
   await installWritingSkill(ctx, { cwd: root, cliRoot: root });
@@ -37,6 +76,8 @@ it("explicitly targets every detected supported agent on each accepted installat
       "skills",
       "add",
       source,
+      "--skill",
+      NAMES.MEMORY_WRITING_SKILL,
       "--global",
       "--yes",
       "--agent",
@@ -65,6 +106,8 @@ it("maps differing IDs and deduplicates agents sharing a Skills target", async (
     "skills",
     "add",
     source,
+    "--skill",
+    NAMES.MEMORY_WRITING_SKILL,
     "--global",
     "--yes",
     "--agent",
@@ -84,6 +127,8 @@ it("skips unsupported agents while installing for supported ones", async () => {
     "skills",
     "add",
     source,
+    "--skill",
+    NAMES.MEMORY_WRITING_SKILL,
     "--global",
     "--yes",
     "--agent",
