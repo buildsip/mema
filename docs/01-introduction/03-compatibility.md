@@ -15,7 +15,6 @@ If your agent harness isn't on this list, you might still be able to install the
 | Cline VSCode Extension |
 | Cline CLI              |
 | Claude Code            |
-| Claude Desktop         |
 | Codex                  |
 | Cursor                 |
 | fx                     |
