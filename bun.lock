@@ -51,7 +51,7 @@
     },
     "packages/cli": {
       "name": "tiramisu",
-      "version": "0.5.2",
+      "version": "0.5.3",
       "bin": {
         "tiramisu": "./dist/index.js",
       },
